@@ -1,16 +1,9 @@
-using Microsoft.EntityFrameworkCore;
-using PEPScanner.Infrastructure.Data;
-
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-
-// Database
-builder.Services.AddDbContext<PepScannerDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // CORS
 builder.Services.AddCors(options =>
@@ -36,12 +29,6 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseCors("AllowAngularApp");
 app.UseAuthorization();
-
-// Controllers
 app.MapControllers();
-
-// Health check endpoints
-app.MapGet("/api/health", () => new { status = "PEP Scanner Backend is running!", timestamp = DateTime.UtcNow });
-app.MapGet("/api/version", () => new { version = "1.0.0", environment = "Development" });
 
 app.Run();

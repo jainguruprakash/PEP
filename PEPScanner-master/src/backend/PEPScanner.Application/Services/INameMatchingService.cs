@@ -1,6 +1,6 @@
 using PEPScanner.Domain.Entities;
 
-namespace PEPScanner.API.Services
+namespace PEPScanner.Application.Services
 {
     public interface INameMatchingService
     {

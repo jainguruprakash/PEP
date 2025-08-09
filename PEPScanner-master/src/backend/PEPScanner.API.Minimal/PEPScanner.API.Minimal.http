@@ -1,0 +1,6 @@
+@PEPScanner.API.Minimal_HostAddress = http://localhost:5276
+
+GET {{PEPScanner.API.Minimal_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

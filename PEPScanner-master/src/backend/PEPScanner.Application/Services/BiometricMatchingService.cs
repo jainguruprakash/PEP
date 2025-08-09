@@ -1,11 +1,11 @@
 using Microsoft.EntityFrameworkCore;
-using PEPScanner.API.Data;
+using PEPScanner.Infrastructure.Data;
 using PEPScanner.Domain.Entities;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Text.Json;
 
-namespace PEPScanner.API.Services
+namespace PEPScanner.Application.Services
 {
     public interface IBiometricMatchingService
     {

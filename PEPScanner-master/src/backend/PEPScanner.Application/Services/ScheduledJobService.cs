@@ -1,10 +1,10 @@
 using Hangfire;
 using Microsoft.EntityFrameworkCore;
-using PEPScanner.API.Data;
+using PEPScanner.Infrastructure.Data;
 using PEPScanner.Domain.Entities;
 using PEPScanner.API.Services;
 
-namespace PEPScanner.API.Services
+namespace PEPScanner.Application.Services
 {
     public interface IScheduledJobService
     {

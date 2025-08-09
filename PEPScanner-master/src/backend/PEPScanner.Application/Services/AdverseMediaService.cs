@@ -1,10 +1,10 @@
 using Microsoft.EntityFrameworkCore;
-using PEPScanner.API.Data;
+using PEPScanner.Infrastructure.Data;
 using PEPScanner.Domain.Entities;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
-namespace PEPScanner.API.Services
+namespace PEPScanner.Application.Services
 {
     public interface IAdverseMediaService
     {

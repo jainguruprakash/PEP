@@ -36,12 +36,6 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseCors("AllowAngularApp");
 app.UseAuthorization();
-
-// Controllers
 app.MapControllers();
-
-// Health check endpoints
-app.MapGet("/api/health", () => new { status = "PEP Scanner Backend is running!", timestamp = DateTime.UtcNow });
-app.MapGet("/api/version", () => new { version = "1.0.0", environment = "Development" });
 
 app.Run();

@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
-using PEPScanner.API.Data;
+using PEPScanner.Infrastructure.Data;
 using PEPScanner.Domain.Entities;
 
-namespace PEPScanner.API.Services
+namespace PEPScanner.Application.Services
 {
     public class ScreeningService : IScreeningService
     {

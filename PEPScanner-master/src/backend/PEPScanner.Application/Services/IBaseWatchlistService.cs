@@ -1,6 +1,6 @@
 using PEPScanner.Domain.Entities;
 
-namespace PEPScanner.API.Services
+namespace PEPScanner.Application.Services
 {
     /// <summary>
     /// Base interface for all watchlist services to ensure consistent implementation

@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using PEPScanner.API.Data;
+using PEPScanner.Infrastructure.Data;
 using PEPScanner.Domain.Entities;
 using CsvHelper;
 using System.Globalization;
@@ -8,7 +8,7 @@ using HtmlAgilityPack;
 using System.Text.RegularExpressions;
 using OfficeOpenXml;
 
-namespace PEPScanner.API.Services
+namespace PEPScanner.Application.Services
 {
     /// <summary>
     /// Indian Parliament Watchlist Service
