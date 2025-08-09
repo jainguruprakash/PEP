@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PEPScanner.API.Services;
-using PEPScanner.API.Models;
+using PEPScanner.Domain.Entities;
 
 namespace PEPScanner.API.Controllers
 {

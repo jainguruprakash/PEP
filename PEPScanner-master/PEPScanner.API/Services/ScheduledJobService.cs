@@ -1,7 +1,7 @@
 using Hangfire;
 using Microsoft.EntityFrameworkCore;
 using PEPScanner.API.Data;
-using PEPScanner.API.Models;
+using PEPScanner.Domain.Entities;
 using PEPScanner.API.Services;
 
 namespace PEPScanner.API.Services

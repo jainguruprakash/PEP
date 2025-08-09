@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using PEPScanner.API.Models;
+using PEPScanner.Domain.Entities;
 
 namespace PEPScanner.API.Data
 {

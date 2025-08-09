@@ -1,7 +1,7 @@
 using Hangfire;
 using Hangfire.Dashboard;
 using PEPScanner.API.Data;
-using PEPScanner.API.Models;
+using PEPScanner.Domain.Entities;
 using Microsoft.AspNetCore.Authentication;
 using System.Security.Claims;
 using System.Text.Encodings.Web;

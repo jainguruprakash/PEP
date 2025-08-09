@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using PEPScanner.API.Data;
-using PEPScanner.API.Models;
+using PEPScanner.Domain.Entities;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Text.Json;

@@ -1,4 +1,4 @@
-using PEPScanner.API.Models;
+using PEPScanner.Domain.Entities;
 
 namespace PEPScanner.API.Services
 {
