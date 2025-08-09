@@ -1,0 +1,28 @@
+import { inject, Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../environments/environment';
+import { Observable } from 'rxjs';
+
+@Injectable({ providedIn: 'root' })
+export class AlertsService {
+  private readonly http = inject(HttpClient);
+  private readonly baseUrl = `${environment.apiBaseUrl}/alerts`;
+
+  getAll(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}`);
+  }
+
+  getByStatus(status: string): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/status/${status}`);
+  }
+
+  getById(id: string): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/${id}`);
+  }
+
+  update(id: string, payload: any): Observable<void> {
+    return this.http.put<void>(`${this.baseUrl}/${id}`, payload);
+  }
+}
+
+
