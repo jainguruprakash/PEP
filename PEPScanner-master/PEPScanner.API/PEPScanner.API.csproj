@@ -49,18 +49,8 @@
       </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="PEPScanner.Application\PEPScanner.Application.csproj" />
-    <ProjectReference Include="PEPScanner.Infrastructure\PEPScanner.Infrastructure.csproj" />
-  </ItemGroup>
-
-  <!-- Exclude clean-architecture project source files from API compile -->
-  <ItemGroup>
-    <Compile Remove="PEPScanner.Domain\**\*.cs" />
-    <Compile Remove="PEPScanner.Application\**\*.cs" />
-    <Compile Remove="PEPScanner.Infrastructure\**\*.cs" />
-    <None Include="PEPScanner.Domain\**\*.cs" ExcludeFromSingleFile="true" />
-    <None Include="PEPScanner.Application\**\*.cs" ExcludeFromSingleFile="true" />
-    <None Include="PEPScanner.Infrastructure\**\*.cs" ExcludeFromSingleFile="true" />
+    <ProjectReference Include="..\PEPScanner.Application\PEPScanner.Application.csproj" />
+    <ProjectReference Include="..\PEPScanner.Infrastructure\PEPScanner.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
