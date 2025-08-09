@@ -1,9 +1,9 @@
-using System;
+﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace PEPScanner.Infrastructure.Migrations
+namespace PEPScanner.API.Migrations
 {
     /// <inheritdoc />
     public partial class AddOrganizationMultiTenancy : Migration
