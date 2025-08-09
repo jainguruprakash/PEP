@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using PEPScanner.API.Data;
-using PEPScanner.API.Services;
 using PEPScanner.Application.Abstractions;
 using PEPScanner.Infrastructure.Services;
 using AppIScreeningService = PEPScanner.Application.Abstractions.IScreeningService;
@@ -69,26 +68,26 @@ builder.Services.AddHttpClient();
 // AutoMapper
 builder.Services.AddAutoMapper(typeof(Program));
 
-// Application Services
-builder.Services.AddScoped<INameMatchingService, NameMatchingService>();
+// Application Services - Using Infrastructure implementations
+builder.Services.AddScoped<INameMatchingService, PEPScanner.Infrastructure.Services.NameMatchingService>();
 builder.Services.AddScoped<AppIScreeningService, InfraScreeningService>();
-builder.Services.AddScoped<IOfacDataService, OfacDataService>();
-builder.Services.AddScoped<IUnSanctionsService, UnSanctionsService>();
-builder.Services.AddScoped<IRbiWatchlistService, RbiWatchlistService>();
-builder.Services.AddScoped<IInHouseFileProcessorService, InHouseFileProcessorService>();
+builder.Services.AddScoped<IOfacDataService, PEPScanner.Infrastructure.Services.OfacDataService>();
+builder.Services.AddScoped<IUnSanctionsService, PEPScanner.Infrastructure.Services.UnSanctionsService>();
+builder.Services.AddScoped<IRbiWatchlistService, PEPScanner.Infrastructure.Services.RbiWatchlistService>();
+builder.Services.AddScoped<IInHouseFileProcessorService, PEPScanner.Infrastructure.Services.InHouseFileProcessorService>();
 
-// New Watchlist Services
-builder.Services.AddScoped<SebiWatchlistService>();
-builder.Services.AddScoped<IndianParliamentWatchlistService>();
+// New Watchlist Services - Using Infrastructure implementations
+builder.Services.AddScoped<PEPScanner.Infrastructure.Services.SebiWatchlistService>();
+builder.Services.AddScoped<PEPScanner.Infrastructure.Services.IndianParliamentWatchlistService>();
 
-// New Services
-builder.Services.AddScoped<IBiometricMatchingService, BiometricMatchingService>();
-builder.Services.AddScoped<IAdverseMediaService, AdverseMediaService>();
-builder.Services.AddScoped<INotificationService, NotificationService>();
+// New Services - Using Infrastructure implementations
+builder.Services.AddScoped<IBiometricMatchingService, PEPScanner.Infrastructure.Services.BiometricMatchingService>();
+builder.Services.AddScoped<IAdverseMediaService, PEPScanner.Infrastructure.Services.AdverseMediaService>();
+builder.Services.AddScoped<INotificationService, PEPScanner.Infrastructure.Services.NotificationService>();
 // builder.Services.AddScoped<IScheduledJobService, ScheduledJobService>(); // Temporarily disabled with Hangfire
 
-// Watchlist Service Registry
-builder.Services.AddSingleton<IWatchlistServiceRegistry, WatchlistServiceRegistry>();
+// Watchlist Service Registry - Using Infrastructure implementation
+builder.Services.AddSingleton<IWatchlistServiceRegistry, PEPScanner.Infrastructure.Services.WatchlistServiceRegistry>();
 
 // Authentication
 if (builder.Environment.IsDevelopment())
