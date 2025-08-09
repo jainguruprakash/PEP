@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using PEPScanner.API.Data;
+using PEPScanner.Infrastructure.Data;
 using PEPScanner.Application.Abstractions;
 using PEPScanner.Infrastructure.Services;
 using AppIScreeningService = PEPScanner.Application.Abstractions.IScreeningService;
