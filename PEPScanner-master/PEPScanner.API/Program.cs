@@ -56,11 +56,12 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<PepScannerDbContext>(options =>
     options.UseSqlite(connectionString));
 
-// Hangfire for background jobs
-builder.Services.AddHangfire(config =>
-    config.UseSimpleAssemblyNameTypeSerializer()
-          .UseRecommendedSerializerSettings());
-builder.Services.AddHangfireServer();
+// Hangfire for background jobs (temporarily disabled for Clean Architecture demo)
+// TODO: Re-enable with proper storage configuration
+// builder.Services.AddHangfire(config =>
+//     config.UseSimpleAssemblyNameTypeSerializer()
+//           .UseRecommendedSerializerSettings());
+// builder.Services.AddHangfireServer();
 
 // HTTP Client
 builder.Services.AddHttpClient();
@@ -84,7 +85,7 @@ builder.Services.AddScoped<IndianParliamentWatchlistService>();
 builder.Services.AddScoped<IBiometricMatchingService, BiometricMatchingService>();
 builder.Services.AddScoped<IAdverseMediaService, AdverseMediaService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
-builder.Services.AddScoped<IScheduledJobService, ScheduledJobService>();
+// builder.Services.AddScoped<IScheduledJobService, ScheduledJobService>(); // Temporarily disabled with Hangfire
 
 // Watchlist Service Registry
 builder.Services.AddSingleton<IWatchlistServiceRegistry, WatchlistServiceRegistry>();
@@ -134,11 +135,11 @@ app.UseCors("AllowAngular");
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Hangfire Dashboard
-app.UseHangfireDashboard("/hangfire", new DashboardOptions
-{
-    Authorization = new[] { new HangfireAuthorizationFilter() }
-});
+// Hangfire Dashboard (temporarily disabled)
+// app.UseHangfireDashboard("/hangfire", new DashboardOptions
+// {
+//     Authorization = new[] { new HangfireAuthorizationFilter() }
+// });
 
 // Register watchlist services in registry
 using (var scope = app.Services.CreateScope())
@@ -160,26 +161,26 @@ using (var scope = app.Services.CreateScope())
     registry.RegisterService(parliamentService);
 }
 
-// Initialize scheduled jobs
-using (var scope = app.Services.CreateScope())
-{
-    try
-    {
-        var scheduledJobService = scope.ServiceProvider.GetRequiredService<IScheduledJobService>();
-        
-        // Schedule all recurring jobs
-        await scheduledJobService.ScheduleWatchlistUpdateJobsAsync();
-        await scheduledJobService.ScheduleCustomerScreeningJobsAsync();
-        await scheduledJobService.ScheduleAdverseMediaScanJobsAsync();
-        await scheduledJobService.ScheduleReportGenerationJobsAsync();
-        
-        Log.Information("All scheduled jobs initialized successfully");
-    }
-    catch (Exception ex)
-    {
-        Log.Error(ex, "Error initializing scheduled jobs");
-    }
-}
+// Initialize scheduled jobs (temporarily disabled with Hangfire)
+// using (var scope = app.Services.CreateScope())
+// {
+//     try
+//     {
+//         var scheduledJobService = scope.ServiceProvider.GetRequiredService<IScheduledJobService>();
+//         
+//         // Schedule all recurring jobs
+//         await scheduledJobService.ScheduleWatchlistUpdateJobsAsync();
+//         await scheduledJobService.ScheduleCustomerScreeningJobsAsync();
+//         await scheduledJobService.ScheduleAdverseMediaScanJobsAsync();
+//         await scheduledJobService.ScheduleReportGenerationJobsAsync();
+//         
+//         Log.Information("All scheduled jobs initialized successfully");
+//     }
+//     catch (Exception ex)
+//     {
+//         Log.Error(ex, "Error initializing scheduled jobs");
+//     }
+// }
 
 // Map API endpoints
 app.MapControllers();

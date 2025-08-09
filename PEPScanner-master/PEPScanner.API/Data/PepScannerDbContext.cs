@@ -1,17 +1,34 @@
-// This is a compatibility shim for migration and existing references.
-// The actual DbContext implementation is in PEPScanner.Infrastructure/Persistence/PepScannerDbContext.cs
-
 using Microsoft.EntityFrameworkCore;
+using PEPScanner.Domain.Entities;
 
 namespace PEPScanner.API.Data
 {
-    // Empty partial class that allows existing migrations to reference this namespace
-    public partial class PepScannerDbContext : DbContext
+    public class PepScannerDbContext : DbContext
     {
-        public PepScannerDbContext(DbContextOptions<PepScannerDbContext> options) : base(options) 
+        public PepScannerDbContext(DbContextOptions<PepScannerDbContext> options) : base(options)
         {
-            // This constructor is only kept for compatibility with existing migrations
-            // Actual implementation is in Infrastructure layer
+        }
+
+        public DbSet<Customer> Customers => Set<Customer>();
+        public DbSet<WatchlistEntry> WatchlistEntries => Set<WatchlistEntry>();
+        public DbSet<Alert> Alerts => Set<Alert>();
+        public DbSet<CustomerRelationship> CustomerRelationships => Set<CustomerRelationship>();
+        public DbSet<CustomerDocument> CustomerDocuments => Set<CustomerDocument>();
+        public DbSet<ScreeningJob> ScreeningJobs => Set<ScreeningJob>();
+        public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+        public DbSet<NotificationLog> NotificationLogs => Set<NotificationLog>();
+        
+        // Organization and Multi-tenant support
+        public DbSet<Organization> Organizations => Set<Organization>();
+        public DbSet<OrganizationUser> OrganizationUsers => Set<OrganizationUser>();
+        public DbSet<OrganizationWatchlist> OrganizationWatchlists => Set<OrganizationWatchlist>();
+        public DbSet<OrganizationConfiguration> OrganizationConfigurations => Set<OrganizationConfiguration>();
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            // Apply all the entity configurations here
+            // For now, let's use the data annotations on the entities
+            base.OnModelCreating(modelBuilder);
         }
     }
 }

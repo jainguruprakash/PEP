@@ -24,7 +24,7 @@ namespace PEPScanner.API
             {
                 var watchlistEntries = new[]
                 {
-                    new Models.WatchlistEntry
+                    new WatchlistEntry
                     {
                         Id = Guid.NewGuid(),
                         Source = "OFAC",
@@ -36,7 +36,7 @@ namespace PEPScanner.API
                         DateAddedUtc = DateTime.UtcNow,
                         IsActive = true
                     },
-                    new Models.WatchlistEntry
+                    new WatchlistEntry
                     {
                         Id = Guid.NewGuid(),
                         Source = "UN",
@@ -50,7 +50,7 @@ namespace PEPScanner.API
                         DateAddedUtc = DateTime.UtcNow,
                         IsActive = true
                     },
-                    new Models.WatchlistEntry
+                    new WatchlistEntry
                     {
                         Id = Guid.NewGuid(),
                         Source = "RBI",
