@@ -1,5 +1,16 @@
 <div class="screening-container">
-  <mat-card class="main-card">
+  <!-- Notifications -->
+  <div class="notifications" *ngIf="notifications().length > 0">
+    <mat-card *ngFor="let notification of notifications()" class="notification-card">
+      <mat-icon>info</mat-icon>
+      <span>{{ notification }}</span>
+    </mat-card>
+  </div>
+
+  <mat-tab-group>
+    <!-- Single Screening Tab -->
+    <mat-tab label="Single Customer">
+      <mat-card class="main-card">
     <mat-card-header>
       <mat-card-title>
         <mat-icon>search</mat-icon>
@@ -12,6 +23,22 @@
 
     <mat-card-content>
       <form [formGroup]="singleScreeningForm" (ngSubmit)="screenSingleCustomer()">
+
+        <!-- Quick Templates -->
+        <div class="templates-section">
+          <mat-form-field appearance="outline">
+            <mat-label>Quick Templates</mat-label>
+            <mat-select (selectionChange)="loadTemplate($event.value)">
+              <mat-option value="">Select Template</mat-option>
+              <mat-option *ngFor="let template of searchTemplates()" [value]="template.id">
+                {{ template.name }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+          <button mat-button (click)="saveCurrentAsTemplate()">
+            <mat-icon>save</mat-icon> Save as Template
+          </button>
+        </div>
 
         <!-- Basic Information Section -->
         <div class="form-section">
@@ -136,15 +163,82 @@
             Clear Form
           </button>
 
-          <button mat-button type="button" (click)="exportResults()"
+          <button mat-button [matMenuTriggerFor]="exportMenu"
                   [disabled]="!result() || isLoading()">
             <mat-icon>download</mat-icon>
-            Export Results
+            Export
           </button>
+          <mat-menu #exportMenu="matMenu">
+            <button mat-menu-item (click)="exportResults('json')">
+              <mat-icon>code</mat-icon> JSON
+            </button>
+            <button mat-menu-item (click)="exportResults('pdf')">
+              <mat-icon>picture_as_pdf</mat-icon> PDF Report
+            </button>
+            <button mat-menu-item (click)="exportResults('excel')">
+              <mat-icon>table_chart</mat-icon> Excel
+            </button>
+          </mat-menu>
         </div>
       </form>
     </mat-card-content>
   </mat-card>
+    </mat-tab>
+
+    <!-- Bulk Screening Tab -->
+    <mat-tab label="Bulk Screening">
+      <mat-card class="main-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>upload_file</mat-icon>
+            Bulk Customer Screening
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <form [formGroup]="bulkScreeningForm">
+            <div class="bulk-upload">
+              <input type="file" #fileInput (change)="uploadBulkFile($event)" 
+                     accept=".csv,.xlsx" style="display: none">
+              <button mat-raised-button color="primary" (click)="fileInput.click()">
+                <mat-icon>cloud_upload</mat-icon>
+                Upload Customer File
+              </button>
+              <p class="upload-help">Supported formats: CSV, Excel</p>
+            </div>
+          </form>
+          
+          <!-- Bulk Results -->
+          <div *ngIf="bulkResults().length > 0" class="bulk-results">
+            <h3>Bulk Screening Results</h3>
+            <mat-table [dataSource]="bulkResults()">
+              <ng-container matColumnDef="name">
+                <mat-header-cell *matHeaderCellDef>Name</mat-header-cell>
+                <mat-cell *matCellDef="let result">{{ result.customerName }}</mat-cell>
+              </ng-container>
+              <ng-container matColumnDef="riskScore">
+                <mat-header-cell *matHeaderCellDef>Risk Score</mat-header-cell>
+                <mat-cell *matCellDef="let result">{{ result.riskScore }}%</mat-cell>
+              </ng-container>
+              <ng-container matColumnDef="matches">
+                <mat-header-cell *matHeaderCellDef>Matches</mat-header-cell>
+                <mat-cell *matCellDef="let result">{{ result.matchCount }}</mat-cell>
+              </ng-container>
+              <ng-container matColumnDef="status">
+                <mat-header-cell *matHeaderCellDef>Status</mat-header-cell>
+                <mat-cell *matCellDef="let result">
+                  <span class="status-badge" [class]="result.status.toLowerCase().replace(' ', '-')">
+                    {{ result.status }}
+                  </span>
+                </mat-cell>
+              </ng-container>
+              <mat-header-row *matHeaderRowDef="['name', 'riskScore', 'matches', 'status']"></mat-header-row>
+              <mat-row *matRowDef="let row; columns: ['name', 'riskScore', 'matches', 'status']"></mat-row>
+            </mat-table>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </mat-tab>
+  </mat-tab-group>
 
   <!-- Loading Overlay -->
   <div *ngIf="isLoading()" class="loading-overlay">
@@ -158,10 +252,86 @@
     </mat-card>
   </div>
 
-  <!-- Results Section -->
-  <app-screening-results
-    [result]="result()"
-    [onCreateAlert]="createAlert.bind(this)"
-    *ngIf="result() && !isLoading()">
-  </app-screening-results>
+  <!-- Enhanced Results Section -->
+  <div *ngIf="result() && !isLoading()" class="results-container">
+    <mat-tab-group>
+      <!-- Screening Results -->
+      <mat-tab label="Results">
+        <!-- Quick Actions Panel -->
+        <div class="quick-actions" *ngIf="result()">
+          <button mat-raised-button color="primary" (click)="approveCustomer()">
+            <mat-icon>check_circle</mat-icon> Approve
+          </button>
+          <button mat-raised-button color="warn" (click)="flagForReview()">
+            <mat-icon>flag</mat-icon> Flag for Review
+          </button>
+          <button mat-raised-button color="accent" (click)="requestEDD()">
+            <mat-icon>assignment</mat-icon> Request EDD
+          </button>
+        </div>
+        
+        <app-screening-results
+          [result]="result()"
+          [onCreateAlert]="createAlert.bind(this)">
+        </app-screening-results>
+      </mat-tab>
+      
+      <!-- AI Suggestions -->
+      <mat-tab label="AI Insights" *ngIf="aiSuggestions()">
+        <mat-card class="ai-suggestions">
+          <mat-card-header>
+            <mat-card-title>
+              <mat-icon>psychology</mat-icon>
+              AI-Powered Insights
+            </mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="suggestion-section">
+              <h4>Recommended Action</h4>
+              <p class="recommendation">{{ aiSuggestions().recommendedAction }}</p>
+              <div class="confidence">Confidence: {{ (aiSuggestions().confidence * 100) | number:'1.0-0' }}%</div>
+            </div>
+            
+            <div class="suggestion-section">
+              <h4>Risk Factors</h4>
+              <mat-chip-set>
+                <mat-chip *ngFor="let factor of aiSuggestions().riskFactors">{{ factor }}</mat-chip>
+              </mat-chip-set>
+            </div>
+            
+            <div class="suggestion-section">
+              <h4>Similar Cases</h4>
+              <div *ngFor="let case of aiSuggestions().similarCases" class="similar-case">
+                <span class="case-name">{{ case.name }}</span>
+                <span class="case-score">Risk: {{ (case.riskScore * 100) | number:'1.0-0' }}%</span>
+                <span class="case-outcome">{{ case.outcome }}</span>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </mat-tab>
+      
+      <!-- Screening History -->
+      <mat-tab label="History" *ngIf="screeningHistory().length > 0">
+        <mat-card class="history-card">
+          <mat-card-header>
+            <mat-card-title>
+              <mat-icon>history</mat-icon>
+              Screening History
+            </mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="history-timeline">
+              <div *ngFor="let screening of screeningHistory()" class="history-item">
+                <div class="history-date">{{ screening.date | date:'short' }}</div>
+                <div class="history-action">{{ screening.action }}</div>
+                <div class="history-user">by {{ screening.user }}</div>
+                <div class="history-result">{{ screening.result }}</div>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </mat-tab>
+    </mat-tab-group>
+  </div>
 </div>

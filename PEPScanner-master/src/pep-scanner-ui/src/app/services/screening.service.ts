@@ -150,6 +150,40 @@ export class ScreeningService {
   getScreeningStatus(screeningId: string): Observable<any> {
     return this.http.get(`${this.baseUrl}/status/${screeningId}`);
   }
+
+  // Bulk screening
+  screenBatchFile(file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post(`${this.baseUrl}/batch-file`, formData);
+  }
+
+  // Customer actions
+  approveCustomer(customerId: string, notes: string): Observable<any> {
+    return this.http.post(`${this.baseUrl}/approve`, { customerId, notes });
+  }
+
+  flagForReview(customerId: string, reason: string): Observable<any> {
+    return this.http.post(`${this.baseUrl}/flag`, { customerId, reason });
+  }
+
+  requestEDD(customerId: string, requirements: string[]): Observable<any> {
+    return this.http.post(`${this.baseUrl}/edd`, { customerId, requirements });
+  }
+
+  // Screening history
+  getScreeningHistory(customerId: string): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/history/${customerId}`);
+  }
+
+  // Templates
+  getSearchTemplates(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/templates`);
+  }
+
+  saveSearchTemplate(template: any): Observable<any> {
+    return this.http.post(`${this.baseUrl}/templates`, template);
+  }
 }
 
 

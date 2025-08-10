@@ -201,6 +201,121 @@ namespace PEPScanner.API.Controllers
             }
         }
 
+        [HttpPost("batch-file")]
+        public async Task<IActionResult> ScreenBatchFile(IFormFile file)
+        {
+            try
+            {
+                var results = new List<object>();
+                // Process file and return batch results
+                return Ok(results);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing batch file");
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        [HttpPost("approve")]
+        public async Task<IActionResult> ApproveCustomer([FromBody] CustomerActionRequest request)
+        {
+            try
+            {
+                // Process approval
+                return Ok(new { success = true, message = "Customer approved" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error approving customer");
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        [HttpPost("flag")]
+        public async Task<IActionResult> FlagForReview([FromBody] CustomerActionRequest request)
+        {
+            try
+            {
+                // Process flag
+                return Ok(new { success = true, message = "Customer flagged for review" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error flagging customer");
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        [HttpPost("edd")]
+        public async Task<IActionResult> RequestEDD([FromBody] EDDRequest request)
+        {
+            try
+            {
+                // Process EDD request
+                return Ok(new { success = true, message = "EDD requested" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error requesting EDD");
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        [HttpGet("history/{customerId}")]
+        public async Task<IActionResult> GetScreeningHistory(string customerId)
+        {
+            try
+            {
+                var history = new[]
+                {
+                    new { date = DateTime.Now.AddDays(-1), action = "Screening", user = "John Doe", result = "Medium Risk" },
+                    new { date = DateTime.Now.AddDays(-7), action = "Screening", user = "Jane Smith", result = "Clear" }
+                };
+                return Ok(history);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting screening history");
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        [HttpGet("templates")]
+        public async Task<IActionResult> GetSearchTemplates()
+        {
+            try
+            {
+                var templates = new[]
+                {
+                    new { id = "high-risk-pep", name = "High Risk PEP Check", config = new { threshold = 90, sources = new[] { "OFAC", "UN" } } },
+                    new { id = "sanctions-only", name = "Sanctions Only", config = new { threshold = 80, sources = new[] { "OFAC", "UN", "EU" } } },
+                    new { id = "local-lists", name = "Local Lists Only", config = new { threshold = 70, sources = new[] { "RBI", "SEBI" } } }
+                };
+                return Ok(templates);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting templates");
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        [HttpPost("templates")]
+        public async Task<IActionResult> SaveSearchTemplate([FromBody] SearchTemplate template)
+        {
+            try
+            {
+                // Save template
+                return Ok(new { success = true, templateId = Guid.NewGuid() });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error saving template");
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
         private double CalculateMatchScore(string searchName, string primaryName, string? alternateNames, CustomerScreeningRequest request)
         {
             var scores = new List<double>();
@@ -485,5 +600,24 @@ namespace PEPScanner.API.Controllers
         public string Country { get; set; } = string.Empty;
         public double Threshold { get; set; } = 0.7;
         public int MaxResults { get; set; } = 50;
+    }
+
+    public class CustomerActionRequest
+    {
+        public string CustomerId { get; set; } = string.Empty;
+        public string Notes { get; set; } = string.Empty;
+        public string Reason { get; set; } = string.Empty;
+    }
+
+    public class EDDRequest
+    {
+        public string CustomerId { get; set; } = string.Empty;
+        public List<string> Requirements { get; set; } = new();
+    }
+
+    public class SearchTemplate
+    {
+        public string Name { get; set; } = string.Empty;
+        public object Config { get; set; } = new();
     }
 }

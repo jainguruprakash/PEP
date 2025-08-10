@@ -21,8 +21,14 @@ import { MatSortModule } from '@angular/material/sort';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatChipsModule } from '@angular/material/chips';
+import { MatTableModule } from '@angular/material/table';
 import { ScreeningService } from '../../services/screening.service';
 import { AlertsService } from '../../services/alerts.service';
+import { ReportService } from '../../services/report.service';
+import { WebSocketService } from '../../services/websocket.service';
+import { AiSuggestionsService } from '../../services/ai-suggestions.service';
 import { ScreeningResultsComponent } from './screening-results.component';
 
 @Component({
@@ -44,6 +50,9 @@ import { ScreeningResultsComponent } from './screening-results.component';
     MatNativeDateModule,
     MatTooltipModule,
     MatProgressBarModule,
+    MatMenuModule,
+    MatChipsModule,
+    MatTableModule,
     ScreeningResultsComponent
   ],
   templateUrl: './customer-screening.component.html',
@@ -53,12 +62,20 @@ export class CustomerScreeningComponent implements OnInit {
   private fb = inject(FormBuilder);
   private screeningService = inject(ScreeningService);
   private alertsService = inject(AlertsService);
+  private reportService = inject(ReportService);
+  private webSocketService = inject(WebSocketService);
+  private aiService = inject(AiSuggestionsService);
 
   // Signals for reactive state management
   isLoading = signal(false);
   result = signal<any>(null);
+  bulkResults = signal<any[]>([]);
+  screeningHistory = signal<any[]>([]);
+  aiSuggestions = signal<any>(null);
+  searchTemplates = signal<any[]>([]);
+  notifications = signal<string[]>([]);
 
-  // Form group
+  // Form groups
   singleScreeningForm = this.fb.group({
     fullName: ['', Validators.required],
     dateOfBirth: [''],
@@ -72,6 +89,11 @@ export class CustomerScreeningComponent implements OnInit {
     includeAliases: [true],
     includeFuzzyMatching: [true],
     includePhoneticMatching: [true]
+  });
+
+  bulkScreeningForm = this.fb.group({
+    file: ['', Validators.required],
+    fileType: ['csv', Validators.required]
   });
 
   // Configuration options
@@ -99,6 +121,8 @@ export class CustomerScreeningComponent implements OnInit {
 
   ngOnInit() {
     this.initializeFormArrays();
+    this.loadSearchTemplates();
+    this.setupRealTimeUpdates();
   }
 
   private initializeFormArrays() {
@@ -139,9 +163,15 @@ export class CustomerScreeningComponent implements OnInit {
         this.result.set(res);
         this.isLoading.set(false);
         
+        // Load AI suggestions and history
+        this.getAISuggestions();
+        if (res.customerId) {
+          this.loadScreeningHistory(res.customerId);
+        }
+        
         // Show alert creation notification if alerts were auto-created
         if ((res as any).alertsCreated?.length > 0) {
-          console.log(`${(res as any).alertsCreated.length} alert(s) created automatically`);
+          this.addNotification(`${(res as any).alertsCreated.length} alert(s) created automatically`);
         }
       },
       error: (error) => {
@@ -230,19 +260,139 @@ export class CustomerScreeningComponent implements OnInit {
     return 168; // Low: 1 week
   }
 
-  // Export functionality
-  exportResults() {
+  // Enhanced export functionality
+  exportResults(format: 'json' | 'pdf' | 'excel' = 'json') {
     const result = this.result();
     if (!result) return;
 
-    const dataStr = JSON.stringify(result, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `screening-results-${new Date().toISOString().split('T')[0]}.json`;
-    link.click();
-    URL.revokeObjectURL(url);
+    if (format === 'json') {
+      const dataStr = JSON.stringify(result, null, 2);
+      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(dataBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `screening-results-${new Date().toISOString().split('T')[0]}.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } else {
+      this.reportService.generateReport(result, format).subscribe(blob => {
+        this.reportService.downloadReport(blob, `screening-report.${format}`);
+      });
+    }
+  }
+
+  // Bulk screening
+  uploadBulkFile(event: any) {
+    const file = event.target.files[0];
+    if (file) {
+      this.isLoading.set(true);
+      this.screeningService.screenBatchFile(file).subscribe({
+        next: (results) => {
+          this.bulkResults.set(results);
+          this.isLoading.set(false);
+        },
+        error: (error) => {
+          console.error('Bulk screening error:', error);
+          this.isLoading.set(false);
+        }
+      });
+    }
+  }
+
+  // Customer actions
+  approveCustomer() {
+    const result = this.result();
+    if (!result) return;
+    
+    this.screeningService.approveCustomer(result.customerId, 'Approved after screening').subscribe({
+      next: () => this.addNotification('Customer approved successfully'),
+      error: (error) => console.error('Approval error:', error)
+    });
+  }
+
+  flagForReview() {
+    const result = this.result();
+    if (!result) return;
+    
+    this.screeningService.flagForReview(result.customerId, 'Flagged for manual review').subscribe({
+      next: () => this.addNotification('Customer flagged for review'),
+      error: (error) => console.error('Flag error:', error)
+    });
+  }
+
+  requestEDD() {
+    const result = this.result();
+    if (!result) return;
+    
+    const requirements = ['Source of wealth documentation', 'Enhanced background check'];
+    this.screeningService.requestEDD(result.customerId, requirements).subscribe({
+      next: () => this.addNotification('EDD requested successfully'),
+      error: (error) => console.error('EDD error:', error)
+    });
+  }
+
+  // Load screening history
+  loadScreeningHistory(customerId: string) {
+    this.screeningService.getScreeningHistory(customerId).subscribe({
+      next: (history) => this.screeningHistory.set(history),
+      error: (error) => console.error('History error:', error)
+    });
+  }
+
+  // AI suggestions
+  getAISuggestions() {
+    const formValue = this.singleScreeningForm.value;
+    this.aiService.getScreeningSuggestions(formValue).subscribe({
+      next: (suggestions) => this.aiSuggestions.set(suggestions),
+      error: (error) => console.error('AI suggestions error:', error)
+    });
+  }
+
+  // Search templates
+  loadSearchTemplates() {
+    this.screeningService.getSearchTemplates().subscribe({
+      next: (templates) => this.searchTemplates.set(templates),
+      error: (error) => console.error('Templates error:', error)
+    });
+  }
+
+  loadTemplate(templateId: string) {
+    const template = this.searchTemplates().find(t => t.id === templateId);
+    if (template) {
+      this.singleScreeningForm.patchValue(template.config);
+    }
+  }
+
+  saveCurrentAsTemplate() {
+    const template = {
+      name: 'Custom Template',
+      config: this.singleScreeningForm.value
+    };
+    this.screeningService.saveSearchTemplate(template).subscribe({
+      next: () => {
+        this.loadSearchTemplates();
+        this.addNotification('Template saved successfully');
+      },
+      error: (error) => console.error('Save template error:', error)
+    });
+  }
+
+  // Real-time updates
+  private setupRealTimeUpdates() {
+    this.webSocketService.connect().subscribe(update => {
+      if (update.type === 'WATCHLIST_UPDATE') {
+        this.addNotification('Watchlist updated - Re-screen recommended');
+      }
+    });
+  }
+
+  private addNotification(message: string) {
+    const current = this.notifications();
+    this.notifications.set([...current, message]);
+    setTimeout(() => {
+      const updated = this.notifications().filter(n => n !== message);
+      this.notifications.set(updated);
+    }, 5000);
   }
 }
 
