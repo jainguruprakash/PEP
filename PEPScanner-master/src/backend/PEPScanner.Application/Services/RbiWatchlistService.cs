@@ -81,12 +81,12 @@ namespace PEPScanner.Application.Services
             return rbiEntries.Select(CreateWatchlistEntryFromRbi).ToList();
         }
 
-        public async Task<List<RbiEntry>> FetchRbiWatchlistAsync()
+        public async Task<List<RbiEntry>> FetchRbiWatchlistAsync(bool currentYearOnly = false)
         {
             try
             {
-                _logger.LogInformation("Fetching RBI watchlist data via web scraping");
-                
+                _logger.LogInformation("Fetching RBI watchlist data via web scraping (currentYearOnly: {CurrentYearOnly})", currentYearOnly);
+
                 var allEntries = new List<RbiEntry>();
                 
                 // Configure HttpClient for scraping
@@ -114,8 +114,18 @@ namespace PEPScanner.Application.Services
                 var alertList = await ScrapeRbiListAsync(_rbiAlertList, "Alert List");
                 allEntries.AddRange(alertList);
                 
+                // Apply current year filtering if requested
+                if (currentYearOnly)
+                {
+                    var currentYear = DateTime.Now.Year;
+                    var originalCount = allEntries.Count;
+                    allEntries = allEntries.Where(e => e.ListedDate?.Year == currentYear).ToList();
+                    _logger.LogInformation("Filtered to current year ({CurrentYear}): {FilteredCount} of {OriginalCount} entries",
+                        currentYear, allEntries.Count, originalCount);
+                }
+
                 _logger.LogInformation("Successfully scraped {Count} RBI entries", allEntries.Count);
-                
+
                 return allEntries;
             }
             catch (Exception ex)

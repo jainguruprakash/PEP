@@ -211,11 +211,11 @@ namespace PEPScanner.API.Controllers
         }
 
         [HttpPost("fetch/rbi")]
-        public async Task<IActionResult> FetchRbiData()
+        public async Task<IActionResult> FetchRbiData([FromQuery] bool currentYearOnly = false)
         {
             try
             {
-                _logger.LogInformation("Starting RBI data fetch");
+                _logger.LogInformation("Starting RBI data fetch (currentYearOnly: {CurrentYearOnly})", currentYearOnly);
 
                 // RBI maintains various lists - creating comprehensive sample data
                 var entries = new List<WatchlistEntry>
