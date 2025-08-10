@@ -1,6 +1,6 @@
 .search-container {
   padding: 24px;
-  max-width: 1400px;
+  max-width: 1200px;
   margin: 0 auto;
 }
 
@@ -49,21 +49,6 @@
   }
 }
 
-.search-type-option {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-
-  .type-label {
-    font-weight: 500;
-  }
-
-  .type-description {
-    color: #6b7280;
-    font-size: 0.75rem;
-  }
-}
-
 .threshold-section {
   margin-bottom: 24px;
 
@@ -74,49 +59,15 @@
     color: #374151;
   }
 
+  .threshold-slider {
+    width: 100%;
+    margin-bottom: 8px;
+  }
+
   .threshold-help {
-    margin-top: 8px;
     color: #6b7280;
     font-size: 0.875rem;
   }
-}
-
-.filters-panel {
-  margin-bottom: 24px;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  box-shadow: none;
-
-  mat-expansion-panel-header {
-    mat-panel-title {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-weight: 500;
-    }
-  }
-}
-
-.advanced-filters {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 24px;
-  padding: 16px 0;
-}
-
-.filter-section {
-  .section-label {
-    display: block;
-    font-weight: 500;
-    margin-bottom: 12px;
-    color: #374151;
-  }
-}
-
-.checkbox-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 8px;
 }
 
 .action-buttons {
@@ -163,32 +114,12 @@
   }
 }
 
-.results-table-container {
-  .table-filter {
-    width: 100%;
-    margin-bottom: 16px;
-  }
-}
-
 .results-table {
   width: 100%;
   margin-bottom: 16px;
 
-  .name-cell {
-    .primary-name {
-      font-weight: 500;
-      display: block;
-      margin-bottom: 4px;
-    }
-
-    .aliases {
-      mat-chip-set {
-        mat-chip {
-          font-size: 0.75rem;
-          height: 20px;
-        }
-      }
-    }
+  .primary-name {
+    font-weight: 500;
   }
 
   .list-type {
@@ -196,34 +127,13 @@
     color: #6b7280;
   }
 
-  .match-score {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    min-width: 80px;
-
-    .score-value {
-      font-weight: 500;
-      font-size: 0.875rem;
-    }
-
-    mat-progress-bar {
-      height: 4px;
-    }
-  }
-
-  .date {
+  .score-value {
+    font-weight: 500;
     font-size: 0.875rem;
-    color: #6b7280;
-  }
-
-  tr.selected {
-    background-color: #f3f4f6;
   }
 
   tr:hover {
     background-color: #f9fafb;
-    cursor: pointer;
   }
 }
 
@@ -256,7 +166,6 @@
   }
 }
 
-// Responsive Design
 @media (max-width: 768px) {
   .search-container {
     padding: 16px;
@@ -271,75 +180,19 @@
     }
   }
 
-  .checkbox-grid {
-    grid-template-columns: 1fr;
-    gap: 8px;
-  }
-
   .action-buttons {
     flex-direction: column;
     gap: 8px;
   }
-
-  .results-table {
-    font-size: 0.875rem;
-
-    .name-cell {
-      .aliases {
-        mat-chip-set {
-          mat-chip {
-            font-size: 0.625rem;
-            height: 18px;
-          }
-        }
-      }
-    }
-  }
 }
 
-@media (max-width: 480px) {
-  .header-card {
-    mat-card-header {
-      mat-card-title {
-        font-size: 1.25rem;
-      }
-    }
-  }
-
-  .results-card {
-    mat-card-header {
-      mat-card-title {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 8px;
-
-        mat-chip-set {
-          margin-left: 0;
-        }
-      }
-    }
-  }
-}
-
-// Material Design Customizations
 .mat-mdc-form-field {
-  width: 100%;
-}
-
-.mat-mdc-slider {
   width: 100%;
 }
 
 .mat-mdc-chip {
   font-size: 0.75rem;
-}
 
-.mat-mdc-progress-bar {
-  height: 4px;
-}
-
-// Status Colors
-.mat-mdc-chip {
   &.mat-primary {
     background-color: #dbeafe;
     color: #1e40af;

@@ -16,15 +16,15 @@
   <mat-card class="search-form-card">
     <mat-card-content>
       <form [formGroup]="searchForm" (ngSubmit)="performSearch()">
-        
+
         <!-- Basic Search Section -->
         <div class="search-section">
           <h3>Search Criteria</h3>
-          
+
           <div class="basic-search-grid">
             <mat-form-field appearance="outline" class="search-term-field">
               <mat-label>Search Term *</mat-label>
-              <input matInput formControlName="searchTerm" 
+              <input matInput formControlName="searchTerm"
                      placeholder="Enter name, ID, or keyword"
                      required>
               <mat-icon matSuffix>search</mat-icon>
@@ -34,10 +34,7 @@
               <mat-label>Search Type</mat-label>
               <mat-select formControlName="searchType">
                 <mat-option *ngFor="let type of searchTypes" [value]="type.value">
-                  <div class="search-type-option">
-                    <span class="type-label">{{ type.label }}</span>
-                    <small class="type-description">{{ type.description }}</small>
-                  </div>
+                  {{ type.label }}
                 </mat-option>
               </mat-select>
             </mat-form-field>
@@ -49,7 +46,6 @@
                 <mat-option value="100">100 Results</mat-option>
                 <mat-option value="250">250 Results</mat-option>
                 <mat-option value="500">500 Results</mat-option>
-                <mat-option value="1000">1000 Results</mat-option>
               </mat-select>
             </mat-form-field>
           </div>
@@ -59,85 +55,16 @@
             <label class="section-label">
               Matching Threshold: {{ searchForm.get('threshold')?.value }}%
             </label>
-            <mat-slider min="50" max="100" step="5" discrete>
-              <input matSliderThumb formControlName="threshold">
-            </mat-slider>
+            <input type="range" min="50" max="100" step="5" formControlName="threshold" class="threshold-slider">
             <div class="threshold-help">
               <small>Higher values = more precise matches, Lower values = more potential matches</small>
             </div>
           </div>
         </div>
 
-        <!-- Advanced Filters -->
-        <mat-expansion-panel class="filters-panel">
-          <mat-expansion-panel-header>
-            <mat-panel-title>
-              <mat-icon>tune</mat-icon>
-              Advanced Filters
-            </mat-panel-title>
-            <mat-panel-description>
-              Refine your search with additional criteria
-            </mat-panel-description>
-          </mat-expansion-panel-header>
-
-          <div class="advanced-filters">
-            <!-- Data Sources -->
-            <div class="filter-section">
-              <label class="section-label">Data Sources</label>
-              <div class="checkbox-grid">
-                <mat-checkbox 
-                  *ngFor="let source of availableSources; let i = index"
-                  [formControlName]="i"
-                  [matTooltip]="source.label">
-                  {{ source.label }}
-                </mat-checkbox>
-              </div>
-            </div>
-
-            <!-- List Types -->
-            <div class="filter-section">
-              <label class="section-label">List Types</label>
-              <div class="checkbox-grid">
-                <mat-checkbox 
-                  *ngFor="let listType of availableListTypes; let i = index"
-                  [formControlName]="i"
-                  [matTooltip]="listType.label">
-                  {{ listType.label }}
-                </mat-checkbox>
-              </div>
-            </div>
-
-            <!-- Risk Levels -->
-            <div class="filter-section">
-              <label class="section-label">Risk Levels</label>
-              <div class="checkbox-grid">
-                <mat-checkbox 
-                  *ngFor="let riskLevel of availableRiskLevels; let i = index"
-                  [formControlName]="i"
-                  [matTooltip]="riskLevel.label">
-                  {{ riskLevel.label }}
-                </mat-checkbox>
-              </div>
-            </div>
-
-            <!-- Matching Options -->
-            <div class="filter-section">
-              <label class="section-label">Matching Options</label>
-              <div class="checkbox-grid">
-                <mat-checkbox formControlName="includeAliases">
-                  Include Aliases & Alternative Names
-                </mat-checkbox>
-                <mat-checkbox formControlName="includeFuzzyMatching">
-                  Enable Fuzzy Matching
-                </mat-checkbox>
-              </div>
-            </div>
-          </div>
-        </mat-expansion-panel>
-
         <!-- Action Buttons -->
         <div class="action-buttons">
-          <button mat-raised-button color="primary" type="submit" 
+          <button mat-raised-button color="primary" type="submit"
                   [disabled]="searchForm.invalid || isLoading()">
             <mat-spinner diameter="20" *ngIf="isLoading()"></mat-spinner>
             <mat-icon *ngIf="!isLoading()">search</mat-icon>
@@ -145,16 +72,10 @@
             <span *ngIf="isLoading()">Searching...</span>
           </button>
 
-          <button mat-button type="button" (click)="clearFilters()" 
+          <button mat-button type="button" (click)="searchForm.reset()"
                   [disabled]="isLoading()">
             <mat-icon>clear</mat-icon>
-            Clear Filters
-          </button>
-
-          <button mat-button type="button" (click)="exportResults()" 
-                  [disabled]="searchResults().length === 0 || isLoading()">
-            <mat-icon>download</mat-icon>
-            Export Results
+            Clear
           </button>
         </div>
       </form>
@@ -167,11 +88,8 @@
       <mat-card-title>
         <mat-icon>list</mat-icon>
         Search Results
-        <mat-chip-set *ngIf="totalResults() > 0">
-          <mat-chip>{{ totalResults() }} results found</mat-chip>
-          <mat-chip *ngIf="selectedResults().length > 0" color="accent">
-            {{ selectedResults().length }} selected
-          </mat-chip>
+        <mat-chip-set *ngIf="searchResults().length > 0">
+          <mat-chip>{{ searchResults().length }} results found</mat-chip>
         </mat-chip-set>
       </mat-card-title>
     </mat-card-header>
@@ -185,58 +103,22 @@
 
       <!-- Results Table -->
       <div *ngIf="!isLoading() && searchResults().length > 0" class="results-table-container">
-        <!-- Table Filter -->
-        <mat-form-field appearance="outline" class="table-filter">
-          <mat-label>Filter results</mat-label>
-          <input matInput (keyup)="applyFilter($event)" 
-                 placeholder="Filter by name, source, country...">
-          <mat-icon matSuffix>filter_list</mat-icon>
-        </mat-form-field>
-
         <!-- Data Table -->
-        <table mat-table [dataSource]="dataSource" matSort class="results-table">
-          
-          <!-- Selection Column -->
-          <ng-container matColumnDef="select">
-            <th mat-header-cell *matHeaderCellDef>
-              <mat-checkbox (change)="masterToggle()" 
-                            [checked]="isAllSelected()"
-                            [indeterminate]="selectedResults().length > 0 && !isAllSelected()">
-              </mat-checkbox>
-            </th>
-            <td mat-cell *matCellDef="let row">
-              <mat-checkbox (click)="$event.stopPropagation()"
-                            (change)="toggleSelection(row)"
-                            [checked]="isSelected(row)">
-              </mat-checkbox>
-            </td>
-          </ng-container>
+        <table mat-table [dataSource]="searchResults()" class="results-table">
 
           <!-- Name Column -->
           <ng-container matColumnDef="name">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Name</th>
+            <th mat-header-cell *matHeaderCellDef>Name</th>
             <td mat-cell *matCellDef="let row">
-              <div class="name-cell">
-                <span class="primary-name">{{ row.name }}</span>
-                <div *ngIf="row.aliases && row.aliases.length > 0" class="aliases">
-                  <mat-chip-set>
-                    <mat-chip *ngFor="let alias of row.aliases.slice(0, 2)">
-                      {{ alias }}
-                    </mat-chip>
-                    <mat-chip *ngIf="row.aliases.length > 2">
-                      +{{ row.aliases.length - 2 }} more
-                    </mat-chip>
-                  </mat-chip-set>
-                </div>
-              </div>
+              <span class="primary-name">{{ row.name }}</span>
             </td>
           </ng-container>
 
           <!-- Source Column -->
           <ng-container matColumnDef="source">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Source</th>
+            <th mat-header-cell *matHeaderCellDef>Source</th>
             <td mat-cell *matCellDef="let row">
-              <mat-chip [color]="getSourceChipColor(row.source)">
+              <mat-chip [color]="getRiskLevelColor(row.source)">
                 {{ row.source }}
               </mat-chip>
             </td>
@@ -244,7 +126,7 @@
 
           <!-- List Type Column -->
           <ng-container matColumnDef="listType">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>List Type</th>
+            <th mat-header-cell *matHeaderCellDef>List Type</th>
             <td mat-cell *matCellDef="let row">
               <span class="list-type">{{ row.listType }}</span>
             </td>
@@ -252,7 +134,7 @@
 
           <!-- Risk Level Column -->
           <ng-container matColumnDef="riskLevel">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Risk Level</th>
+            <th mat-header-cell *matHeaderCellDef>Risk Level</th>
             <td mat-cell *matCellDef="let row">
               <mat-chip [color]="getRiskLevelColor(row.riskLevel)">
                 {{ row.riskLevel }}
@@ -262,7 +144,7 @@
 
           <!-- Country Column -->
           <ng-container matColumnDef="country">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Country</th>
+            <th mat-header-cell *matHeaderCellDef>Country</th>
             <td mat-cell *matCellDef="let row">
               <span>{{ row.country || 'N/A' }}</span>
             </td>
@@ -270,22 +152,9 @@
 
           <!-- Match Score Column -->
           <ng-container matColumnDef="matchScore">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Match Score</th>
+            <th mat-header-cell *matHeaderCellDef>Match Score</th>
             <td mat-cell *matCellDef="let row">
-              <div class="match-score">
-                <span class="score-value">{{ formatMatchScore(row.matchScore) }}</span>
-                <mat-progress-bar mode="determinate" [value]="row.matchScore" 
-                                  [color]="row.matchScore > 90 ? 'warn' : row.matchScore > 75 ? 'accent' : 'primary'">
-                </mat-progress-bar>
-              </div>
-            </td>
-          </ng-container>
-
-          <!-- Last Updated Column -->
-          <ng-container matColumnDef="lastUpdated">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Last Updated</th>
-            <td mat-cell *matCellDef="let row">
-              <span class="date">{{ formatDate(row.lastUpdated) }}</span>
+              <span class="score-value">{{ formatMatchScore(row.matchScore) }}</span>
             </td>
           </ng-container>
 
@@ -293,32 +162,23 @@
           <ng-container matColumnDef="actions">
             <th mat-header-cell *matHeaderCellDef>Actions</th>
             <td mat-cell *matCellDef="let row">
-              <button mat-icon-button (click)="viewDetails(row)" 
-                      matTooltip="View Details">
+              <button mat-icon-button (click)="viewDetails(row)">
                 <mat-icon>visibility</mat-icon>
               </button>
             </td>
           </ng-container>
 
           <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-          <tr mat-row *matRowDef="let row; columns: displayedColumns;" 
-              (click)="toggleSelection(row)" 
-              [class.selected]="isSelected(row)">
-          </tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
         </table>
-
-        <!-- Paginator -->
-        <mat-paginator [pageSizeOptions]="[10, 25, 50, 100]" 
-                       showFirstLastButtons>
-        </mat-paginator>
       </div>
 
       <!-- No Results -->
-      <div *ngIf="!isLoading() && searchResults().length === 0 && searchForm.get('searchTerm')?.value" 
+      <div *ngIf="!isLoading() && searchResults().length === 0 && searchForm.get('searchTerm')?.value"
            class="no-results">
         <mat-icon>search_off</mat-icon>
         <h3>No Results Found</h3>
-        <p>Try adjusting your search criteria or filters</p>
+        <p>Try adjusting your search criteria</p>
       </div>
     </mat-card-content>
   </mat-card>

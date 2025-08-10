@@ -13,6 +13,7 @@ export class CustomersService {
   create(payload: any): Observable<any> { return this.http.post<any>(this.baseUrl, payload); }
   update(id: string, payload: any): Observable<void> { return this.http.put<void>(`${this.baseUrl}/${id}`, payload); }
   delete(id: string): Observable<void> { return this.http.delete<void>(`${this.baseUrl}/${id}`); }
+  bulkUpload(formData: FormData): Observable<any> { return this.http.post<any>(`${this.baseUrl}/bulk-upload`, formData); }
 }
 
 

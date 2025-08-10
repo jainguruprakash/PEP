@@ -52,6 +52,10 @@ import { Router } from '@angular/router';
           <mat-icon matListItemIcon>account_balance</mat-icon>
           <span matListItemTitle>Transaction Screening</span>
         </a>
+        <a mat-list-item routerLink="/adverse-media" routerLinkActive="active">
+          <mat-icon matListItemIcon>newspaper</mat-icon>
+          <span matListItemTitle>Adverse Media</span>
+        </a>
         <a mat-list-item routerLink="/search" routerLinkActive="active">
           <mat-icon matListItemIcon>search</mat-icon>
           <span matListItemTitle>Search</span>
@@ -71,6 +75,14 @@ import { Router } from '@angular/router';
         <a mat-list-item routerLink="/customers" routerLinkActive="active">
           <mat-icon matListItemIcon>people</mat-icon>
           <span matListItemTitle>Customers</span>
+        </a>
+        <a mat-list-item routerLink="/reports" routerLinkActive="active">
+          <mat-icon matListItemIcon>description</mat-icon>
+          <span matListItemTitle>SAR/STR Reports</span>
+        </a>
+        <a mat-list-item routerLink="/future-features" routerLinkActive="active">
+          <mat-icon matListItemIcon>rocket_launch</mat-icon>
+          <span matListItemTitle>Future Features</span>
         </a>
         @if (authService.hasAnyRole(['Admin'])) {
           <a mat-list-item routerLink="/organizations" routerLinkActive="active">

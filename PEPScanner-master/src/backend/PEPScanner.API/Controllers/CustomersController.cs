@@ -140,6 +140,93 @@ namespace PEPScanner.API.Controllers
                 return StatusCode(500, new { error = "Internal server error" });
             }
         }
+
+        [HttpPost("bulk-upload")]
+        public async Task<IActionResult> BulkUpload(IFormFile file)
+        {
+            try
+            {
+                if (file == null || file.Length == 0)
+                {
+                    return BadRequest(new { error = "No file uploaded" });
+                }
+
+                var result = new BulkUploadResult
+                {
+                    TotalRecords = 0,
+                    SuccessCount = 0,
+                    FailedCount = 0,
+                    Errors = new List<string>()
+                };
+
+                using var stream = file.OpenReadStream();
+                using var reader = new StreamReader(stream);
+
+                // Skip header row
+                var header = await reader.ReadLineAsync();
+                if (string.IsNullOrEmpty(header))
+                {
+                    return BadRequest(new { error = "File is empty or invalid" });
+                }
+
+                var lineNumber = 1;
+                string line;
+
+                while ((line = await reader.ReadLineAsync()) != null)
+                {
+                    lineNumber++;
+                    result.TotalRecords++;
+
+                    try
+                    {
+                        var fields = line.Split(',');
+                        if (fields.Length < 4)
+                        {
+                            result.FailedCount++;
+                            result.Errors.Add($"Line {lineNumber}: Insufficient data fields");
+                            continue;
+                        }
+
+                        var customer = new Customer
+                        {
+                            Id = Guid.NewGuid(),
+                            OrganizationId = Guid.NewGuid(), // TODO: Get from user context
+                            FullName = $"{fields[0].Trim()} {fields[1].Trim()}".Trim(),
+                            EmailAddress = fields[2].Trim(),
+                            Country = fields[3].Trim(),
+                            PhoneNumber = fields.Length > 4 ? fields[4].Trim() : null,
+                            DateOfBirth = fields.Length > 5 && DateTime.TryParse(fields[5].Trim(), out var dob) ? dob : null,
+                            IdentificationNumber = fields.Length > 6 ? fields[6].Trim() : null,
+                            IdentificationType = fields.Length > 7 ? fields[7].Trim() : null,
+                            Address = fields.Length > 8 ? fields[8].Trim() : null,
+                            RiskLevel = "Low",
+                            CreatedAtUtc = DateTime.UtcNow,
+                            UpdatedAtUtc = DateTime.UtcNow
+                        };
+
+                        _context.Customers.Add(customer);
+                        result.SuccessCount++;
+                    }
+                    catch (Exception ex)
+                    {
+                        result.FailedCount++;
+                        result.Errors.Add($"Line {lineNumber}: {ex.Message}");
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("Bulk upload completed: {Success} success, {Failed} failed",
+                    result.SuccessCount, result.FailedCount);
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during bulk upload");
+                return StatusCode(500, new { error = "Internal server error during upload" });
+            }
+        }
     }
 
     public class CreateCustomerRequest
@@ -156,5 +243,13 @@ namespace PEPScanner.API.Controllers
         public string LastName { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string Country { get; set; } = string.Empty;
+    }
+
+    public class BulkUploadResult
+    {
+        public int TotalRecords { get; set; }
+        public int SuccessCount { get; set; }
+        public int FailedCount { get; set; }
+        public List<string> Errors { get; set; } = new List<string>();
     }
 }

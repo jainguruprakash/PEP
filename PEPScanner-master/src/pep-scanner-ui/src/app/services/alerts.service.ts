@@ -23,6 +23,22 @@ export class AlertsService {
   update(id: string, payload: any): Observable<void> {
     return this.http.put<void>(`${this.baseUrl}/${id}`, payload);
   }
+
+  approve(id: string, request: { approvedBy: string; comments: string }): Observable<any> {
+    return this.http.post(`${this.baseUrl}/${id}/approve`, request);
+  }
+
+  reject(id: string, request: { rejectedBy: string; reason: string }): Observable<any> {
+    return this.http.post(`${this.baseUrl}/${id}/reject`, request);
+  }
+
+  assign(id: string, request: { assignedTo: string; assignedBy: string }): Observable<any> {
+    return this.http.post(`${this.baseUrl}/${id}/assign`, request);
+  }
+
+  getPendingApproval(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/pending-approval`);
+  }
 }
 
 
