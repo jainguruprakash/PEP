@@ -242,17 +242,38 @@ export class CustomersComponent {
   }
 
   loadCustomers() {
-    this.customersService.getAll().subscribe(customers => {
-      this.customers.set(customers);
+    this.customersService.getAll().subscribe({
+      next: (customers) => {
+        this.customers.set(customers);
+      },
+      error: (error) => {
+        console.error('Error loading customers:', error);
+        this.snackBar.open('Failed to load customers. Please refresh the page.', 'Close', { duration: 5000 });
+      }
     });
   }
 
   addCustomer() {
     if (this.customerForm.valid) {
-      this.customersService.create(this.customerForm.value).subscribe(() => {
-        this.loadCustomers();
-        this.customerForm.reset();
-        this.showAddForm = false;
+      const formValue = this.customerForm.value;
+      const customerData = {
+        FirstName: formValue.firstName,
+        LastName: formValue.lastName,
+        Email: formValue.email,
+        Country: formValue.country
+      };
+
+      this.customersService.create(customerData).subscribe({
+        next: () => {
+          this.loadCustomers();
+          this.customerForm.reset();
+          this.showAddForm = false;
+          this.snackBar.open('Customer created successfully!', 'Close', { duration: 3000 });
+        },
+        error: (error) => {
+          console.error('Error creating customer:', error);
+          this.snackBar.open('Failed to create customer. Please try again.', 'Close', { duration: 5000 });
+        }
       });
     }
   }
@@ -373,17 +394,17 @@ export class CustomersComponent {
             success: true,
             message: 'Customers uploaded successfully!',
             details: {
-              total: response.totalRecords || 0,
-              success: response.successCount || 0,
-              failed: response.failedCount || 0,
-              errors: response.errors || []
+              total: response.TotalRecords || 0,
+              success: response.SuccessCount || 0,
+              failed: response.FailedCount || 0,
+              errors: response.Errors || []
             }
           };
           this.uploadProgress = 0;
           this.loadCustomers();
 
           this.snackBar.open(
-            `Successfully uploaded ${response.successCount} customers`,
+            `Successfully uploaded ${response.SuccessCount} customers`,
             'Close',
             { duration: 5000 }
           );
