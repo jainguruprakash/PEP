@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PEPScanner.Infrastructure.Data;
 using PEPScanner.Domain.Entities;
+using PEPScanner.API.Services;
 
 namespace PEPScanner.API.Controllers
 {
@@ -10,11 +11,13 @@ namespace PEPScanner.API.Controllers
     public class AlertController : ControllerBase
     {
         private readonly PepScannerDbContext _context;
+        private readonly INotificationService _notificationService;
         private readonly ILogger<AlertController> _logger;
 
-        public AlertController(PepScannerDbContext context, ILogger<AlertController> logger)
+        public AlertController(PepScannerDbContext context, INotificationService notificationService, ILogger<AlertController> logger)
         {
             _context = context;
+            _notificationService = notificationService;
             _logger = logger;
         }
 
@@ -42,6 +45,9 @@ namespace PEPScanner.API.Controllers
 
                 _context.Alerts.Add(alert);
                 await _context.SaveChangesAsync();
+
+                // Create notification
+                await _notificationService.CreateAlertNotificationAsync(alert);
 
                 _logger.LogInformation("Adverse media alert created: {AlertId} for customer: {CustomerId}", alert.Id, request.CustomerId);
 

@@ -13,11 +13,13 @@ namespace PEPScanner.API.Services
     public class AutomatedScreeningService : IAutomatedScreeningService
     {
         private readonly PepScannerDbContext _context;
+        private readonly INotificationService _notificationService;
         private readonly ILogger<AutomatedScreeningService> _logger;
 
-        public AutomatedScreeningService(PepScannerDbContext context, ILogger<AutomatedScreeningService> logger)
+        public AutomatedScreeningService(PepScannerDbContext context, INotificationService notificationService, ILogger<AutomatedScreeningService> logger)
         {
             _context = context;
+            _notificationService = notificationService;
             _logger = logger;
         }
 
@@ -83,6 +85,12 @@ namespace PEPScanner.API.Services
                 }
 
                 await _context.SaveChangesAsync();
+
+                // Create notifications for each alert
+                foreach (var alert in alerts)
+                {
+                    await _notificationService.CreateAlertNotificationAsync(alert);
+                }
 
                 _logger.LogInformation("Created {AlertCount} adverse media alerts for customer: {CustomerId}", 
                     alerts.Count, customer.Id);

@@ -53,7 +53,8 @@ namespace PEPScanner.Infrastructure.Data
 
         // AI Risk Scoring and Real-time Notifications
         public DbSet<RiskAssessmentEntity> RiskAssessments => Set<RiskAssessmentEntity>();
-        public DbSet<NotificationEntity> Notifications => Set<NotificationEntity>();
+        public DbSet<NotificationEntity> NotificationEntities => Set<NotificationEntity>();
+        public DbSet<Notification> Notifications => Set<Notification>();
         public DbSet<AIModelMetricsEntity> AIModelMetrics => Set<AIModelMetricsEntity>();
         public DbSet<RiskFactorTemplateEntity> RiskFactorTemplates => Set<RiskFactorTemplateEntity>();
         public DbSet<CustomerRiskProfileEntity> CustomerRiskProfiles => Set<CustomerRiskProfileEntity>();

@@ -38,6 +38,7 @@ builder.Services.AddHttpClient();
 // Custom Services
 builder.Services.AddScoped<PEPScanner.API.Services.IWatchlistUpdateService, PEPScanner.API.Services.WatchlistUpdateService>();
 builder.Services.AddScoped<PEPScanner.API.Services.IAutomatedScreeningService, PEPScanner.API.Services.AutomatedScreeningService>();
+builder.Services.AddScoped<PEPScanner.API.Services.INotificationService, PEPScanner.API.Services.NotificationService>();
 
 // Register OpenSanctions services
 builder.Services.AddHttpClient<PEPScanner.Infrastructure.Services.IOpenSanctionsService, PEPScanner.Infrastructure.Services.OpenSanctionsService>();
@@ -154,6 +155,9 @@ using (var scope = app.Services.CreateScope())
     // Seed users and sample alerts
     await PEPScanner.API.Data.SeedData.SeedUsersAsync(context);
     await PEPScanner.API.Data.SeedData.SeedSampleAlertsAsync(context);
+    
+    // Seed dashboard data
+    await PEPScanner.API.Data.DashboardSeedData.SeedDashboardDataAsync(context);
 
     var watchlistUpdateService = scope.ServiceProvider.GetRequiredService<PEPScanner.API.Services.IWatchlistUpdateService>();
     watchlistUpdateService.ScheduleRecurringUpdates();
