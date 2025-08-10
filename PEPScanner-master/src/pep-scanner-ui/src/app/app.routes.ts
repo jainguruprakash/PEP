@@ -5,6 +5,7 @@ export const routes: Routes = [
   // Auth routes (no guard)
   { path: 'login', loadComponent: () => import('./features/auth/login.component').then(m => m.LoginComponent), canActivate: [loginGuard] },
   { path: 'signup', loadComponent: () => import('./features/auth/signup.component').then(m => m.SignupComponent), canActivate: [loginGuard] },
+  { path: 'onboard-organization', loadComponent: () => import('./features/auth/organization-signup.component').then(m => m.OrganizationSignupComponent), canActivate: [loginGuard] },
 
   // Protected routes
   {
@@ -42,15 +43,6 @@ export const routes: Routes = [
       }
     ]
   },
-  {
-    path: 'login',
-    loadComponent: () => import('./features/auth/login.component').then(m => m.LoginComponent),
-    canActivate: [loginGuard]
-  },
-  {
-    path: 'signup',
-    loadComponent: () => import('./features/auth/signup.component').then(m => m.SignupComponent),
-    canActivate: [loginGuard]
-  },
+
   { path: '**', redirectTo: '' }
 ];

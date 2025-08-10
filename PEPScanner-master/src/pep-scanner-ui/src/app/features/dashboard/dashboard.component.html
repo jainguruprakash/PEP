@@ -1,11 +1,17 @@
 <div class="dashboard-container">
-  <!-- Header -->
-  <div class="dashboard-header">
-    <h1>Dashboard</h1>
-    <button mat-raised-button color="primary" (click)="refreshDashboard()" [disabled]="loading()">
-      <mat-icon>refresh</mat-icon>
-      Refresh
-    </button>
+  <!-- Hero Section -->
+  <div class="hero-section">
+    <div class="hero-content">
+      <h1 class="hero-title">Pepify</h1>
+      <p class="hero-tagline">AI-Powered PEP Screening from India to Beyond</p>
+      <p class="hero-description">Advanced compliance screening solution powered by artificial intelligence for comprehensive risk assessment and regulatory compliance.</p>
+    </div>
+    <div class="hero-actions">
+      <button mat-raised-button color="primary" (click)="refreshDashboard()" [disabled]="loading()">
+        <mat-icon>refresh</mat-icon>
+        Refresh Dashboard
+      </button>
+    </div>
   </div>
 
   <!-- Loading Spinner -->
@@ -16,6 +22,12 @@
 
   <!-- Dashboard Content -->
   <div *ngIf="!loading()" class="dashboard-content">
+    
+    <!-- Quick Stats Header -->
+    <div class="stats-header">
+      <h2>Compliance Overview</h2>
+      <p>Real-time insights into your screening and compliance activities</p>
+    </div>
     
     <!-- KPI Cards -->
     <div class="kpi-grid" *ngIf="kpis() as kpiData">

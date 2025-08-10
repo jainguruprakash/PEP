@@ -205,6 +205,27 @@ export class AuthService {
     return currentTime < expirationTime;
   }
 
+  onboardOrganization(onboardingData: any): Observable<any> {
+    return this.http.post(`${this.API_BASE}/auth/onboard-organization`, onboardingData)
+      .pipe(
+        tap(response => {
+          if (response.authResponse) {
+            this.setSession(response.authResponse);
+            this.currentUserSubject.next(response.authResponse.user);
+            this.isAuthenticatedSubject.next(true);
+          }
+        }),
+        catchError(error => {
+          console.error('Organization onboarding failed:', error);
+          throw error;
+        })
+      );
+  }
+
+  inviteUser(inviteData: any): Observable<any> {
+    return this.http.post(`${this.API_BASE}/auth/invite-user`, inviteData);
+  }
+
   private checkTokenExpiration(): void {
     if (!this.hasValidToken() && this.getCurrentUser()) {
       // Token is expired, try to refresh

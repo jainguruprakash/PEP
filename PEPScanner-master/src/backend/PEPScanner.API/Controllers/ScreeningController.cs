@@ -48,6 +48,37 @@ namespace PEPScanner.API.Controllers
                                    (w.AlternateNames != null && w.AlternateNames.ToUpper().Contains(searchName)))
                         .ToListAsync();
 
+                    // Add MCA Director screening
+                    var mcaDirectors = await SearchMcaDirectorsAsync(searchName);
+                    foreach (var director in mcaDirectors)
+                    {
+                        var directorMatchScore = CalculateStringSimilarity(searchName, director.Name.ToUpper(), request);
+                        if (directorMatchScore >= threshold)
+                        {
+                            matches.Add(new
+                            {
+                                id = director.Din,
+                                matchedName = director.Name,
+                                alternateNames = director.CompanyName,
+                                source = "MCA",
+                                listType = "Director",
+                                country = "India",
+                                positionOrRole = director.Designation,
+                                riskCategory = director.RiskLevel,
+                                pepCategory = "Corporate Director",
+                                pepPosition = director.Designation,
+                                companyName = director.CompanyName,
+                                cin = director.Cin,
+                                din = director.Din,
+                                appointmentDate = director.AppointmentDate,
+                                matchScore = Math.Round(directorMatchScore, 2),
+                                dateAdded = DateTime.UtcNow,
+                                lastUpdated = DateTime.UtcNow
+                            });
+                        }
+                    }
+
+                    // Process regular watchlist matches
                     foreach (var match in watchlistMatches)
                     {
                         var matchScore = CalculateMatchScore(searchName, match.PrimaryName, match.AlternateNames, request);
@@ -590,7 +621,47 @@ namespace PEPScanner.API.Controllers
                 query = query.Where(w => requestedSources.Contains(w.Source));
             }
             
-            return await query.Select(w => w.Source).Distinct().ToListAsync();
+            var sources = await query.Select(w => w.Source).Distinct().ToListAsync();
+            
+            // Add MCA as a source if not filtered out
+            if (requestedSources == null || requestedSources.Contains("MCA"))
+            {
+                sources.Add("MCA");
+            }
+            
+            return sources;
+        }
+        
+        private async Task<List<McaDirector>> SearchMcaDirectorsAsync(string searchName)
+        {
+            try
+            {
+                // Mock MCA director search - replace with actual MCA API call
+                var directors = new List<McaDirector>();
+                
+                if (searchName.Contains("AMIT"))
+                {
+                    directors.Add(new McaDirector
+                    {
+                        Din = "00123456",
+                        Name = "Amit Shah",
+                        CompanyName = "ABC Private Limited",
+                        Cin = "U12345MH2020PTC123456",
+                        Designation = "Managing Director",
+                        AppointmentDate = "2020-01-15",
+                        Status = "Active",
+                        Nationality = "Indian",
+                        RiskLevel = "Medium"
+                    });
+                }
+                
+                return directors;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error searching MCA directors for: {SearchName}", searchName);
+                return new List<McaDirector>();
+            }
         }
 
         private double CalculateRiskScore(List<object> matches)
@@ -702,5 +773,19 @@ namespace PEPScanner.API.Controllers
     {
         public string Name { get; set; } = string.Empty;
         public object Config { get; set; } = new();
+    }
+    
+    // MCA Director model for screening integration
+    public class McaDirector
+    {
+        public string Din { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string CompanyName { get; set; } = string.Empty;
+        public string Cin { get; set; } = string.Empty;
+        public string Designation { get; set; } = string.Empty;
+        public string AppointmentDate { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+        public string Nationality { get; set; } = string.Empty;
+        public string RiskLevel { get; set; } = string.Empty;
     }
 }

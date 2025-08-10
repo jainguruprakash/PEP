@@ -263,6 +263,11 @@ import { MatBadgeModule } from '@angular/material/badge';
       color: white !important;
     }
 
+    .source-mca {
+      background-color: #795548 !important;
+      color: white !important;
+    }
+
     /* Risk Classes */
     .risk-high {
       background-color: #f44336 !important;

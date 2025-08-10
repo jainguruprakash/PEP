@@ -104,6 +104,7 @@ export class CustomerScreeningComponent implements OnInit {
     { value: 'RBI', label: 'RBI (India)', selected: true },
     { value: 'FIU-IND', label: 'FIU-IND', selected: true },
     { value: 'SEBI', label: 'SEBI (India)', selected: true },
+    { value: 'MCA', label: 'MCA Directors (India)', selected: true },
     { value: 'LOCAL', label: 'Local Lists', selected: false }
   ];
 
@@ -117,7 +118,7 @@ export class CustomerScreeningComponent implements OnInit {
     'SSN', 'National ID', 'Tax ID', 'Other'
   ];
 
-  totalSources = 7;
+  totalSources = 8;
 
   ngOnInit() {
     this.initializeFormArrays();

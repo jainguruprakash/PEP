@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { RouterLink, RouterLinkActive, RouterOutlet, Router, NavigationEnd } from '@angular/router';
 import { NgIf, AsyncPipe, DatePipe } from '@angular/common';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatSidenavModule } from '@angular/material/sidenav';
@@ -11,7 +11,7 @@ import { MatBadgeModule } from '@angular/material/badge';
 import { MatDividerModule } from '@angular/material/divider';
 import { AuthService } from '../services/auth.service';
 import { NotificationService } from '../services/notification.service';
-import { Router } from '@angular/router';
+import { filter } from 'rxjs/operators';
 
 @Component({
   selector: 'app-shell',
@@ -37,69 +37,72 @@ import { Router } from '@angular/router';
     <mat-sidenav mode="side" opened>
       <mat-toolbar color="primary">
         <mat-icon>security</mat-icon>
-        <span class="app-title">PEP Scanner</span>
+        <div class="app-branding">
+          <span class="app-title">Pepify</span>
+          <span class="app-tagline">AI-Powered PEP Screening from India to Beyond</span>
+        </div>
       </mat-toolbar>
       <mat-nav-list>
-        <a mat-list-item routerLink="/dashboard" routerLinkActive="active">
+        <a mat-list-item routerLink="/dashboard" routerLinkActive="active" [class.active]="isRouteActive('/dashboard')">
           <mat-icon matListItemIcon>dashboard</mat-icon>
           <span matListItemTitle>Dashboard</span>
         </a>
-        <a mat-list-item routerLink="/screening/customer" routerLinkActive="active">
+        <a mat-list-item routerLink="/screening/customer" routerLinkActive="active" [class.active]="isRouteActive('/screening')">
           <mat-icon matListItemIcon>person_search</mat-icon>
           <span matListItemTitle>Customer Screening</span>
         </a>
-        <a mat-list-item routerLink="/screening/transaction" routerLinkActive="active">
+        <a mat-list-item routerLink="/screening/transaction" routerLinkActive="active" [class.active]="isRouteActive('/screening/transaction')">
           <mat-icon matListItemIcon>account_balance</mat-icon>
           <span matListItemTitle>Transaction Screening</span>
         </a>
-        <a mat-list-item routerLink="/adverse-media" routerLinkActive="active">
+        <a mat-list-item routerLink="/adverse-media" routerLinkActive="active" [class.active]="isRouteActive('/adverse-media')">
           <mat-icon matListItemIcon>newspaper</mat-icon>
           <span matListItemTitle>Adverse Media</span>
         </a>
-        <a mat-list-item routerLink="/customer-media-scan" routerLinkActive="active">
+        <a mat-list-item routerLink="/customer-media-scan" routerLinkActive="active" [class.active]="isRouteActive('/customer-media-scan')">
           <mat-icon matListItemIcon>scanner</mat-icon>
           <span matListItemTitle>Customer Media Scan</span>
         </a>
-        <a mat-list-item routerLink="/financial-intelligence" routerLinkActive="active">
+        <a mat-list-item routerLink="/financial-intelligence" routerLinkActive="active" [class.active]="isRouteActive('/financial-intelligence')">
           <mat-icon matListItemIcon>account_balance</mat-icon>
           <span matListItemTitle>Financial Intelligence</span>
         </a>
-        <a mat-list-item routerLink="/search" routerLinkActive="active">
+        <a mat-list-item routerLink="/search" routerLinkActive="active" [class.active]="isRouteActive('/search')">
           <mat-icon matListItemIcon>search</mat-icon>
           <span matListItemTitle>Search</span>
         </a>
-        <a mat-list-item routerLink="/watchlists" routerLinkActive="active">
+        <a mat-list-item routerLink="/watchlists" routerLinkActive="active" [class.active]="isRouteActive('/watchlists')">
           <mat-icon matListItemIcon>list</mat-icon>
           <span matListItemTitle>Watchlists</span>
         </a>
-        <a mat-list-item routerLink="/sanctions" routerLinkActive="active">
+        <a mat-list-item routerLink="/sanctions" routerLinkActive="active" [class.active]="isRouteActive('/sanctions')">
           <mat-icon matListItemIcon>gavel</mat-icon>
           <span matListItemTitle>Sanctions</span>
         </a>
-        <a mat-list-item routerLink="/alerts" routerLinkActive="active">
+        <a mat-list-item routerLink="/alerts" routerLinkActive="active" [class.active]="isRouteActive('/alerts')">
           <mat-icon matListItemIcon>warning</mat-icon>
           <span matListItemTitle>Alerts</span>
         </a>
-        <a mat-list-item routerLink="/customers" routerLinkActive="active">
+        <a mat-list-item routerLink="/customers" routerLinkActive="active" [class.active]="isRouteActive('/customers')">
           <mat-icon matListItemIcon>people</mat-icon>
           <span matListItemTitle>Customers</span>
         </a>
-        <a mat-list-item routerLink="/reports" routerLinkActive="active">
+        <a mat-list-item routerLink="/reports" routerLinkActive="active" [class.active]="isRouteActive('/reports')">
           <mat-icon matListItemIcon>description</mat-icon>
           <span matListItemTitle>SAR/STR Reports</span>
         </a>
-        <a mat-list-item routerLink="/future-features" routerLinkActive="active">
+        <a mat-list-item routerLink="/future-features" routerLinkActive="active" [class.active]="isRouteActive('/future-features')">
           <mat-icon matListItemIcon>rocket_launch</mat-icon>
           <span matListItemTitle>Future Features</span>
         </a>
         @if (authService.hasAnyRole(['Admin'])) {
-          <a mat-list-item routerLink="/organizations" routerLinkActive="active">
+          <a mat-list-item routerLink="/organizations" routerLinkActive="active" [class.active]="isRouteActive('/organizations')">
             <mat-icon matListItemIcon>business</mat-icon>
             <span matListItemTitle>Organizations</span>
           </a>
         }
         @if (authService.hasAnyRole(['Admin', 'Manager'])) {
-          <a mat-list-item routerLink="/settings" routerLinkActive="active">
+          <a mat-list-item routerLink="/settings" routerLinkActive="active" [class.active]="isRouteActive('/settings')">
             <mat-icon matListItemIcon>settings</mat-icon>
             <span matListItemTitle>Settings</span>
           </a>
@@ -186,9 +189,22 @@ import { Router } from '@angular/router';
     .toolbar-spacer {
       flex: 1 1 auto;
     }
-    .app-title {
+    .app-branding {
       margin-left: 8px;
-      font-weight: 500;
+      display: flex;
+      flex-direction: column;
+    }
+    .app-title {
+      font-weight: 600;
+      font-size: 18px;
+      line-height: 1.2;
+    }
+    .app-tagline {
+      font-size: 11px;
+      opacity: 0.8;
+      font-weight: 400;
+      line-height: 1.1;
+      margin-top: -2px;
     }
     .user-info {
       display: flex;
@@ -288,16 +304,31 @@ import { Router } from '@angular/router';
       margin: 0;
       font-size: 14px;
     }
+    .active {
+      background-color: rgba(255, 255, 255, 0.1) !important;
+      color: #fff !important;
+    }
+    .active mat-icon {
+      color: #fff !important;
+    }
   `]
 })
 export class AppShellComponent {
   authService = inject(AuthService);
   notificationService = inject(NotificationService);
   router = inject(Router);
+  currentRoute = '';
 
   constructor() {
     // Simulate real-time notifications
     this.notificationService.simulateRealTimeNotification();
+    
+    // Track current route for active menu highlighting
+    this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd)
+    ).subscribe((event: NavigationEnd) => {
+      this.currentRoute = event.urlAfterRedirects;
+    });
   }
 
   logout() {
@@ -316,6 +347,10 @@ export class AppShellComponent {
 
   markAllAsRead() {
     this.notificationService.markAllAsRead().subscribe();
+  }
+
+  isRouteActive(route: string): boolean {
+    return this.currentRoute.startsWith(route);
   }
 }
 
