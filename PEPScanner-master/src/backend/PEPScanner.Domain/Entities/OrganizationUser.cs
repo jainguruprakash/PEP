@@ -78,7 +78,6 @@ namespace PEPScanner.Domain.Entities
         public string Language { get; set; } = "en";
         
         // Navigation properties
-        public virtual Organization Organization { get; set; } = null!;
         public virtual ICollection<AuditLog> AuditLogs { get; set; } = new List<AuditLog>();
     }
 }
