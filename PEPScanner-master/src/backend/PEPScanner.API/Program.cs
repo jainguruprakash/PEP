@@ -1,5 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using PEPScanner.Infrastructure.Data;
+using PEPScanner.Application.Services;
+using Hangfire;
+using Hangfire.MemoryStorage;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +14,20 @@ builder.Services.AddSwaggerGen();
 // Database
 builder.Services.AddDbContext<PepScannerDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Hangfire
+builder.Services.AddHangfire(configuration => configuration
+    .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+    .UseSimpleAssemblyNameTypeSerializer()
+    .UseRecommendedSerializerSettings()
+    .UseMemoryStorage());
+
+builder.Services.AddHangfireServer();
+
+// Application Services
+builder.Services.AddHttpClient<IWatchlistDataFetchService, WatchlistDataFetchService>();
+builder.Services.AddScoped<IWatchlistDataFetchService, WatchlistDataFetchService>();
+builder.Services.AddScoped<IWatchlistJobService, WatchlistJobService>();
 
 // CORS
 builder.Services.AddCors(options =>
@@ -35,6 +52,10 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors("AllowAngularApp");
+
+// Hangfire Dashboard
+app.UseHangfireDashboard("/hangfire");
+
 app.UseAuthorization();
 
 // Controllers

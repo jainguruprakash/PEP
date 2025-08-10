@@ -27,12 +27,11 @@ namespace PEPScanner.API.Controllers
                     .Select(c => new
                     {
                         c.Id,
-                        c.FirstName,
-                        c.LastName,
-                        c.Email,
+                        c.FullName,
+                        c.EmailAddress,
                         c.Country,
                         c.RiskLevel,
-                        c.CreatedAt
+                        c.CreatedAtUtc
                     })
                     .ToListAsync();
 
@@ -73,13 +72,13 @@ namespace PEPScanner.API.Controllers
                 var customer = new Customer
                 {
                     Id = Guid.NewGuid(),
-                    FirstName = request.FirstName,
-                    LastName = request.LastName,
-                    Email = request.Email,
+                    OrganizationId = Guid.NewGuid(), // TODO: Get from user context
+                    FullName = $"{request.FirstName} {request.LastName}".Trim(),
+                    EmailAddress = request.Email,
                     Country = request.Country,
                     RiskLevel = "Low",
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
+                    CreatedAtUtc = DateTime.UtcNow,
+                    UpdatedAtUtc = DateTime.UtcNow
                 };
 
                 _context.Customers.Add(customer);
@@ -105,11 +104,10 @@ namespace PEPScanner.API.Controllers
                     return NotFound(new { error = "Customer not found" });
                 }
 
-                customer.FirstName = request.FirstName;
-                customer.LastName = request.LastName;
-                customer.Email = request.Email;
+                customer.FullName = $"{request.FirstName} {request.LastName}".Trim();
+                customer.EmailAddress = request.Email;
                 customer.Country = request.Country;
-                customer.UpdatedAt = DateTime.UtcNow;
+                customer.UpdatedAtUtc = DateTime.UtcNow;
 
                 await _context.SaveChangesAsync();
                 return NoContent();

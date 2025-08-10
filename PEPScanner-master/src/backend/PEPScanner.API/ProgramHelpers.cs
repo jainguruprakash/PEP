@@ -69,45 +69,4 @@ namespace PEPScanner.API
             }
         }
     }
-
-    // Development-only authentication handler: accepts Authorization: Bearer dev-token
-    namespace Dev
-    {
-        public class DevAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
-        {
-            public DevAuthenticationHandler(IOptionsMonitor<AuthenticationSchemeOptions> options, ILoggerFactory logger, UrlEncoder encoder, ISystemClock clock)
-                : base(options, logger, encoder, clock) { }
-
-            protected override Task<AuthenticateResult> HandleAuthenticateAsync()
-            {
-                if (!Request.Headers.ContainsKey("Authorization"))
-                {
-                    return Task.FromResult(AuthenticateResult.NoResult());
-                }
-
-                var auth = Request.Headers["Authorization"].ToString();
-                if (!auth.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
-                {
-                    return Task.FromResult(AuthenticateResult.NoResult());
-                }
-
-                var token = auth.Substring("Bearer ".Length).Trim();
-                if (token != "dev-token" && token != "bank-onboarding-dev-token")
-                {
-                    return Task.FromResult(AuthenticateResult.Fail("Invalid dev token"));
-                }
-
-                var claims = new List<Claim>
-                {
-                    new Claim(ClaimTypes.Name, "dev-user"),
-                    new Claim(ClaimTypes.Role, "Manager"),
-                    new Claim(ClaimTypes.Role, "ComplianceOfficer")
-                };
-                var identity = new ClaimsIdentity(claims, Scheme.Name);
-                var principal = new ClaimsPrincipal(identity);
-                var ticket = new AuthenticationTicket(principal, Scheme.Name);
-                return Task.FromResult(AuthenticateResult.Success(ticket));
-            }
-        }
-    }
 }

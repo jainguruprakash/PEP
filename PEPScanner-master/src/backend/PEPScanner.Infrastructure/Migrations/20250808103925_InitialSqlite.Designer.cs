@@ -4,11 +4,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using PEPScanner.API.Data;
+using PEPScanner.Infrastructure.Data;
 
 #nullable disable
 
-namespace PEPScanner.API.Migrations
+namespace PEPScanner.Infrastructure.Migrations
 {
     [DbContext(typeof(PepScannerDbContext))]
     [Migration("20250808103925_InitialSqlite")]

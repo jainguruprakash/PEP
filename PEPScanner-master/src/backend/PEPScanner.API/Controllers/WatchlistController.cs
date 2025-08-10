@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using PEPScanner.Infrastructure.Data;
 using PEPScanner.Domain.Entities;
 
@@ -204,6 +205,94 @@ namespace PEPScanner.API.Controllers
                 return StatusCode(500, new { error = "Internal server error" });
             }
         }
+
+        [HttpGet("ofac/search")]
+        public async Task<IActionResult> SearchOfac([FromQuery] string name)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(name))
+                {
+                    return BadRequest(new { error = "Name parameter is required" });
+                }
+
+                var results = await _context.WatchlistEntries
+                    .Where(w => w.Source == "OFAC" &&
+                               (w.PrimaryName.Contains(name) ||
+                                (w.AlternateNames != null && w.AlternateNames.Contains(name))))
+                    .Select(w => new
+                    {
+                        w.Id,
+                        FullName = w.PrimaryName,
+                        AliasNames = w.AlternateNames,
+                        w.Country,
+                        w.DateOfBirth,
+                        Designation = w.PositionOrRole,
+                        Reason = w.RiskCategory,
+                        w.ListType
+                    })
+                    .Take(50)
+                    .ToListAsync();
+
+                return Ok(new
+                {
+                    Source = "OFAC",
+                    Query = name,
+                    TotalResults = results.Count,
+                    Results = results
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error searching OFAC watchlist for name {Name}", name);
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        [HttpGet("un/search")]
+        public async Task<IActionResult> SearchUn([FromQuery] string name)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(name))
+                {
+                    return BadRequest(new { error = "Name parameter is required" });
+                }
+
+                var results = await _context.WatchlistEntries
+                    .Where(w => w.Source == "UN" &&
+                               (w.PrimaryName.Contains(name) ||
+                                (w.AlternateNames != null && w.AlternateNames.Contains(name))))
+                    .Select(w => new
+                    {
+                        w.Id,
+                        FullName = w.PrimaryName,
+                        AliasNames = w.AlternateNames,
+                        w.Country,
+                        w.DateOfBirth,
+                        Designation = w.PositionOrRole,
+                        Reason = w.RiskCategory,
+                        w.ListType
+                    })
+                    .Take(50)
+                    .ToListAsync();
+
+                return Ok(new
+                {
+                    Source = "UN",
+                    Query = name,
+                    TotalResults = results.Count,
+                    Results = results
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error searching UN watchlist for name {Name}", name);
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+
     }
 
     public class WatchlistSearchRequest

@@ -1,4 +1,6 @@
 using PEPScanner.Domain.Entities;
+using PEPScanner.Application.Contracts;
+using Microsoft.AspNetCore.Http;
 
 namespace PEPScanner.Application.Abstractions
 {

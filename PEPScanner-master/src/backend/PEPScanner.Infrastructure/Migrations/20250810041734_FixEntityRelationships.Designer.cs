@@ -11,8 +11,8 @@ using PEPScanner.Infrastructure.Data;
 namespace PEPScanner.Infrastructure.Migrations
 {
     [DbContext(typeof(PepScannerDbContext))]
-    [Migration("20250808174910_AddOrganizationMultiTenancy")]
-    partial class AddOrganizationMultiTenancy
+    [Migration("20250810041734_FixEntityRelationships")]
+    partial class FixEntityRelationships
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -20,7 +20,7 @@ namespace PEPScanner.Infrastructure.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.7");
 
-            modelBuilder.Entity("PEPScanner.API.Models.Alert", b =>
+            modelBuilder.Entity("PEPScanner.Domain.Entities.Alert", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -197,26 +197,27 @@ namespace PEPScanner.Infrastructure.Migrations
                     b.Property<Guid?>("WatchlistEntryId")
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid?>("WatchlistEntryId1")
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("AssignedTo");
-
-                    b.HasIndex("CreatedAtUtc");
+                    b.HasIndex("CreatedAtUtc")
+                        .HasDatabaseName("IX_Alert_CreatedAtUtc");
 
                     b.HasIndex("CustomerId");
 
-                    b.HasIndex("Priority");
-
-                    b.HasIndex("SimilarityScore");
-
-                    b.HasIndex("Status");
+                    b.HasIndex("Status")
+                        .HasDatabaseName("IX_Alert_Status");
 
                     b.HasIndex("WatchlistEntryId");
+
+                    b.HasIndex("WatchlistEntryId1");
 
                     b.ToTable("Alerts");
                 });
 
-            modelBuilder.Entity("PEPScanner.API.Models.AuditLog", b =>
+            modelBuilder.Entity("PEPScanner.Domain.Entities.AuditLog", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -296,26 +297,12 @@ namespace PEPScanner.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Action");
-
-                    b.HasIndex("Date");
-
-                    b.HasIndex("EntityId");
-
-                    b.HasIndex("EntityType");
-
-                    b.HasIndex("Hour");
-
                     b.HasIndex("OrganizationUserId");
-
-                    b.HasIndex("TimestampUtc");
-
-                    b.HasIndex("UserId");
 
                     b.ToTable("AuditLogs");
                 });
 
-            modelBuilder.Entity("PEPScanner.API.Models.Customer", b =>
+            modelBuilder.Entity("PEPScanner.Domain.Entities.Customer", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -423,6 +410,9 @@ namespace PEPScanner.Infrastructure.Migrations
                     b.Property<Guid>("OrganizationId")
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid?>("OrganizationId1")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("PepCountry")
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
@@ -478,24 +468,14 @@ namespace PEPScanner.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CreatedAtUtc");
-
-                    b.HasIndex("FullName");
-
-                    b.HasIndex("IdentificationNumber");
-
-                    b.HasIndex("IsActive");
-
-                    b.HasIndex("IsPep");
-
                     b.HasIndex("OrganizationId");
 
-                    b.HasIndex("RiskLevel");
+                    b.HasIndex("OrganizationId1");
 
                     b.ToTable("Customers");
                 });
 
-            modelBuilder.Entity("PEPScanner.API.Models.CustomerDocument", b =>
+            modelBuilder.Entity("PEPScanner.Domain.Entities.CustomerDocument", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -575,16 +555,10 @@ namespace PEPScanner.Infrastructure.Migrations
 
                     b.HasIndex("CustomerId");
 
-                    b.HasIndex("DocumentNumber");
-
-                    b.HasIndex("DocumentType");
-
-                    b.HasIndex("IsVerified");
-
                     b.ToTable("CustomerDocuments");
                 });
 
-            modelBuilder.Entity("PEPScanner.API.Models.CustomerRelationship", b =>
+            modelBuilder.Entity("PEPScanner.Domain.Entities.CustomerRelationship", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -594,7 +568,6 @@ namespace PEPScanner.Infrastructure.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("CreatedBy")
-                        .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
                     b.Property<Guid>("CustomerId")
@@ -604,19 +577,16 @@ namespace PEPScanner.Infrastructure.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("RelationshipDetails")
-                        .HasMaxLength(500)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("RelationshipType")
                         .IsRequired()
-                        .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime?>("UpdatedAtUtc")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("UpdatedBy")
-                        .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
@@ -625,12 +595,64 @@ namespace PEPScanner.Infrastructure.Migrations
 
                     b.HasIndex("RelatedCustomerId");
 
-                    b.HasIndex("RelationshipType");
-
                     b.ToTable("CustomerRelationships");
                 });
 
-            modelBuilder.Entity("PEPScanner.API.Models.Organization", b =>
+            modelBuilder.Entity("PEPScanner.Domain.Entities.NotificationLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("AlertId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("NotificationType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Payload")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Recipient")
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("RetryCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("SentAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Subject")
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("NotificationLogs");
+                });
+
+            modelBuilder.Entity("PEPScanner.Domain.Entities.Organization", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -777,23 +799,10 @@ namespace PEPScanner.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Code")
-                        .IsUnique();
-
-                    b.HasIndex("Country");
-
-                    b.HasIndex("CreatedAtUtc");
-
-                    b.HasIndex("IsActive");
-
-                    b.HasIndex("Name");
-
-                    b.HasIndex("Type");
-
                     b.ToTable("Organizations");
                 });
 
-            modelBuilder.Entity("PEPScanner.API.Models.OrganizationConfiguration", b =>
+            modelBuilder.Entity("PEPScanner.Domain.Entities.OrganizationConfiguration", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -836,6 +845,9 @@ namespace PEPScanner.Infrastructure.Migrations
                     b.Property<Guid>("OrganizationId")
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid>("OrganizationId1")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime?>("UpdatedAtUtc")
                         .HasColumnType("TEXT");
 
@@ -851,18 +863,14 @@ namespace PEPScanner.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Category");
-
-                    b.HasIndex("IsRequired");
-
-                    b.HasIndex("Key");
-
                     b.HasIndex("OrganizationId");
+
+                    b.HasIndex("OrganizationId1");
 
                     b.ToTable("OrganizationConfigurations");
                 });
 
-            modelBuilder.Entity("PEPScanner.API.Models.OrganizationUser", b =>
+            modelBuilder.Entity("PEPScanner.Domain.Entities.OrganizationUser", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -918,6 +926,9 @@ namespace PEPScanner.Infrastructure.Migrations
                     b.Property<Guid>("OrganizationId")
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid>("OrganizationId1")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime?>("PasswordChangedAtUtc")
                         .HasColumnType("TEXT");
 
@@ -961,22 +972,14 @@ namespace PEPScanner.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CreatedAtUtc");
-
-                    b.HasIndex("Email");
-
-                    b.HasIndex("IsActive");
-
                     b.HasIndex("OrganizationId");
 
-                    b.HasIndex("Role");
-
-                    b.HasIndex("Username");
+                    b.HasIndex("OrganizationId1");
 
                     b.ToTable("OrganizationUsers");
                 });
 
-            modelBuilder.Entity("PEPScanner.API.Models.OrganizationWatchlist", b =>
+            modelBuilder.Entity("PEPScanner.Domain.Entities.OrganizationWatchlist", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -1014,6 +1017,9 @@ namespace PEPScanner.Infrastructure.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<Guid>("OrganizationId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("OrganizationId1")
                         .HasColumnType("TEXT");
 
                     b.Property<int>("Priority")
@@ -1057,20 +1063,14 @@ namespace PEPScanner.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("IsEnabled");
-
                     b.HasIndex("OrganizationId");
 
-                    b.HasIndex("Priority");
-
-                    b.HasIndex("WatchlistSource");
-
-                    b.HasIndex("WatchlistType");
+                    b.HasIndex("OrganizationId1");
 
                     b.ToTable("OrganizationWatchlists");
                 });
 
-            modelBuilder.Entity("PEPScanner.API.Models.ScreeningJob", b =>
+            modelBuilder.Entity("PEPScanner.Domain.Entities.ScreeningJob", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -1152,18 +1152,16 @@ namespace PEPScanner.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CreatedAtUtc");
+                    b.HasIndex("CreatedAtUtc")
+                        .HasDatabaseName("IX_ScreeningJob_CreatedAtUtc");
 
-                    b.HasIndex("JobType");
-
-                    b.HasIndex("StartedAtUtc");
-
-                    b.HasIndex("Status");
+                    b.HasIndex("Status")
+                        .HasDatabaseName("IX_ScreeningJob_Status");
 
                     b.ToTable("ScreeningJobs");
                 });
 
-            modelBuilder.Entity("PEPScanner.API.Models.WatchlistEntry", b =>
+            modelBuilder.Entity("PEPScanner.Domain.Entities.WatchlistEntry", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -1413,61 +1411,64 @@ namespace PEPScanner.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Country");
+                    b.HasIndex("PrimaryName")
+                        .HasDatabaseName("IX_WatchlistEntry_PrimaryName");
 
-                    b.HasIndex("DateAddedUtc");
+                    b.HasIndex("Source")
+                        .HasDatabaseName("IX_WatchlistEntry_Source");
 
-                    b.HasIndex("IsActive");
-
-                    b.HasIndex("ListType");
-
-                    b.HasIndex("PrimaryName");
-
-                    b.HasIndex("RiskLevel");
-
-                    b.HasIndex("Source");
+                    b.HasIndex("Source", "PrimaryName")
+                        .HasDatabaseName("IX_WatchlistEntry_Source_PrimaryName");
 
                     b.ToTable("WatchlistEntries");
                 });
 
-            modelBuilder.Entity("PEPScanner.API.Models.Alert", b =>
+            modelBuilder.Entity("PEPScanner.Domain.Entities.Alert", b =>
                 {
-                    b.HasOne("PEPScanner.API.Models.Customer", "Customer")
+                    b.HasOne("PEPScanner.Domain.Entities.Customer", "Customer")
                         .WithMany("Alerts")
                         .HasForeignKey("CustomerId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("PEPScanner.API.Models.WatchlistEntry", "WatchlistEntry")
-                        .WithMany("Alerts")
+                    b.HasOne("PEPScanner.Domain.Entities.WatchlistEntry", "WatchlistEntry")
+                        .WithMany()
                         .HasForeignKey("WatchlistEntryId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("PEPScanner.Domain.Entities.WatchlistEntry", null)
+                        .WithMany("Alerts")
+                        .HasForeignKey("WatchlistEntryId1");
 
                     b.Navigation("Customer");
 
                     b.Navigation("WatchlistEntry");
                 });
 
-            modelBuilder.Entity("PEPScanner.API.Models.AuditLog", b =>
+            modelBuilder.Entity("PEPScanner.Domain.Entities.AuditLog", b =>
                 {
-                    b.HasOne("PEPScanner.API.Models.OrganizationUser", null)
+                    b.HasOne("PEPScanner.Domain.Entities.OrganizationUser", null)
                         .WithMany("AuditLogs")
                         .HasForeignKey("OrganizationUserId");
                 });
 
-            modelBuilder.Entity("PEPScanner.API.Models.Customer", b =>
+            modelBuilder.Entity("PEPScanner.Domain.Entities.Customer", b =>
                 {
-                    b.HasOne("PEPScanner.API.Models.Organization", "Organization")
-                        .WithMany("Customers")
+                    b.HasOne("PEPScanner.Domain.Entities.Organization", "Organization")
+                        .WithMany()
                         .HasForeignKey("OrganizationId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("PEPScanner.Domain.Entities.Organization", null)
+                        .WithMany("Customers")
+                        .HasForeignKey("OrganizationId1");
 
                     b.Navigation("Organization");
                 });
 
-            modelBuilder.Entity("PEPScanner.API.Models.CustomerDocument", b =>
+            modelBuilder.Entity("PEPScanner.Domain.Entities.CustomerDocument", b =>
                 {
-                    b.HasOne("PEPScanner.API.Models.Customer", "Customer")
+                    b.HasOne("PEPScanner.Domain.Entities.Customer", "Customer")
                         .WithMany("Documents")
                         .HasForeignKey("CustomerId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1476,15 +1477,15 @@ namespace PEPScanner.Infrastructure.Migrations
                     b.Navigation("Customer");
                 });
 
-            modelBuilder.Entity("PEPScanner.API.Models.CustomerRelationship", b =>
+            modelBuilder.Entity("PEPScanner.Domain.Entities.CustomerRelationship", b =>
                 {
-                    b.HasOne("PEPScanner.API.Models.Customer", "Customer")
+                    b.HasOne("PEPScanner.Domain.Entities.Customer", "Customer")
                         .WithMany("Relationships")
                         .HasForeignKey("CustomerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("PEPScanner.API.Models.Customer", "RelatedCustomer")
+                    b.HasOne("PEPScanner.Domain.Entities.Customer", "RelatedCustomer")
                         .WithMany()
                         .HasForeignKey("RelatedCustomerId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -1495,40 +1496,58 @@ namespace PEPScanner.Infrastructure.Migrations
                     b.Navigation("RelatedCustomer");
                 });
 
-            modelBuilder.Entity("PEPScanner.API.Models.OrganizationConfiguration", b =>
+            modelBuilder.Entity("PEPScanner.Domain.Entities.OrganizationConfiguration", b =>
                 {
-                    b.HasOne("PEPScanner.API.Models.Organization", "Organization")
+                    b.HasOne("PEPScanner.Domain.Entities.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("PEPScanner.Domain.Entities.Organization", "Organization")
                         .WithMany("Configurations")
-                        .HasForeignKey("OrganizationId")
+                        .HasForeignKey("OrganizationId1")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Organization");
                 });
 
-            modelBuilder.Entity("PEPScanner.API.Models.OrganizationUser", b =>
+            modelBuilder.Entity("PEPScanner.Domain.Entities.OrganizationUser", b =>
                 {
-                    b.HasOne("PEPScanner.API.Models.Organization", "Organization")
+                    b.HasOne("PEPScanner.Domain.Entities.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("PEPScanner.Domain.Entities.Organization", "Organization")
                         .WithMany("Users")
-                        .HasForeignKey("OrganizationId")
+                        .HasForeignKey("OrganizationId1")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Organization");
                 });
 
-            modelBuilder.Entity("PEPScanner.API.Models.OrganizationWatchlist", b =>
+            modelBuilder.Entity("PEPScanner.Domain.Entities.OrganizationWatchlist", b =>
                 {
-                    b.HasOne("PEPScanner.API.Models.Organization", "Organization")
-                        .WithMany("Watchlists")
+                    b.HasOne("PEPScanner.Domain.Entities.Organization", null)
+                        .WithMany()
                         .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("PEPScanner.Domain.Entities.Organization", "Organization")
+                        .WithMany("Watchlists")
+                        .HasForeignKey("OrganizationId1")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Organization");
                 });
 
-            modelBuilder.Entity("PEPScanner.API.Models.Customer", b =>
+            modelBuilder.Entity("PEPScanner.Domain.Entities.Customer", b =>
                 {
                     b.Navigation("Alerts");
 
@@ -1537,7 +1556,7 @@ namespace PEPScanner.Infrastructure.Migrations
                     b.Navigation("Relationships");
                 });
 
-            modelBuilder.Entity("PEPScanner.API.Models.Organization", b =>
+            modelBuilder.Entity("PEPScanner.Domain.Entities.Organization", b =>
                 {
                     b.Navigation("Configurations");
 
@@ -1548,12 +1567,12 @@ namespace PEPScanner.Infrastructure.Migrations
                     b.Navigation("Watchlists");
                 });
 
-            modelBuilder.Entity("PEPScanner.API.Models.OrganizationUser", b =>
+            modelBuilder.Entity("PEPScanner.Domain.Entities.OrganizationUser", b =>
                 {
                     b.Navigation("AuditLogs");
                 });
 
-            modelBuilder.Entity("PEPScanner.API.Models.WatchlistEntry", b =>
+            modelBuilder.Entity("PEPScanner.Domain.Entities.WatchlistEntry", b =>
                 {
                     b.Navigation("Alerts");
                 });

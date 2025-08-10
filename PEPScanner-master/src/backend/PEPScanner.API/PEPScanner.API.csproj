@@ -7,6 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Hangfire" Version="1.8.20" />
+    <PackageReference Include="Hangfire.MemoryStorage" Version="1.8.1.2" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.19" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.7">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -24,9 +26,9 @@
     <PackageReference Include="Lucene.Net" Version="4.8.0-beta00016" />
     <PackageReference Include="Lucene.Net.Analysis.Common" Version="4.8.0-beta00016" />
     <!-- Scheduling and Background Jobs -->
-    <PackageReference Include="Hangfire.AspNetCore" Version="1.8.6" />
-    <PackageReference Include="Hangfire.SqlServer" Version="1.8.6" />
-             <PackageReference Include="Hangfire.Sqlite" Version="1.4.2" />
+    <PackageReference Include="Hangfire.AspNetCore" Version="1.8.20" />
+    <PackageReference Include="Hangfire.SqlServer" Version="1.8.20" />
+    <PackageReference Include="Hangfire.Sqlite" Version="1.4.2" />
     <!-- Authentication and Security -->
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.7" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.3.1" />
@@ -49,6 +51,7 @@
       </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\PEPScanner.Application\PEPScanner.Application.csproj" />
     <ProjectReference Include="..\PEPScanner.Infrastructure\PEPScanner.Infrastructure.csproj" />
   </ItemGroup>
 

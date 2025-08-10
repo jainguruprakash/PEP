@@ -1,4 +1,6 @@
 using PEPScanner.Domain.Entities;
+using PEPScanner.Application.Contracts;
+using Microsoft.AspNetCore.Http;
 
 namespace PEPScanner.Application.Services
 {
@@ -30,18 +32,7 @@ namespace PEPScanner.Application.Services
         List<string> GetAvailableSources();
     }
 
-    public class WatchlistUpdateResult
-    {
-        public bool Success { get; set; }
-        public string Source { get; set; } = string.Empty;
-        public int TotalRecords { get; set; }
-        public int NewRecords { get; set; }
-        public int UpdatedRecords { get; set; }
-        public int DeletedRecords { get; set; }
-        public string? ErrorMessage { get; set; }
-        public DateTime ProcessingDate { get; set; } = DateTime.UtcNow;
-        public TimeSpan ProcessingTime { get; set; }
-    }
+
 
     public class WatchlistSource
     {

@@ -37,11 +37,11 @@ namespace PEPScanner.API.Controllers
                         a.AlertType,
                         a.Status,
                         a.Priority,
-                        a.Message,
-                        a.CreatedAt,
-                        a.UpdatedAt
+                        a.MatchingDetails,
+                        a.CreatedAtUtc,
+                        a.UpdatedAtUtc
                     })
-                    .OrderByDescending(a => a.CreatedAt)
+                    .OrderByDescending(a => a.CreatedAtUtc)
                     .ToListAsync();
 
                 return Ok(alerts);
@@ -85,7 +85,7 @@ namespace PEPScanner.API.Controllers
                 }
 
                 alert.Status = request.Status;
-                alert.UpdatedAt = DateTime.UtcNow;
+                alert.UpdatedAtUtc = DateTime.UtcNow;
 
                 await _context.SaveChangesAsync();
                 return NoContent();
@@ -110,10 +110,10 @@ namespace PEPScanner.API.Controllers
                         a.AlertType,
                         a.Status,
                         a.Priority,
-                        a.Message,
-                        a.CreatedAt
+                        a.MatchingDetails,
+                        a.CreatedAtUtc
                     })
-                    .OrderByDescending(a => a.CreatedAt)
+                    .OrderByDescending(a => a.CreatedAtUtc)
                     .ToListAsync();
 
                 return Ok(alerts);

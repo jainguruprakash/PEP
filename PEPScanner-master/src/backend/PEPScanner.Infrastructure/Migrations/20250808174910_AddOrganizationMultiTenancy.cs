@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace PEPScanner.API.Migrations
+namespace PEPScanner.Infrastructure.Migrations
 {
     /// <inheritdoc />
     public partial class AddOrganizationMultiTenancy : Migration
