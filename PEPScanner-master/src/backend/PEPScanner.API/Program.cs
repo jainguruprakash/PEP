@@ -37,6 +37,7 @@ builder.Services.AddHttpClient();
 
 // Custom Services
 builder.Services.AddScoped<PEPScanner.API.Services.IWatchlistUpdateService, PEPScanner.API.Services.WatchlistUpdateService>();
+builder.Services.AddScoped<PEPScanner.API.Services.IAutomatedScreeningService, PEPScanner.API.Services.AutomatedScreeningService>();
 
 // Register OpenSanctions services
 builder.Services.AddHttpClient<PEPScanner.Infrastructure.Services.IOpenSanctionsService, PEPScanner.Infrastructure.Services.OpenSanctionsService>();

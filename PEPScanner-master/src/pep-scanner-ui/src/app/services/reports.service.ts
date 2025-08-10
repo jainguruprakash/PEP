@@ -279,7 +279,7 @@ export class ReportsService {
         return 'primary';
       case ReportStatus.UnderReview:
         return 'accent';
-      case ReportStatus.PendingApproval:
+      case ReportStatus.RequiresMoreInfo:
         return 'warn';
       case ReportStatus.Approved:
         return 'primary';

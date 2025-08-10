@@ -22,7 +22,6 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatMenuModule } from '@angular/material/menu';
-import { MatChipsModule } from '@angular/material/chips';
 import { ScreeningService } from '../../services/screening.service';
 import { AlertsService } from '../../services/alerts.service';
 import { ReportService } from '../../services/report.service';
@@ -44,6 +43,7 @@ import { ScreeningResultsComponent } from './screening-results.component';
     MatSelectModule,
     MatCheckboxModule,
     MatIconModule,
+    MatTabsModule,
     MatSliderModule,
     MatDatepickerModule,
     MatNativeDateModule,

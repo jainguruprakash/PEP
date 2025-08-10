@@ -62,7 +62,7 @@ namespace PEPScanner.API.Controllers
         {
             try
             {
-                var report = GenerateMockSarReports().FirstOrDefault(r => r.Id == id);
+                var report = GenerateMockSarReports().FirstOrDefault(r => r.Id.ToString() == id);
                 if (report == null)
                     return NotFound();
 
@@ -86,7 +86,7 @@ namespace PEPScanner.API.Controllers
                     ReportNumber = GenerateReportNumber("SAR"),
                     OrganizationId = Guid.Parse("11111111-1111-1111-1111-111111111111"),
                     ReportedById = Guid.Parse("22222222-2222-2222-2222-222222222222"),
-                    CustomerId = request.CustomerId.HasValue ? Guid.Parse(request.CustomerId) : null,
+                    CustomerId = !string.IsNullOrEmpty(request.CustomerId) ? Guid.Parse(request.CustomerId) : null,
                     SubjectName = request.SubjectName,
                     SubjectAddress = request.SubjectAddress,
                     SubjectIdentification = request.SubjectIdentification,
@@ -125,7 +125,7 @@ namespace PEPScanner.API.Controllers
         {
             try
             {
-                var report = GenerateMockSarReports().FirstOrDefault(r => r.Id == id);
+                var report = GenerateMockSarReports().FirstOrDefault(r => r.Id.ToString() == id);
                 if (report == null)
                     return NotFound();
 
@@ -152,7 +152,7 @@ namespace PEPScanner.API.Controllers
         {
             try
             {
-                var report = GenerateMockSarReports().FirstOrDefault(r => r.Id == id);
+                var report = GenerateMockSarReports().FirstOrDefault(r => r.Id.ToString() == id);
                 if (report == null)
                     return NotFound();
 
@@ -161,7 +161,7 @@ namespace PEPScanner.API.Controllers
                 report.ComplianceComments = request.ComplianceComments;
                 report.UpdatedAt = DateTime.UtcNow;
 
-                if (request.Status == ReportStatus.Submitted)
+                if (request.Status == SarStatus.Submitted)
                 {
                     report.SubmissionDate = DateTime.UtcNow;
                     report.RegulatoryReferenceNumber = GenerateRegulatoryReference();
@@ -185,18 +185,18 @@ namespace PEPScanner.API.Controllers
             {
                 new SuspiciousActivityReport
                 {
-                    Id = "sar-1",
+                    Id = Guid.Parse("11111111-1111-1111-1111-111111111111"),
                     ReportNumber = "SAR-2024-001",
-                    OrganizationId = "org-1",
-                    ReportedById = "user-1",
-                    CustomerId = "cust-1",
+                    OrganizationId = Guid.Parse("22222222-2222-2222-2222-222222222222"),
+                    ReportedById = Guid.Parse("33333333-3333-3333-3333-333333333333"),
+                    CustomerId = Guid.Parse("44444444-4444-4444-4444-444444444444"),
                     SubjectName = "Amit Shah",
                     SubjectAddress = "New Delhi, India",
                     SubjectIdentification = "PAN: ABCDE1234F",
                     SuspiciousActivity = "Politically Exposed Person (PEP) Match",
                     ActivityDescription = "Customer matched against PEP database with high confidence score",
-                    Priority = ReportPriority.High,
-                    Status = ReportStatus.Draft,
+                    Priority = SarPriority.High,
+                    Status = SarStatus.Draft,
                     IncidentDate = DateTime.UtcNow.AddDays(-5),
                     DiscoveryDate = DateTime.UtcNow.AddDays(-3),
                     RegulatoryReferences = "RBI Master Direction on KYC - Section 51; PMLA Rules 2005 - Rule 9",
@@ -272,7 +272,7 @@ namespace PEPScanner.API.Controllers
         public string? TransactionCurrency { get; set; }
         public DateTime? TransactionDate { get; set; }
         public string? TransactionLocation { get; set; }
-        public ReportPriority? Priority { get; set; }
+        public SarPriority? Priority { get; set; }
         public DateTime? IncidentDate { get; set; }
         public DateTime? DiscoveryDate { get; set; }
         public string? RegulatoryReferences { get; set; }

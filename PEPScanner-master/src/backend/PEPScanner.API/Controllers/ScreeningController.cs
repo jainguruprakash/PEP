@@ -774,18 +774,5 @@ namespace PEPScanner.API.Controllers
         public string Name { get; set; } = string.Empty;
         public object Config { get; set; } = new();
     }
-    
-    // MCA Director model for screening integration
-    public class McaDirector
-    {
-        public string Din { get; set; } = string.Empty;
-        public string Name { get; set; } = string.Empty;
-        public string CompanyName { get; set; } = string.Empty;
-        public string Cin { get; set; } = string.Empty;
-        public string Designation { get; set; } = string.Empty;
-        public string AppointmentDate { get; set; } = string.Empty;
-        public string Status { get; set; } = string.Empty;
-        public string Nationality { get; set; } = string.Empty;
-        public string RiskLevel { get; set; } = string.Empty;
-    }
+
 }
