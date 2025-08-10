@@ -21,7 +21,7 @@ builder.Services.AddSignalR();
 
 // Database
 builder.Services.AddDbContext<PepScannerDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Hangfire
 builder.Services.AddHangfire(configuration => configuration

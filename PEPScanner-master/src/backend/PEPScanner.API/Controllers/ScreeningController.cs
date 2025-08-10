@@ -23,7 +23,8 @@ namespace PEPScanner.API.Controllers
         {
             try
             {
-                _logger.LogInformation("Screening customer: {CustomerName}", request.FullName);
+                _logger.LogInformation("Screening customer: {CustomerName} with sources: {Sources}", 
+                    request.FullName, string.Join(", ", request.Sources ?? new List<string>()));
 
                 // Perform actual screening against watchlist entries
                 var matches = new List<object>();
@@ -31,16 +32,26 @@ namespace PEPScanner.API.Controllers
 
                 if (!string.IsNullOrEmpty(searchName))
                 {
-                    var watchlistMatches = await _context.WatchlistEntries
-                        .Where(w => w.IsActive &&
-                                   (w.PrimaryName.ToUpper().Contains(searchName) ||
-                                    (w.AlternateNames != null && w.AlternateNames.ToUpper().Contains(searchName))))
+                    var query = _context.WatchlistEntries.Where(w => w.IsActive);
+                    
+                    // Apply source filtering if sources are specified
+                    if (request.Sources != null && request.Sources.Any())
+                    {
+                        query = query.Where(w => request.Sources.Contains(w.Source));
+                    }
+                    
+                    // Apply name matching with threshold consideration
+                    var threshold = (request.Threshold ?? 70) / 100.0;
+                    
+                    var watchlistMatches = await query
+                        .Where(w => w.PrimaryName.ToUpper().Contains(searchName) ||
+                                   (w.AlternateNames != null && w.AlternateNames.ToUpper().Contains(searchName)))
                         .ToListAsync();
 
                     foreach (var match in watchlistMatches)
                     {
-                        var matchScore = CalculateMatchScore(searchName, match.PrimaryName, match.AlternateNames);
-                        if (matchScore > 0.7) // Only include high-confidence matches
+                        var matchScore = CalculateMatchScore(searchName, match.PrimaryName, match.AlternateNames, request);
+                        if (matchScore >= threshold) // Use dynamic threshold
                         {
                             matches.Add(new
                             {
@@ -94,12 +105,13 @@ namespace PEPScanner.API.Controllers
                     screeningDetails = new
                     {
                         searchCriteria = searchName,
-                        totalWatchlistEntries = await _context.WatchlistEntries.CountAsync(w => w.IsActive),
-                        sourcesSearched = await _context.WatchlistEntries
-                            .Where(w => w.IsActive)
-                            .Select(w => w.Source)
-                            .Distinct()
-                            .ToListAsync()
+                        threshold = request.Threshold ?? 70,
+                        sourcesRequested = request.Sources ?? new List<string>(),
+                        includeAliases = request.IncludeAliases ?? true,
+                        includeFuzzyMatching = request.IncludeFuzzyMatching ?? true,
+                        includePhoneticMatching = request.IncludePhoneticMatching ?? true,
+                        totalWatchlistEntries = await GetFilteredWatchlistCount(request.Sources),
+                        sourcesSearched = await GetSearchedSources(request.Sources)
                     }
                 };
 
@@ -189,15 +201,15 @@ namespace PEPScanner.API.Controllers
             }
         }
 
-        private double CalculateMatchScore(string searchName, string primaryName, string? alternateNames)
+        private double CalculateMatchScore(string searchName, string primaryName, string? alternateNames, CustomerScreeningRequest request)
         {
             var scores = new List<double>();
 
             // Calculate score for primary name
-            scores.Add(CalculateStringSimilarity(searchName, primaryName.ToUpper()));
+            scores.Add(CalculateStringSimilarity(searchName, primaryName.ToUpper(), request));
 
-            // Calculate scores for alternate names
-            if (!string.IsNullOrEmpty(alternateNames))
+            // Calculate scores for alternate names if enabled
+            if ((request.IncludeAliases ?? true) && !string.IsNullOrEmpty(alternateNames))
             {
                 var alternates = alternateNames.Split(';', ',')
                     .Select(name => name.Trim().ToUpper())
@@ -205,7 +217,7 @@ namespace PEPScanner.API.Controllers
 
                 foreach (var alternateName in alternates)
                 {
-                    scores.Add(CalculateStringSimilarity(searchName, alternateName));
+                    scores.Add(CalculateStringSimilarity(searchName, alternateName, request));
                 }
             }
 
@@ -213,7 +225,7 @@ namespace PEPScanner.API.Controllers
             return scores.Any() ? scores.Max() : 0.0;
         }
 
-        private double CalculateStringSimilarity(string str1, string str2)
+        private double CalculateStringSimilarity(string str1, string str2, CustomerScreeningRequest request)
         {
             if (string.IsNullOrEmpty(str1) || string.IsNullOrEmpty(str2))
                 return 0.0;
@@ -226,10 +238,24 @@ namespace PEPScanner.API.Controllers
             if (str1.Contains(str2) || str2.Contains(str1))
                 return 0.9;
 
-            // Simple Levenshtein distance-based similarity
-            var distance = LevenshteinDistance(str1, str2);
-            var maxLength = Math.Max(str1.Length, str2.Length);
-            return 1.0 - (double)distance / maxLength;
+            // Fuzzy matching if enabled
+            if (request.IncludeFuzzyMatching ?? true)
+            {
+                var distance = LevenshteinDistance(str1, str2);
+                var maxLength = Math.Max(str1.Length, str2.Length);
+                var similarity = 1.0 - (double)distance / maxLength;
+                
+                // Phonetic matching if enabled
+                if ((request.IncludePhoneticMatching ?? true) && similarity < 0.8)
+                {
+                    var phoneticSimilarity = CalculatePhoneticSimilarity(str1, str2);
+                    similarity = Math.Max(similarity, phoneticSimilarity);
+                }
+                
+                return similarity;
+            }
+
+            return 0.0;
         }
 
         private async Task<List<Guid>> CreateAlertsForMatches(CustomerScreeningRequest request, List<object> matches, double riskScore)
@@ -320,21 +346,94 @@ namespace PEPScanner.API.Controllers
 
             return matrix[str1.Length, str2.Length];
         }
+        
+        private double CalculatePhoneticSimilarity(string str1, string str2)
+        {
+            // Simple phonetic matching - in production, use a proper phonetic algorithm like Soundex or Metaphone
+            var phonetic1 = GetSimplePhonetic(str1);
+            var phonetic2 = GetSimplePhonetic(str2);
+            
+            if (phonetic1 == phonetic2)
+                return 0.8;
+                
+            return 0.0;
+        }
+        
+        private string GetSimplePhonetic(string input)
+        {
+            // Very basic phonetic conversion - replace with proper algorithm in production
+            return input.ToUpper()
+                .Replace("PH", "F")
+                .Replace("CK", "K")
+                .Replace("C", "K")
+                .Replace("QU", "KW")
+                .Replace("X", "KS")
+                .Replace("Z", "S");
+        }
+        
+        private async Task<int> GetFilteredWatchlistCount(List<string>? sources)
+        {
+            var query = _context.WatchlistEntries.Where(w => w.IsActive);
+            
+            if (sources != null && sources.Any())
+            {
+                query = query.Where(w => sources.Contains(w.Source));
+            }
+            
+            return await query.CountAsync();
+        }
+        
+        private async Task<List<string>> GetSearchedSources(List<string>? requestedSources)
+        {
+            var query = _context.WatchlistEntries.Where(w => w.IsActive);
+            
+            if (requestedSources != null && requestedSources.Any())
+            {
+                query = query.Where(w => requestedSources.Contains(w.Source));
+            }
+            
+            return await query.Select(w => w.Source).Distinct().ToListAsync();
+        }
 
         private double CalculateRiskScore(List<object> matches)
         {
             if (!matches.Any())
                 return 0.1; // Low risk for no matches
 
-            // Base risk calculation
-            var baseRisk = Math.Min(0.3 + (matches.Count * 0.2), 1.0);
-
-            // Additional risk factors could be added here based on:
-            // - Source criticality (OFAC, UN = higher risk)
-            // - List type (Sanctions = higher risk than PEP)
-            // - Match confidence scores
-
-            return Math.Min(baseRisk, 1.0);
+            double totalRisk = 0.0;
+            
+            foreach (dynamic match in matches)
+            {
+                double matchRisk = 0.0;
+                
+                // Source-based risk weighting
+                matchRisk += match.source?.ToString() switch
+                {
+                    "OFAC" => 0.4,
+                    "UN" => 0.4,
+                    "EU" => 0.3,
+                    "RBI" => 0.3,
+                    "SEBI" => 0.2,
+                    _ => 0.1
+                };
+                
+                // List type risk weighting
+                matchRisk += match.listType?.ToString() switch
+                {
+                    "Sanctions" => 0.4,
+                    "PEP" => 0.2,
+                    "Adverse Media" => 0.1,
+                    _ => 0.1
+                };
+                
+                // Match score weighting
+                matchRisk += (double)(match.matchScore ?? 0.0) * 0.2;
+                
+                totalRisk += matchRisk;
+            }
+            
+            // Normalize and cap at 1.0
+            return Math.Min(totalRisk / matches.Count, 1.0);
         }
 
         private string DetermineStatus(double riskScore, int matchCount)
@@ -342,13 +441,13 @@ namespace PEPScanner.API.Controllers
             if (matchCount == 0)
                 return "Clear";
 
-            if (riskScore >= 0.8)
-                return "High Risk";
-
-            if (riskScore >= 0.5)
-                return "Medium Risk";
-
-            return "Low Risk";
+            return riskScore switch
+            {
+                >= 0.8 => "High Risk",
+                >= 0.6 => "Medium Risk", 
+                >= 0.4 => "Low Risk",
+                _ => "Minimal Risk"
+            };
         }
     }
 
@@ -364,6 +463,11 @@ namespace PEPScanner.API.Controllers
         public string? IdentificationType { get; set; }
         public string EntityType { get; set; } = "Individual";
         public bool AutoCreateAlerts { get; set; } = true;
+        public int? Threshold { get; set; } = 70;
+        public List<string>? Sources { get; set; }
+        public bool? IncludeAliases { get; set; } = true;
+        public bool? IncludeFuzzyMatching { get; set; } = true;
+        public bool? IncludePhoneticMatching { get; set; } = true;
     }
 
     public class TransactionScreeningRequest

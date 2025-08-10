@@ -21,190 +21,7 @@ import { MatBadgeModule } from '@angular/material/badge';
     MatDividerModule,
     MatBadgeModule
   ],
-  template: `
-    <mat-card class="results-card" *ngIf="result">
-      <!-- Header Section -->
-      <mat-card-header class="results-header">
-        <div class="header-content">
-          <div class="customer-info">
-            <h2>{{ result.fullName || result.customerName }}</h2>
-            <div class="customer-details">
-              <span *ngIf="result.nationality">{{ result.nationality }}</span>
-              <span *ngIf="result.country" class="separator">{{ result.country }}</span>
-              <span *ngIf="result.dateOfBirth" class="separator">DOB: {{ result.dateOfBirth | date }}</span>
-            </div>
-          </div>
-          <div class="status-section">
-            <mat-chip-set>
-              <mat-chip [class]="getStatusClass(result.status)">
-                <mat-icon>{{ getStatusIcon(result.status) }}</mat-icon>
-                {{ result.status }}
-              </mat-chip>
-            </mat-chip-set>
-            <div class="risk-score">
-              Risk Score: <strong>{{ (result.riskScore * 100) | number:'1.0-0' }}%</strong>
-            </div>
-          </div>
-        </div>
-      </mat-card-header>
-
-      <mat-card-content>
-        <!-- Summary Section -->
-        <div class="summary-section">
-          <div class="summary-stats">
-            <div class="stat-item">
-              <mat-icon>search</mat-icon>
-              <div>
-                <div class="stat-value">{{ result.matchCount }}</div>
-                <div class="stat-label">Matches Found</div>
-              </div>
-            </div>
-            <div class="stat-item">
-              <mat-icon>database</mat-icon>
-              <div>
-                <div class="stat-value">{{ result.screeningDetails?.totalWatchlistEntries }}</div>
-                <div class="stat-label">Records Searched</div>
-              </div>
-            </div>
-            <div class="stat-item">
-              <mat-icon>source</mat-icon>
-              <div>
-                <div class="stat-value">{{ result.screeningDetails?.sourcesSearched?.length }}</div>
-                <div class="stat-label">Sources</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <mat-divider></mat-divider>
-
-        <!-- Matches Section -->
-        <div class="matches-section" *ngIf="result.matches && result.matches.length > 0">
-          <h3>
-            <mat-icon>warning</mat-icon>
-            Watchlist Matches ({{ result.matches.length }})
-          </h3>
-          
-          <mat-accordion>
-            <mat-expansion-panel *ngFor="let match of result.matches; let i = index" class="match-panel">
-              <mat-expansion-panel-header>
-                <mat-panel-title>
-                  <div class="match-header">
-                    <div class="match-name">{{ match.matchedName }}</div>
-                    <mat-chip-set>
-                      <mat-chip [class]="getSourceClass(match.source)">{{ match.source }}</mat-chip>
-                      <mat-chip [class]="getRiskClass(match.riskCategory)">{{ match.riskCategory }}</mat-chip>
-                    </mat-chip-set>
-                  </div>
-                </mat-panel-title>
-                <mat-panel-description>
-                  <div class="match-score">
-                    Match: {{ (match.matchScore * 100) | number:'1.0-0' }}%
-                  </div>
-                </mat-panel-description>
-              </mat-expansion-panel-header>
-
-              <div class="match-details">
-                <div class="detail-grid">
-                  <div class="detail-item" *ngIf="match.alternateNames">
-                    <strong>Alternate Names:</strong>
-                    <span>{{ match.alternateNames }}</span>
-                  </div>
-                  <div class="detail-item" *ngIf="match.country">
-                    <strong>Country:</strong>
-                    <span>{{ match.country }}</span>
-                  </div>
-                  <div class="detail-item" *ngIf="match.positionOrRole">
-                    <strong>Position/Role:</strong>
-                    <span>{{ match.positionOrRole }}</span>
-                  </div>
-                  <div class="detail-item" *ngIf="match.listType">
-                    <strong>List Type:</strong>
-                    <span>{{ match.listType }}</span>
-                  </div>
-                  <div class="detail-item" *ngIf="match.sanctionType">
-                    <strong>Sanction Type:</strong>
-                    <span>{{ match.sanctionType }}</span>
-                  </div>
-                  <div class="detail-item" *ngIf="match.sanctionReason">
-                    <strong>Sanction Reason:</strong>
-                    <span>{{ match.sanctionReason }}</span>
-                  </div>
-                  <div class="detail-item" *ngIf="match.pepCategory">
-                    <strong>PEP Category:</strong>
-                    <span>{{ match.pepCategory }}</span>
-                  </div>
-                  <div class="detail-item" *ngIf="match.pepPosition">
-                    <strong>PEP Position:</strong>
-                    <span>{{ match.pepPosition }}</span>
-                  </div>
-                </div>
-                
-                <mat-divider></mat-divider>
-                
-                <div class="match-metadata">
-                  <div class="metadata-item">
-                    <mat-icon>schedule</mat-icon>
-                    <span>Added: {{ match.dateAdded | date:'short' }}</span>
-                  </div>
-                  <div class="metadata-item">
-                    <mat-icon>update</mat-icon>
-                    <span>Updated: {{ match.lastUpdated | date:'short' }}</span>
-                  </div>
-                </div>
-              </div>
-            </mat-expansion-panel>
-          </mat-accordion>
-        </div>
-
-        <!-- No Matches Section -->
-        <div class="no-matches-section" *ngIf="!result.matches || result.matches.length === 0">
-          <div class="no-matches-content">
-            <mat-icon class="success-icon">check_circle</mat-icon>
-            <h3>No Watchlist Matches Found</h3>
-            <p>This individual was not found on any monitored watchlists.</p>
-          </div>
-        </div>
-
-        <mat-divider></mat-divider>
-
-        <!-- Screening Details -->
-        <div class="screening-details">
-          <h4>Screening Details</h4>
-          <div class="details-grid">
-            <div class="detail-item">
-              <strong>Search Criteria:</strong>
-              <span>{{ result.screeningDetails?.searchCriteria }}</span>
-            </div>
-            <div class="detail-item">
-              <strong>Sources Searched:</strong>
-              <mat-chip-set>
-                <mat-chip *ngFor="let source of result.screeningDetails?.sourcesSearched" 
-                         [class]="getSourceClass(source)">
-                  {{ source }}
-                </mat-chip>
-              </mat-chip-set>
-            </div>
-            <div class="detail-item">
-              <strong>Screened At:</strong>
-              <span>{{ result.screenedAt | date:'medium' }}</span>
-            </div>
-          </div>
-        </div>
-      </mat-card-content>
-
-      <mat-card-actions>
-        <button mat-raised-button color="primary" (click)="exportResults()">
-          <mat-icon>download</mat-icon>
-          Export Results
-        </button>
-        <button mat-button (click)="printResults()">
-          <mat-icon>print</mat-icon>
-          Print
-        </button>
-      </mat-card-actions>
-    </mat-card>
-  `,
+  templateUrl: './screening-results.component.html',
   styles: [`
     .results-card {
       margin: 16px 0;
@@ -276,6 +93,22 @@ import { MatBadgeModule } from '@angular/material/badge';
       color: #666;
     }
 
+    .alerts-notification {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      background-color: #fff3e0;
+      border: 1px solid #ffb74d;
+      border-radius: 4px;
+      margin-bottom: 16px;
+      color: #e65100;
+    }
+
+    .alerts-notification mat-icon {
+      color: #ff9800;
+    }
+
     .matches-section {
       margin: 16px 0;
     }
@@ -344,6 +177,18 @@ import { MatBadgeModule } from '@angular/material/badge';
       gap: 4px;
       font-size: 12px;
       color: #666;
+    }
+
+    .match-actions {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid #e0e0e0;
+      display: flex;
+      gap: 8px;
+    }
+
+    .match-actions button {
+      min-width: 120px;
     }
 
     .no-matches-section {
@@ -459,6 +304,7 @@ import { MatBadgeModule } from '@angular/material/badge';
 })
 export class ScreeningResultsComponent {
   @Input() result: any = null;
+  @Input() onCreateAlert: ((match: any) => void) | null = null;
 
   getStatusClass(status: string): string {
     return `status-${status.toLowerCase().replace(' ', '-')}`;
@@ -495,5 +341,16 @@ export class ScreeningResultsComponent {
 
   printResults(): void {
     window.print();
+  }
+
+  createAlert(match: any): void {
+    if (this.onCreateAlert) {
+      this.onCreateAlert(match);
+    }
+  }
+
+  viewAlerts(): void {
+    // Navigate to alerts page - you can implement routing here
+    console.log('Navigate to alerts page');
   }
 }

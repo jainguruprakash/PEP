@@ -104,6 +104,7 @@ export class CustomerScreeningComponent implements OnInit {
   private initializeFormArrays() {
     // Initialize sources
     const sourcesArray = this.singleScreeningForm.get('sources') as FormArray;
+    sourcesArray.clear(); // Clear any existing controls
     this.availableSources.forEach(source => {
       sourcesArray.push(this.fb.control(source.selected));
     });
@@ -139,8 +140,8 @@ export class CustomerScreeningComponent implements OnInit {
         this.isLoading.set(false);
         
         // Show alert creation notification if alerts were auto-created
-        if (res.alertsCreated && res.alertsCreated.length > 0) {
-          console.log(`${res.alertsCreated.length} alert(s) created automatically`);
+        if ((res as any).alertsCreated?.length > 0) {
+          console.log(`${(res as any).alertsCreated.length} alert(s) created automatically`);
         }
       },
       error: (error) => {
@@ -152,7 +153,10 @@ export class CustomerScreeningComponent implements OnInit {
 
   // Utility methods
   private getSelectedOptions(selections: any[] | null | undefined, options: any[]): string[] {
-    if (!selections || !Array.isArray(selections)) return [];
+    if (!selections || !Array.isArray(selections)) {
+      // If no selections, return all default selected sources
+      return options.filter(option => option.selected).map(option => option.value);
+    }
     return options
       .filter((_, index) => selections[index] === true)
       .map(option => option.value);
@@ -167,6 +171,8 @@ export class CustomerScreeningComponent implements OnInit {
   clearSingleForm() {
     this.singleScreeningForm.reset();
     this.result.set(null);
+    // Reinitialize form arrays after reset
+    this.initializeFormArrays();
   }
 
   // Create alert for specific match

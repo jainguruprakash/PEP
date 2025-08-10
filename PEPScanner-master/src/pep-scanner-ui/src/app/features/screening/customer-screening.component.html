@@ -87,7 +87,7 @@
             </div>
 
             <!-- Data Sources -->
-            <div class="sources-section">
+            <div class="sources-section" formArrayName="sources">
               <label class="section-label">Watchlist Sources</label>
               <div class="checkbox-grid">
                 <mat-checkbox
@@ -96,6 +96,9 @@
                   [matTooltip]="source.label">
                   {{ source.label }}
                 </mat-checkbox>
+              </div>
+              <div class="sources-help">
+                <small>Select which watchlist sources to search. RBI includes Indian regulatory lists.</small>
               </div>
             </div>
 
@@ -158,6 +161,7 @@
   <!-- Results Section -->
   <app-screening-results
     [result]="result()"
+    [onCreateAlert]="createAlert.bind(this)"
     *ngIf="result() && !isLoading()">
   </app-screening-results>
 </div>

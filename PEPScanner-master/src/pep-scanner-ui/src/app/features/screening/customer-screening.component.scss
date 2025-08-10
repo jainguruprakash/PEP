@@ -64,6 +64,21 @@
   gap: 8px;
 }
 
+.sources-section {
+  .sources-help {
+    margin-top: 8px;
+    color: #6b7280;
+    font-size: 0.875rem;
+  }
+}
+
+.matching-options {
+  .checkbox-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
 .action-buttons {
   display: flex;
   gap: 12px;
