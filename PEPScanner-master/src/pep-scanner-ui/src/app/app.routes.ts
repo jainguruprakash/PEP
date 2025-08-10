@@ -9,6 +9,7 @@ export const routes: Routes = [
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
       { path: 'dashboard', loadComponent: () => import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent) },
+      { path: 'screening', redirectTo: 'screening/customer' },
       { path: 'screening/customer', loadComponent: () => import('./features/screening/customer-screening.component').then(m => m.CustomerScreeningComponent) },
       { path: 'screening/transaction', loadComponent: () => import('./features/screening/transaction-screening.component').then(m => m.TransactionScreeningComponent) },
       { path: 'search', loadComponent: () => import('./features/search/search.component').then(m => m.SearchComponent) },

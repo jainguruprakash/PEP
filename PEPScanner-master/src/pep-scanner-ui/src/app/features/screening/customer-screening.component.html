@@ -1,0 +1,163 @@
+<div class="screening-container">
+  <mat-card class="main-card">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon>search</mat-icon>
+        Customer Screening
+      </mat-card-title>
+      <mat-card-subtitle>
+        Screen customers against global watchlists and sanctions databases
+      </mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <form [formGroup]="singleScreeningForm" (ngSubmit)="screenSingleCustomer()">
+
+        <!-- Basic Information Section -->
+        <div class="form-section">
+          <h3>Customer Information</h3>
+
+          <div class="form-grid">
+            <mat-form-field appearance="outline">
+              <mat-label>Full Name *</mat-label>
+              <input matInput formControlName="fullName" required
+                     placeholder="Enter customer's full name">
+              <mat-icon matSuffix>person</mat-icon>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Date of Birth</mat-label>
+              <input matInput [matDatepicker]="dobPicker" formControlName="dateOfBirth">
+              <mat-datepicker-toggle matSuffix [for]="dobPicker"></mat-datepicker-toggle>
+              <mat-datepicker #dobPicker></mat-datepicker>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Nationality</mat-label>
+              <mat-select formControlName="nationality">
+                <mat-option value="">Select Nationality</mat-option>
+                <mat-option *ngFor="let country of countries" [value]="country">
+                  {{ country }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Country of Residence</mat-label>
+              <mat-select formControlName="country">
+                <mat-option value="">Select Country</mat-option>
+                <mat-option *ngFor="let country of countries" [value]="country">
+                  {{ country }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Identification Number</mat-label>
+              <input matInput formControlName="identificationNumber"
+                     placeholder="Enter ID number">
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Identification Type</mat-label>
+              <mat-select formControlName="identificationType">
+                <mat-option value="">Select ID Type</mat-option>
+                <mat-option *ngFor="let idType of identificationTypes" [value]="idType">
+                  {{ idType }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+        </div>
+
+        <!-- Screening Options -->
+        <div class="form-section">
+          <h3>Screening Options</h3>
+
+          <div class="options-grid">
+            <!-- Matching Threshold -->
+            <div class="threshold-section">
+              <label class="section-label">Matching Threshold: {{ singleScreeningForm.get('threshold')?.value }}%</label>
+              <mat-slider min="50" max="100" step="5" discrete>
+                <input matSliderThumb formControlName="threshold">
+              </mat-slider>
+              <div class="threshold-help">
+                <small>Higher values = more precise matches, Lower values = more potential matches</small>
+              </div>
+            </div>
+
+            <!-- Data Sources -->
+            <div class="sources-section">
+              <label class="section-label">Watchlist Sources</label>
+              <div class="checkbox-grid">
+                <mat-checkbox
+                  *ngFor="let source of availableSources; let i = index"
+                  [formControlName]="i"
+                  [matTooltip]="source.label">
+                  {{ source.label }}
+                </mat-checkbox>
+              </div>
+            </div>
+
+            <!-- Matching Options -->
+            <div class="matching-options">
+              <label class="section-label">Matching Options</label>
+              <div class="checkbox-grid">
+                <mat-checkbox formControlName="includeAliases">
+                  Include Aliases & Alternative Names
+                </mat-checkbox>
+                <mat-checkbox formControlName="includeFuzzyMatching">
+                  Enable Fuzzy Matching
+                </mat-checkbox>
+                <mat-checkbox formControlName="includePhoneticMatching">
+                  Enable Phonetic Matching
+                </mat-checkbox>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+          <button mat-raised-button color="primary" type="submit"
+                  [disabled]="singleScreeningForm.invalid || isLoading()">
+            <mat-spinner diameter="20" *ngIf="isLoading()"></mat-spinner>
+            <mat-icon *ngIf="!isLoading()">search</mat-icon>
+            <span *ngIf="!isLoading()">Screen Customer</span>
+            <span *ngIf="isLoading()">Screening...</span>
+          </button>
+
+          <button mat-button type="button" (click)="clearSingleForm()"
+                  [disabled]="isLoading()">
+            <mat-icon>clear</mat-icon>
+            Clear Form
+          </button>
+
+          <button mat-button type="button" (click)="exportResults()"
+                  [disabled]="!result() || isLoading()">
+            <mat-icon>download</mat-icon>
+            Export Results
+          </button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Loading Overlay -->
+  <div *ngIf="isLoading()" class="loading-overlay">
+    <mat-card class="loading-card">
+      <mat-spinner diameter="50"></mat-spinner>
+      <h3>Screening in Progress</h3>
+      <p>Searching against {{ totalSources }} watchlist sources...</p>
+      <div class="loading-progress">
+        <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+      </div>
+    </mat-card>
+  </div>
+
+  <!-- Results Section -->
+  <app-screening-results
+    [result]="result()"
+    *ngIf="result() && !isLoading()">
+  </app-screening-results>
+</div>
