@@ -42,6 +42,8 @@ builder.Services.AddScoped<PEPScanner.Infrastructure.Services.IEnhancedScreening
 builder.Services.AddScoped<PEPScanner.API.Services.IOpenSanctionsUpdateService, PEPScanner.API.Services.OpenSanctionsUpdateService>();
 builder.Services.AddScoped<PEPScanner.Infrastructure.Services.IOrganizationCustomListService, PEPScanner.Infrastructure.Services.OrganizationCustomListService>();
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
+builder.Services.AddScoped<PEPScanner.Infrastructure.Services.IReportService, PEPScanner.Infrastructure.Services.ReportService>();
+builder.Services.AddScoped<PEPScanner.Infrastructure.Services.IDashboardService, PEPScanner.Infrastructure.Services.DashboardService>();
 
 // JWT Authentication
 var jwtSecret = builder.Configuration["Jwt:Secret"] ?? "your-super-secret-jwt-key-that-should-be-at-least-32-characters-long";
