@@ -487,6 +487,43 @@ namespace PEPScanner.API.Controllers
                 return StatusCode(500, new { error = "Internal server error" });
             }
         }
+
+        [HttpPost("create-from-screening")]
+        public async Task<IActionResult> CreateFromScreening([FromBody] CreateAlertFromScreeningRequest request)
+        {
+            try
+            {
+                var alert = new Alert
+                {
+                    Id = Guid.NewGuid(),
+                    Context = "CustomerScreening",
+                    AlertType = request.AlertType,
+                    SimilarityScore = request.SimilarityScore,
+                    Status = "Open",
+                    Priority = request.Priority,
+                    RiskLevel = request.RiskLevel,
+                    SourceList = request.SourceList,
+                    SourceCategory = request.SourceCategory,
+                    MatchingDetails = request.MatchingDetails,
+                    WorkflowStatus = "PendingReview",
+                    CreatedAtUtc = DateTime.UtcNow,
+                    UpdatedAtUtc = DateTime.UtcNow,
+                    CreatedBy = request.CreatedBy,
+                    DueDate = DateTime.UtcNow.AddHours(request.SlaHours ?? 24),
+                    SlaHours = request.SlaHours ?? 24
+                };
+
+                _context.Alerts.Add(alert);
+                await _context.SaveChangesAsync();
+
+                return Ok(new { alertId = alert.Id, message = "Alert created successfully" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating alert from screening");
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
     }
 
     // Request DTOs
@@ -514,4 +551,17 @@ public class RejectAlertRequest
 {
     public string RejectedBy { get; set; } = string.Empty;
     public string Reason { get; set; } = string.Empty;
+}
+
+public class CreateAlertFromScreeningRequest
+{
+    public string AlertType { get; set; } = string.Empty;
+    public double SimilarityScore { get; set; }
+    public string Priority { get; set; } = "Medium";
+    public string RiskLevel { get; set; } = "Medium";
+    public string? SourceList { get; set; }
+    public string? SourceCategory { get; set; }
+    public string? MatchingDetails { get; set; }
+    public string? CreatedBy { get; set; }
+    public int? SlaHours { get; set; }
 }

@@ -68,6 +68,13 @@ namespace PEPScanner.API.Controllers
                 var riskScore = CalculateRiskScore(matches);
                 var status = DetermineStatus(riskScore, matches.Count);
 
+                // Auto-create alerts for matches above threshold
+                var alertIds = new List<Guid>();
+                if (matches.Count > 0 && riskScore >= 0.5) // Create alerts for medium+ risk
+                {
+                    alertIds = await CreateAlertsForMatches(request, matches, riskScore);
+                }
+
                 var result = new
                 {
                     customerId = request.CustomerId ?? "",
@@ -82,6 +89,7 @@ namespace PEPScanner.API.Controllers
                     matches = matches,
                     matchCount = matches.Count,
                     status = status,
+                    alertsCreated = alertIds,
                     screenedAt = DateTime.UtcNow,
                     screeningDetails = new
                     {
@@ -224,6 +232,71 @@ namespace PEPScanner.API.Controllers
             return 1.0 - (double)distance / maxLength;
         }
 
+        private async Task<List<Guid>> CreateAlertsForMatches(CustomerScreeningRequest request, List<object> matches, double riskScore)
+        {
+            var alertIds = new List<Guid>();
+            
+            foreach (dynamic match in matches)
+            {
+                var alert = new Alert
+                {
+                    Id = Guid.NewGuid(),
+                    Context = "CustomerScreening",
+                    AlertType = DetermineAlertType(match.listType?.ToString()),
+                    SimilarityScore = match.matchScore,
+                    Status = "Open",
+                    Priority = DeterminePriority(riskScore, match.matchScore),
+                    RiskLevel = DetermineRiskLevel(riskScore),
+                    SourceList = match.source?.ToString(),
+                    SourceCategory = match.listType?.ToString(),
+                    MatchingDetails = $"Matched: {match.matchedName} (Score: {match.matchScore})",
+                    WorkflowStatus = "PendingReview",
+                    CreatedAtUtc = DateTime.UtcNow,
+                    UpdatedAtUtc = DateTime.UtcNow,
+                    DueDate = DateTime.UtcNow.AddHours(GetSlaHours(riskScore)),
+                    SlaHours = GetSlaHours(riskScore)
+                };
+                
+                _context.Alerts.Add(alert);
+                alertIds.Add(alert.Id);
+            }
+            
+            await _context.SaveChangesAsync();
+            return alertIds;
+        }
+        
+        private string DetermineAlertType(string? listType) => listType switch
+        {
+            "PEP" => "PEP Match",
+            "Sanctions" => "Sanctions Match",
+            "Adverse Media" => "Adverse Media Match",
+            _ => "Name Match"
+        };
+        
+        private string DeterminePriority(double riskScore, double matchScore) => (riskScore, matchScore) switch
+        {
+            ( >= 0.8, _) => "Critical",
+            ( >= 0.6, >= 0.9) => "High",
+            ( >= 0.5, _) => "Medium",
+            _ => "Low"
+        };
+        
+        private string DetermineRiskLevel(double riskScore) => riskScore switch
+        {
+            >= 0.8 => "Critical",
+            >= 0.6 => "High",
+            >= 0.4 => "Medium",
+            _ => "Low"
+        };
+        
+        private int GetSlaHours(double riskScore) => riskScore switch
+        {
+            >= 0.8 => 4,  // Critical: 4 hours
+            >= 0.6 => 24, // High: 24 hours
+            >= 0.4 => 72, // Medium: 72 hours
+            _ => 168       // Low: 1 week
+        };
+
         private int LevenshteinDistance(string str1, string str2)
         {
             var matrix = new int[str1.Length + 1, str2.Length + 1];
@@ -290,6 +363,7 @@ namespace PEPScanner.API.Controllers
         public string? IdentificationNumber { get; set; }
         public string? IdentificationType { get; set; }
         public string EntityType { get; set; } = "Individual";
+        public bool AutoCreateAlerts { get; set; } = true;
     }
 
     public class TransactionScreeningRequest

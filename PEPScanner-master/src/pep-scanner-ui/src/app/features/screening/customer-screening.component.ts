@@ -22,6 +22,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { ScreeningService } from '../../services/screening.service';
+import { AlertsService } from '../../services/alerts.service';
 import { ScreeningResultsComponent } from './screening-results.component';
 
 @Component({
@@ -51,6 +52,7 @@ import { ScreeningResultsComponent } from './screening-results.component';
 export class CustomerScreeningComponent implements OnInit {
   private fb = inject(FormBuilder);
   private screeningService = inject(ScreeningService);
+  private alertsService = inject(AlertsService);
 
   // Signals for reactive state management
   isLoading = signal(false);
@@ -135,6 +137,11 @@ export class CustomerScreeningComponent implements OnInit {
       next: (res) => {
         this.result.set(res);
         this.isLoading.set(false);
+        
+        // Show alert creation notification if alerts were auto-created
+        if (res.alertsCreated && res.alertsCreated.length > 0) {
+          console.log(`${res.alertsCreated.length} alert(s) created automatically`);
+        }
       },
       error: (error) => {
         console.error('Screening error:', error);
@@ -160,6 +167,61 @@ export class CustomerScreeningComponent implements OnInit {
   clearSingleForm() {
     this.singleScreeningForm.reset();
     this.result.set(null);
+  }
+
+  // Create alert for specific match
+  createAlert(match: any) {
+    const alertRequest = {
+      alertType: this.determineAlertType(match.listType),
+      similarityScore: match.matchScore,
+      priority: this.determinePriority(match.matchScore),
+      riskLevel: this.determineRiskLevel(match.matchScore),
+      sourceList: match.source,
+      sourceCategory: match.listType,
+      matchingDetails: `Manual alert for: ${match.matchedName} (Score: ${match.matchScore})`,
+      createdBy: 'current-user', // Replace with actual user
+      slaHours: this.getSlaHours(match.matchScore)
+    };
+
+    this.alertsService.createFromScreening(alertRequest).subscribe({
+      next: (response) => {
+        console.log('Alert created:', response.alertId);
+        // Update UI to show alert was created
+      },
+      error: (error) => {
+        console.error('Error creating alert:', error);
+      }
+    });
+  }
+
+  private determineAlertType(listType: string): string {
+    switch (listType) {
+      case 'PEP': return 'PEP Match';
+      case 'Sanctions': return 'Sanctions Match';
+      case 'Adverse Media': return 'Adverse Media Match';
+      default: return 'Name Match';
+    }
+  }
+
+  private determinePriority(matchScore: number): string {
+    if (matchScore >= 0.9) return 'Critical';
+    if (matchScore >= 0.8) return 'High';
+    if (matchScore >= 0.7) return 'Medium';
+    return 'Low';
+  }
+
+  private determineRiskLevel(matchScore: number): string {
+    if (matchScore >= 0.9) return 'Critical';
+    if (matchScore >= 0.8) return 'High';
+    if (matchScore >= 0.7) return 'Medium';
+    return 'Low';
+  }
+
+  private getSlaHours(matchScore: number): number {
+    if (matchScore >= 0.9) return 4;   // Critical: 4 hours
+    if (matchScore >= 0.8) return 24;  // High: 24 hours
+    if (matchScore >= 0.7) return 72;  // Medium: 72 hours
+    return 168; // Low: 1 week
   }
 
   // Export functionality

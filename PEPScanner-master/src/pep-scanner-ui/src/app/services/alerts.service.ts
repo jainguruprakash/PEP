@@ -40,7 +40,11 @@ export class AlertsService {
     return this.http.get<any[]>(`${this.baseUrl}/pending-approval`);
   }
 
-  // Adverse Media Alert Creation
+  // Alert Creation
+  createFromScreening(alertData: any): Observable<any> {
+    return this.http.post(`${this.baseUrl}/create-from-screening`, alertData);
+  }
+
   createFromMedia(alertData: any): Observable<any> {
     return this.http.post(`${this.baseUrl}/create-from-media`, alertData);
   }
