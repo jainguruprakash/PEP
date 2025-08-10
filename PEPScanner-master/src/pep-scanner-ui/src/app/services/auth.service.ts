@@ -209,9 +209,9 @@ export class AuthService {
     return this.http.post(`${this.API_BASE}/auth/onboard-organization`, onboardingData)
       .pipe(
         tap(response => {
-          if (response.authResponse) {
-            this.setSession(response.authResponse);
-            this.currentUserSubject.next(response.authResponse.user);
+          if ((response as any).authResponse) {
+            this.setSession((response as any).authResponse);
+            this.currentUserSubject.next((response as any).authResponse.user);
             this.isAuthenticatedSubject.next(true);
           }
         }),

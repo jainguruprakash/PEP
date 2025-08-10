@@ -5,10 +5,12 @@ import { Observable } from 'rxjs';
 export enum ReportStatus {
   Draft = 0,
   UnderReview = 1,
-  PendingApproval = 2,
+  RequiresMoreInfo = 2,
   Approved = 3,
   Submitted = 4,
-  Rejected = 5
+  Filed = 5,
+  Rejected = 6,
+  Closed = 7
 }
 
 export enum ReportPriority {

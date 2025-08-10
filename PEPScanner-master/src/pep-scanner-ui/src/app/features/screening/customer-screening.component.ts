@@ -23,7 +23,6 @@ import { MatDialogModule } from '@angular/material/dialog';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatChipsModule } from '@angular/material/chips';
-import { MatTableModule } from '@angular/material/table';
 import { ScreeningService } from '../../services/screening.service';
 import { AlertsService } from '../../services/alerts.service';
 import { ReportService } from '../../services/report.service';
