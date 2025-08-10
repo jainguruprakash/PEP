@@ -229,4 +229,80 @@ describe('CustomersService', () => {
       req.flush('Cannot delete customer with active alerts', { status: 409, statusText: 'Conflict' });
     });
   });
+
+  describe('bulkUpload', () => {
+    it('should upload customers in bulk successfully', () => {
+      const formData = new FormData();
+      const file = new File(['First Name,Last Name,Email,Country\nJohn,Doe,john@test.com,US'], 'customers.csv', { type: 'text/csv' });
+      formData.append('file', file);
+
+      const mockResponse = {
+        TotalRecords: 1,
+        SuccessCount: 1,
+        FailedCount: 0,
+        Errors: []
+      };
+
+      service.bulkUpload(formData).subscribe(response => {
+        expect(response).toEqual(mockResponse);
+        expect(response.SuccessCount).toBe(1);
+        expect(response.FailedCount).toBe(0);
+      });
+
+      const req = httpMock.expectOne(`${baseUrl}/bulk-upload`);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toBe(formData);
+      req.flush(mockResponse);
+    });
+
+    it('should handle bulk upload with validation errors', () => {
+      const formData = new FormData();
+      const file = new File(['invalid,data'], 'customers.csv', { type: 'text/csv' });
+      formData.append('file', file);
+
+      const mockResponse = {
+        TotalRecords: 2,
+        SuccessCount: 1,
+        FailedCount: 1,
+        Errors: ['Line 2: Invalid email format']
+      };
+
+      service.bulkUpload(formData).subscribe(response => {
+        expect(response.FailedCount).toBe(1);
+        expect(response.Errors.length).toBe(1);
+        expect(response.Errors[0]).toContain('Invalid email format');
+      });
+
+      const req = httpMock.expectOne(`${baseUrl}/bulk-upload`);
+      req.flush(mockResponse);
+    });
+
+    it('should handle bulk upload server error', () => {
+      const formData = new FormData();
+
+      service.bulkUpload(formData).subscribe({
+        next: () => fail('Expected error'),
+        error: (error) => {
+          expect(error.status).toBe(500);
+        }
+      });
+
+      const req = httpMock.expectOne(`${baseUrl}/bulk-upload`);
+      req.flush('Server Error', { status: 500, statusText: 'Internal Server Error' });
+    });
+
+    it('should handle empty file upload', () => {
+      const formData = new FormData();
+
+      service.bulkUpload(formData).subscribe({
+        next: () => fail('Expected error'),
+        error: (error) => {
+          expect(error.status).toBe(400);
+        }
+      });
+
+      const req = httpMock.expectOne(`${baseUrl}/bulk-upload`);
+      req.flush('No file uploaded', { status: 400, statusText: 'Bad Request' });
+    });
+  });
 });

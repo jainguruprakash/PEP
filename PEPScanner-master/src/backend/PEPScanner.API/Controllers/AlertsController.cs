@@ -514,4 +514,175 @@ namespace PEPScanner.API.Controllers
         public string RejectedBy { get; set; } = string.Empty;
         public string Reason { get; set; } = string.Empty;
     }
+
+        [HttpPost("create-from-media")]
+        public async Task<IActionResult> CreateFromAdverseMedia([FromBody] CreateMediaAlertRequest request)
+        {
+            try
+            {
+                var alert = new Alert
+                {
+                    Id = Guid.NewGuid(),
+                    AlertType = "Adverse Media",
+                    EntityName = request.EntityName,
+                    EntityType = request.EntityType,
+                    RiskScore = request.RiskScore,
+                    Status = "Open",
+                    Priority = GetPriorityFromRiskScore(request.RiskScore),
+                    Source = "Adverse Media Scan",
+                    Description = $"Adverse media found: {request.MediaHeadline}",
+                    CreatedAtUtc = DateTime.UtcNow,
+                    UpdatedAtUtc = DateTime.UtcNow,
+                    WorkflowStatus = "PendingReview",
+                    SlaStatus = "OnTime",
+                    DueDate = DateTime.UtcNow.AddDays(GetSlaBusinessDays(request.RiskScore))
+                };
+
+                _context.Alerts.Add(alert);
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("Created adverse media alert {AlertId} for entity {EntityName}",
+                    alert.Id, request.EntityName);
+
+                return CreatedAtAction(nameof(GetById), new { id = alert.Id }, new
+                {
+                    alert.Id,
+                    alert.AlertType,
+                    alert.EntityName,
+                    alert.RiskScore,
+                    alert.Priority,
+                    alert.Status,
+                    alert.WorkflowStatus,
+                    alert.CreatedAtUtc,
+                    MediaHeadline = request.MediaHeadline,
+                    MediaSource = request.MediaSource
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating adverse media alert");
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        [HttpPost("bulk-create-from-media")]
+        public async Task<IActionResult> BulkCreateFromAdverseMedia([FromBody] BulkCreateMediaAlertsRequest request)
+        {
+            try
+            {
+                var alerts = new List<Alert>();
+                var createdCount = 0;
+                var skippedCount = 0;
+
+                foreach (var mediaResult in request.MediaResults)
+                {
+                    // Skip if risk score is below threshold
+                    if (mediaResult.RiskScore < request.MinimumRiskThreshold)
+                    {
+                        skippedCount++;
+                        continue;
+                    }
+
+                    // Check if alert already exists for this entity and media source
+                    var existingAlert = await _context.Alerts
+                        .FirstOrDefaultAsync(a =>
+                            a.EntityName == mediaResult.EntityName &&
+                            a.AlertType == "Adverse Media" &&
+                            a.Description.Contains(mediaResult.MediaHeadline));
+
+                    if (existingAlert != null)
+                    {
+                        skippedCount++;
+                        continue;
+                    }
+
+                    var alert = new Alert
+                    {
+                        Id = Guid.NewGuid(),
+                        AlertType = "Adverse Media",
+                        EntityName = mediaResult.EntityName,
+                        EntityType = mediaResult.EntityType,
+                        RiskScore = mediaResult.RiskScore,
+                        Status = "Open",
+                        Priority = GetPriorityFromRiskScore(mediaResult.RiskScore),
+                        Source = "Adverse Media Scan",
+                        Description = $"Adverse media found: {mediaResult.MediaHeadline}",
+                        CreatedAtUtc = DateTime.UtcNow,
+                        UpdatedAtUtc = DateTime.UtcNow,
+                        WorkflowStatus = "PendingReview",
+                        SlaStatus = "OnTime",
+                        DueDate = DateTime.UtcNow.AddDays(GetSlaBusinessDays(mediaResult.RiskScore))
+                    };
+
+                    alerts.Add(alert);
+                    createdCount++;
+                }
+
+                if (alerts.Any())
+                {
+                    _context.Alerts.AddRange(alerts);
+                    await _context.SaveChangesAsync();
+                }
+
+                _logger.LogInformation("Bulk created {CreatedCount} adverse media alerts, skipped {SkippedCount}",
+                    createdCount, skippedCount);
+
+                return Ok(new
+                {
+                    message = "Bulk alert creation completed",
+                    createdCount,
+                    skippedCount,
+                    totalProcessed = request.MediaResults.Count,
+                    alerts = alerts.Select(a => new { a.Id, a.EntityName, a.RiskScore, a.Priority })
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error bulk creating adverse media alerts");
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        private string GetPriorityFromRiskScore(double riskScore)
+        {
+            return riskScore switch
+            {
+                >= 90 => "Critical",
+                >= 75 => "High",
+                >= 50 => "Medium",
+                _ => "Low"
+            };
+        }
+
+        private int GetSlaBusinessDays(double riskScore)
+        {
+            return riskScore switch
+            {
+                >= 90 => 1, // Critical: 1 business day
+                >= 75 => 3, // High: 3 business days
+                >= 50 => 5, // Medium: 5 business days
+                _ => 10     // Low: 10 business days
+            };
+        }
+    }
+
+    public class CreateMediaAlertRequest
+    {
+        public string EntityName { get; set; } = string.Empty;
+        public string EntityType { get; set; } = "Individual";
+        public double RiskScore { get; set; }
+        public string MediaHeadline { get; set; } = string.Empty;
+        public string MediaSource { get; set; } = string.Empty;
+        public DateTime PublishedDate { get; set; }
+        public List<string> RiskCategories { get; set; } = new();
+        public string Excerpt { get; set; } = string.Empty;
+        public string ArticleUrl { get; set; } = string.Empty;
+        public string Sentiment { get; set; } = "Neutral";
+    }
+
+    public class BulkCreateMediaAlertsRequest
+    {
+        public List<CreateMediaAlertRequest> MediaResults { get; set; } = new();
+        public double MinimumRiskThreshold { get; set; } = 60.0;
+    }
 }

@@ -16,6 +16,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 import { AdverseMediaService } from '../../services/adverse-media.service';
+import { AlertsService } from '../../services/alerts.service';
 
 @Component({
   selector: 'app-adverse-media',
@@ -139,7 +140,20 @@ import { AdverseMediaService } from '../../services/adverse-media.service';
 
               <!-- Real-time Results -->
               <div *ngIf="scanResults().length > 0" class="results-section">
-                <h3>Scan Results ({{ scanResults().length }} articles found)</h3>
+                <div class="results-header">
+                  <h3>Scan Results ({{ scanResults().length }} articles found)</h3>
+                  <div class="bulk-actions">
+                    <button mat-raised-button color="warn" (click)="createBulkAlerts()"
+                            [disabled]="getHighRiskResults().length === 0">
+                      <mat-icon>warning</mat-icon>
+                      Create Alerts for High Risk ({{ getHighRiskResults().length }})
+                    </button>
+                    <button mat-button (click)="selectAllHighRisk()">
+                      <mat-icon>select_all</mat-icon>
+                      Select High Risk
+                    </button>
+                  </div>
+                </div>
                 <div class="results-grid">
                   <mat-card *ngFor="let result of scanResults()" class="result-card">
                     <mat-card-header>
@@ -168,7 +182,7 @@ import { AdverseMediaService } from '../../services/adverse-media.service';
                         <mat-icon>open_in_new</mat-icon>
                         Read Full Article
                       </button>
-                      <button mat-button (click)="createAlert(result)">
+                      <button mat-raised-button color="warn" (click)="createAlert(result)">
                         <mat-icon>warning</mat-icon>
                         Create Alert
                       </button>
@@ -383,6 +397,7 @@ export class AdverseMediaComponent {
   private adverseMediaService = inject(AdverseMediaService);
   private fb = inject(FormBuilder);
   private snackBar = inject(MatSnackBar);
+  private alertsService = inject(AlertsService);
   
   isScanning = signal(false);
   scanResults = signal<any[]>([]);
@@ -504,7 +519,38 @@ export class AdverseMediaComponent {
   }
 
   createAlert(result: any) {
-    this.snackBar.open('Alert created successfully', 'Close', { duration: 3000 });
+    const alertRequest = {
+      EntityName: result.entities?.[0] || this.scanForm.value.entityName,
+      EntityType: this.scanForm.value.entityType === 'person' ? 'Individual' : 'Organization',
+      RiskScore: result.riskScore,
+      MediaHeadline: result.headline,
+      MediaSource: result.source,
+      PublishedDate: result.publishedDate,
+      RiskCategories: result.riskCategories,
+      Excerpt: result.excerpt,
+      ArticleUrl: result.url,
+      Sentiment: result.sentiment || 'Negative'
+    };
+
+    this.alertsService.createFromMedia(alertRequest).subscribe({
+      next: (response) => {
+        this.snackBar.open(
+          `Alert created successfully for ${alertRequest.EntityName}`,
+          'View Alert',
+          {
+            duration: 5000,
+            action: 'View Alert'
+          }
+        ).onAction().subscribe(() => {
+          // Navigate to alert details
+          window.open(`/alerts/${response.id}`, '_blank');
+        });
+      },
+      error: (error) => {
+        console.error('Error creating alert:', error);
+        this.snackBar.open('Failed to create alert. Please try again.', 'Close', { duration: 5000 });
+      }
+    });
   }
 
   addToMonitoring(result?: any) {
@@ -525,5 +571,59 @@ export class AdverseMediaComponent {
 
   removeMonitoring(entity: any) {
     this.snackBar.open('Monitoring removed', 'Close', { duration: 3000 });
+  }
+
+  getHighRiskResults() {
+    return this.scanResults().filter(result => result.riskScore >= 75);
+  }
+
+  selectAllHighRisk() {
+    // This could be used to select checkboxes if we add them to the UI
+    this.snackBar.open('High risk results selected', 'Close', { duration: 2000 });
+  }
+
+  createBulkAlerts() {
+    const highRiskResults = this.getHighRiskResults();
+
+    if (highRiskResults.length === 0) {
+      this.snackBar.open('No high-risk results to create alerts for', 'Close', { duration: 3000 });
+      return;
+    }
+
+    const bulkRequest = {
+      MediaResults: highRiskResults.map(result => ({
+        EntityName: result.entities?.[0] || this.scanForm.value.entityName,
+        EntityType: this.scanForm.value.entityType === 'person' ? 'Individual' : 'Organization',
+        RiskScore: result.riskScore,
+        MediaHeadline: result.headline,
+        MediaSource: result.source,
+        PublishedDate: result.publishedDate,
+        RiskCategories: result.riskCategories,
+        Excerpt: result.excerpt,
+        ArticleUrl: result.url,
+        Sentiment: result.sentiment || 'Negative'
+      })),
+      MinimumRiskThreshold: 75
+    };
+
+    this.alertsService.bulkCreateFromMedia(bulkRequest).subscribe({
+      next: (response) => {
+        this.snackBar.open(
+          `Created ${response.createdCount} alerts, skipped ${response.skippedCount}`,
+          'View Alerts',
+          {
+            duration: 7000,
+            action: 'View Alerts'
+          }
+        ).onAction().subscribe(() => {
+          // Navigate to alerts list
+          window.open('/alerts', '_blank');
+        });
+      },
+      error: (error) => {
+        console.error('Error creating bulk alerts:', error);
+        this.snackBar.open('Failed to create alerts. Please try again.', 'Close', { duration: 5000 });
+      }
+    });
   }
 }
