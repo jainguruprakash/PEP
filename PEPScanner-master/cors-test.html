@@ -73,6 +73,18 @@
         <div id="download-result"></div>
     </div>
 
+    <div class="test-section">
+        <h3>Test 5: User Registration</h3>
+        <button onclick="testRegister()">Test POST /api/auth/register</button>
+        <div id="register-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test 6: User Login</h3>
+        <button onclick="testLogin()">Test POST /api/auth/login</button>
+        <div id="login-result"></div>
+    </div>
+
     <script>
         const API_BASE = 'http://localhost:5097';
 
@@ -143,6 +155,33 @@
                 method: 'POST'
             });
             displayResult('download-result', result);
+        }
+
+        async function testRegister() {
+            const result = await makeRequest(`${API_BASE}/api/auth/register`, {
+                method: 'POST',
+                body: JSON.stringify({
+                    username: 'testuser' + Date.now(),
+                    password: 'TestPassword123!',
+                    email: 'test' + Date.now() + '@bank.com',
+                    firstName: 'John',
+                    lastName: 'Doe',
+                    role: 'ComplianceOfficer',
+                    organizationName: 'Test Bank'
+                })
+            });
+            displayResult('register-result', result);
+        }
+
+        async function testLogin() {
+            const result = await makeRequest(`${API_BASE}/api/auth/login`, {
+                method: 'POST',
+                body: JSON.stringify({
+                    username: 'john.doe',
+                    password: 'TestPassword123!'
+                })
+            });
+            displayResult('login-result', result);
         }
 
         // Auto-run basic tests on page load

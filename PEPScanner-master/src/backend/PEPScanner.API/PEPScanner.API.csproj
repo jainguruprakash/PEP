@@ -39,7 +39,7 @@
     <!-- HTTP Client for External APIs -->
     <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
     <!-- CSV Processing -->
-    <PackageReference Include="CsvHelper" Version="30.0.1" />
+    <PackageReference Include="CsvHelper" Version="33.1.0" />
     <!-- Validation -->
     <PackageReference Include="FluentValidation.AspNetCore" Version="11.3.0" />
              <!-- AutoMapper for DTOs -->

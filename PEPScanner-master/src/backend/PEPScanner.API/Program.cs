@@ -1,9 +1,13 @@
 using Microsoft.EntityFrameworkCore;
 using PEPScanner.Infrastructure.Data;
 using PEPScanner.API.Data;
+using PEPScanner.Infrastructure.Services;
 
 using Hangfire;
 using Hangfire.MemoryStorage;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -37,6 +41,32 @@ builder.Services.AddHttpClient<PEPScanner.Infrastructure.Services.IOpenSanctions
 builder.Services.AddScoped<PEPScanner.Infrastructure.Services.IEnhancedScreeningService, PEPScanner.Infrastructure.Services.EnhancedScreeningService>();
 builder.Services.AddScoped<PEPScanner.API.Services.IOpenSanctionsUpdateService, PEPScanner.API.Services.OpenSanctionsUpdateService>();
 builder.Services.AddScoped<PEPScanner.Infrastructure.Services.IOrganizationCustomListService, PEPScanner.Infrastructure.Services.OrganizationCustomListService>();
+builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
+
+// JWT Authentication
+var jwtSecret = builder.Configuration["Jwt:Secret"] ?? "your-super-secret-jwt-key-that-should-be-at-least-32-characters-long";
+var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "PEPScanner";
+var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "PEPScanner-Users";
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(jwtSecret)),
+        ValidateIssuer = true,
+        ValidIssuer = jwtIssuer,
+        ValidateAudience = true,
+        ValidAudience = jwtAudience,
+        ValidateLifetime = true,
+        ClockSkew = TimeSpan.Zero
+    };
+});
 
 // CORS
 builder.Services.AddCors(options =>
@@ -91,6 +121,7 @@ else
 // Hangfire Dashboard
 app.UseHangfireDashboard("/hangfire");
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 // Controllers

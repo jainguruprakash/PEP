@@ -7,6 +7,9 @@ namespace PEPScanner.Domain.Entities
         public Guid Id { get; set; }
         
         public Guid OrganizationId { get; set; }
+
+        // Navigation property
+        public virtual Organization? Organization { get; set; }
         
         [Required]
         [MaxLength(100)]
@@ -54,6 +57,15 @@ namespace PEPScanner.Domain.Entities
         
         [MaxLength(100)]
         public string UpdatedBy { get; set; } = string.Empty;
+
+        // Authentication fields
+        [MaxLength(500)]
+        public string PasswordHash { get; set; } = string.Empty;
+
+        [MaxLength(500)]
+        public string? RefreshToken { get; set; }
+
+        public DateTime? RefreshTokenExpiryTime { get; set; }
         
         // Permissions and settings
         [MaxLength(1000)]

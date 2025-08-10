@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using PEPScanner.Infrastructure.Data;
-using PEPScanner.Domain.Entities;
+using Microsoft.AspNetCore.Authorization;
+using PEPScanner.Infrastructure.Services;
 using System.Security.Claims;
+using System.ComponentModel.DataAnnotations;
 
 namespace PEPScanner.API.Controllers
 {
@@ -10,12 +10,12 @@ namespace PEPScanner.API.Controllers
     [Route("api/[controller]")]
     public class AuthController : ControllerBase
     {
-        private readonly PepScannerDbContext _context;
+        private readonly IAuthenticationService _authService;
         private readonly ILogger<AuthController> _logger;
 
-        public AuthController(PepScannerDbContext context, ILogger<AuthController> logger)
+        public AuthController(IAuthenticationService authService, ILogger<AuthController> logger)
         {
-            _context = context;
+            _authService = authService;
             _logger = logger;
         }
 
@@ -24,36 +24,37 @@ namespace PEPScanner.API.Controllers
         {
             try
             {
-                // For development, we'll use simple username/password validation
-                // In production, this should use proper password hashing and JWT tokens
-                
                 if (string.IsNullOrEmpty(request.Username) || string.IsNullOrEmpty(request.Password))
                 {
                     return BadRequest(new { error = "Username and password are required" });
                 }
 
-                // Development authentication - replace with real authentication
-                if (request.Username == "admin" && request.Password == "admin123")
-                {
-                    var response = new
-                    {
-                        AccessToken = "dev-token",
-                        TokenType = "Bearer",
-                        ExpiresIn = 3600,
-                        User = new
-                        {
-                            Id = "dev-user-123",
-                            Username = "admin",
-                            Email = "admin@pepscanner.com",
-                            Role = "Administrator",
-                            OrganizationId = "dev-org-123"
-                        }
-                    };
+                var result = await _authService.LoginAsync(request.Username, request.Password);
 
-                    return Ok(response);
+                if (!result.Success)
+                {
+                    return Unauthorized(new { error = result.ErrorMessage });
                 }
 
-                return Unauthorized(new { error = "Invalid credentials" });
+                var response = new
+                {
+                    AccessToken = result.AccessToken,
+                    RefreshToken = result.RefreshToken,
+                    TokenType = "Bearer",
+                    ExpiresIn = 3600,
+                    User = new
+                    {
+                        Id = result.User!.Id,
+                        Username = result.User.Username,
+                        Email = result.User.Email,
+                        FirstName = result.User.FirstName,
+                        LastName = result.User.LastName,
+                        Role = result.User.Role,
+                        OrganizationId = result.User.OrganizationId
+                    }
+                };
+
+                return Ok(response);
             }
             catch (Exception ex)
             {
@@ -67,64 +68,51 @@ namespace PEPScanner.API.Controllers
         {
             try
             {
-                // Basic validation
-                if (string.IsNullOrEmpty(request.Username) || string.IsNullOrEmpty(request.Password))
+                if (string.IsNullOrEmpty(request.Username) || string.IsNullOrEmpty(request.Email) || string.IsNullOrEmpty(request.Password))
                 {
-                    return BadRequest(new { error = "Username and password are required" });
+                    return BadRequest(new { error = "Username, email, and password are required" });
                 }
 
-                if (string.IsNullOrEmpty(request.Email))
+                if (string.IsNullOrEmpty(request.Role))
                 {
-                    return BadRequest(new { error = "Email is required" });
+                    return BadRequest(new { error = "Role is required. Valid roles: Analyst, ComplianceOfficer, Manager, Admin" });
                 }
 
-                // For development, we'll create a simple user record
-                // In production, this should hash passwords and validate email uniqueness
-                
-                var userId = Guid.NewGuid();
-                var organizationId = Guid.NewGuid();
-
-                // Create organization if provided
-                if (!string.IsNullOrEmpty(request.OrganizationName))
+                var registerUserRequest = new RegisterUserRequest
                 {
-                    var organization = new Organization
-                    {
-                        Id = organizationId,
-                        Name = request.OrganizationName,
-                        Code = request.OrganizationCode ?? string.Empty,
-                        Type = "Bank",
-                        Industry = "Financial Services",
-                        Country = request.Country ?? "India",
-                        ContactPerson = request.Username,
-                        ContactEmail = request.Email,
-                        CreatedAtUtc = DateTime.UtcNow,
-                        IsActive = true
-                    };
-
-                    _context.Organizations.Add(organization);
-                }
-
-                // Create organization user
-                var orgUser = new OrganizationUser
-                {
-                    Id = Guid.NewGuid(),
-                    OrganizationId = organizationId,
                     Username = request.Username,
                     Email = request.Email,
-                    Role = "Administrator",
-                    IsActive = true,
-                    CreatedAtUtc = DateTime.UtcNow
+                    Password = request.Password,
+                    FirstName = request.FirstName,
+                    LastName = request.LastName,
+                    Role = request.Role,
+                    OrganizationName = request.OrganizationName
                 };
 
-                _context.OrganizationUsers.Add(orgUser);
-                await _context.SaveChangesAsync();
+                var result = await _authService.RegisterAsync(registerUserRequest);
+
+                if (!result.Success)
+                {
+                    return BadRequest(new { error = result.ErrorMessage });
+                }
 
                 var response = new
                 {
                     Message = "User registered successfully",
-                    UserId = userId,
-                    OrganizationId = organizationId,
-                    AccessToken = "bank-onboarding-dev-token"
+                    AccessToken = result.AccessToken,
+                    RefreshToken = result.RefreshToken,
+                    TokenType = "Bearer",
+                    ExpiresIn = 3600,
+                    User = new
+                    {
+                        Id = result.User!.Id,
+                        Username = result.User.Username,
+                        Email = result.User.Email,
+                        FirstName = result.User.FirstName,
+                        LastName = result.User.LastName,
+                        Role = result.User.Role,
+                        OrganizationId = result.User.OrganizationId
+                    }
                 };
 
                 return Ok(response);
@@ -242,10 +230,29 @@ namespace PEPScanner.API.Controllers
 
     public class RegisterRequest
     {
+        [Required]
         public string Username { get; set; } = string.Empty;
-        public string Password { get; set; } = string.Empty;
+
+        [Required]
+        [EmailAddress]
         public string Email { get; set; } = string.Empty;
-        public string? OrganizationName { get; set; }
+
+        [Required]
+        [MinLength(8)]
+        public string Password { get; set; } = string.Empty;
+
+        [Required]
+        public string FirstName { get; set; } = string.Empty;
+
+        [Required]
+        public string LastName { get; set; } = string.Empty;
+
+        [Required]
+        public string Role { get; set; } = string.Empty; // Analyst, ComplianceOfficer, Manager, Admin
+
+        [Required]
+        public string OrganizationName { get; set; } = string.Empty;
+
         public string? OrganizationCode { get; set; }
         public string? Country { get; set; }
     }

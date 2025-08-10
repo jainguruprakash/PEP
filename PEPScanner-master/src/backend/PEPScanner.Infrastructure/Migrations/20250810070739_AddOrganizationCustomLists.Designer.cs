@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PEPScanner.Infrastructure.Data;
 
@@ -10,9 +11,11 @@ using PEPScanner.Infrastructure.Data;
 namespace PEPScanner.Infrastructure.Migrations
 {
     [DbContext(typeof(PepScannerDbContext))]
-    partial class PepScannerDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250810070739_AddOrganizationCustomLists")]
+    partial class AddOrganizationCustomLists
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.7");
@@ -1495,11 +1498,6 @@ namespace PEPScanner.Infrastructure.Migrations
                     b.Property<DateTime?>("PasswordChangedAtUtc")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("PasswordHash")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("Permissions")
                         .IsRequired()
                         .HasMaxLength(1000)
@@ -1513,13 +1511,6 @@ namespace PEPScanner.Infrastructure.Migrations
                     b.Property<string>("Position")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("RefreshToken")
-                        .HasMaxLength(500)
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime?>("RefreshTokenExpiryTime")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Role")

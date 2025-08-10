@@ -101,9 +101,9 @@ namespace PEPScanner.Infrastructure.Data
         private void ConfigureOrganizationRelationships(ModelBuilder modelBuilder)
         {
             // Organization -> OrganizationUsers (One-to-Many)
-            modelBuilder.Entity<OrganizationUser>()
-                .HasOne<Organization>()
-                .WithMany()
+            modelBuilder.Entity<Organization>()
+                .HasMany(o => o.Users)
+                .WithOne(ou => ou.Organization)
                 .HasForeignKey(ou => ou.OrganizationId)
                 .OnDelete(DeleteBehavior.Cascade);
 

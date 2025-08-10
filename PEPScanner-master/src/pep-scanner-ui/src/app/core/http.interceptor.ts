@@ -2,9 +2,11 @@ import { HttpErrorResponse, HttpEvent, HttpHandlerFn, HttpRequest } from '@angul
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, Observable, throwError } from 'rxjs';
+import { AuthService } from '../services/auth.service';
 
 export function authHttpInterceptor(req: HttpRequest<unknown>, next: HttpHandlerFn): Observable<HttpEvent<unknown>> {
-  const token = localStorage.getItem('access_token');
+  const authService = inject(AuthService);
+  const token = authService.getToken();
 
   const authReq = token
     ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
@@ -13,8 +15,8 @@ export function authHttpInterceptor(req: HttpRequest<unknown>, next: HttpHandler
   return next(authReq).pipe(
     catchError((error: HttpErrorResponse) => {
       if (error.status === 401) {
-        const router = inject(Router);
-        router.navigateByUrl('/login');
+        // Token is invalid or expired, logout user
+        authService.logout();
       }
       return throwError(() => error);
     })
