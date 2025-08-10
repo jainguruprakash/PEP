@@ -27,12 +27,15 @@ builder.Services.AddHangfireServer();
 // HTTP Client for external API calls
 builder.Services.AddHttpClient();
 
+// Custom Services
+builder.Services.AddScoped<PEPScanner.API.Services.IWatchlistUpdateService, PEPScanner.API.Services.WatchlistUpdateService>();
+
 // CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAngularApp", policy =>
     {
-        policy.WithOrigins("http://localhost:4200", "http://localhost:4201")
+        policy.WithOrigins("http://localhost:4200", "http://localhost:4201", "http://localhost:56733")
               .AllowAnyMethod()
               .AllowAnyHeader()
               .AllowCredentials();
@@ -62,5 +65,12 @@ app.MapControllers();
 // Health check endpoints
 app.MapGet("/api/health", () => new { status = "PEP Scanner Backend is running!", timestamp = DateTime.UtcNow });
 app.MapGet("/api/version", () => new { version = "1.0.0", environment = "Development" });
+
+// Initialize recurring jobs
+using (var scope = app.Services.CreateScope())
+{
+    var watchlistUpdateService = scope.ServiceProvider.GetRequiredService<PEPScanner.API.Services.IWatchlistUpdateService>();
+    watchlistUpdateService.ScheduleRecurringUpdates();
+}
 
 app.Run();
