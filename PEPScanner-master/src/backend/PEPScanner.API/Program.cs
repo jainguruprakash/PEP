@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using PEPScanner.Infrastructure.Data;
-using PEPScanner.Application.Services;
+
 using Hangfire;
 using Hangfire.MemoryStorage;
 
@@ -24,10 +24,8 @@ builder.Services.AddHangfire(configuration => configuration
 
 builder.Services.AddHangfireServer();
 
-// Application Services
-builder.Services.AddHttpClient<IWatchlistDataFetchService, WatchlistDataFetchService>();
-builder.Services.AddScoped<IWatchlistDataFetchService, WatchlistDataFetchService>();
-builder.Services.AddScoped<IWatchlistJobService, WatchlistJobService>();
+// HTTP Client for external API calls
+builder.Services.AddHttpClient();
 
 // CORS
 builder.Services.AddCors(options =>
