@@ -51,6 +51,13 @@ namespace PEPScanner.Infrastructure.Data
         public DbSet<OrganizationWatchlist> OrganizationWatchlists => Set<OrganizationWatchlist>();
         public DbSet<OrganizationConfiguration> OrganizationConfigurations => Set<OrganizationConfiguration>();
 
+        // AI Risk Scoring and Real-time Notifications
+        public DbSet<RiskAssessmentEntity> RiskAssessments => Set<RiskAssessmentEntity>();
+        public DbSet<NotificationEntity> Notifications => Set<NotificationEntity>();
+        public DbSet<AIModelMetricsEntity> AIModelMetrics => Set<AIModelMetricsEntity>();
+        public DbSet<RiskFactorTemplateEntity> RiskFactorTemplates => Set<RiskFactorTemplateEntity>();
+        public DbSet<CustomerRiskProfileEntity> CustomerRiskProfiles => Set<CustomerRiskProfileEntity>();
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -74,6 +81,9 @@ namespace PEPScanner.Infrastructure.Data
             ConfigureOpenSanctionsRelationships(modelBuilder);
             ConfigureReportRelationships(modelBuilder);
             ConfigureDashboardRelationships(modelBuilder);
+
+            // Configure AI Risk Scoring relationships
+            ConfigureAIRiskScoringRelationships(modelBuilder);
         }
 
         private void ConfigureCustomerRelationships(ModelBuilder modelBuilder)
@@ -395,6 +405,81 @@ namespace PEPScanner.Infrastructure.Data
             modelBuilder.Entity<ComplianceReport>()
                 .HasIndex(cr => new { cr.OrganizationId, cr.ReportType, cr.ReportPeriodStart })
                 .HasDatabaseName("IX_ComplianceReport_Org_Type_Period");
+        }
+
+        private void ConfigureAIRiskScoringRelationships(ModelBuilder modelBuilder)
+        {
+            // Risk Assessment relationships
+            modelBuilder.Entity<RiskAssessmentEntity>()
+                .HasOne(ra => ra.Customer)
+                .WithMany()
+                .HasForeignKey(ra => ra.CustomerId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<RiskAssessmentEntity>()
+                .HasIndex(ra => ra.CustomerId)
+                .HasDatabaseName("IX_RiskAssessment_CustomerId");
+
+            modelBuilder.Entity<RiskAssessmentEntity>()
+                .HasIndex(ra => ra.CalculatedAt)
+                .HasDatabaseName("IX_RiskAssessment_CalculatedAt");
+
+            modelBuilder.Entity<RiskAssessmentEntity>()
+                .HasIndex(ra => new { ra.CustomerId, ra.CalculatedAt })
+                .HasDatabaseName("IX_RiskAssessment_Customer_Date");
+
+            // Notification relationships
+            modelBuilder.Entity<NotificationEntity>()
+                .HasOne(n => n.Customer)
+                .WithMany()
+                .HasForeignKey(n => n.CustomerId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<NotificationEntity>()
+                .HasIndex(n => n.Timestamp)
+                .HasDatabaseName("IX_Notification_Timestamp");
+
+            modelBuilder.Entity<NotificationEntity>()
+                .HasIndex(n => new { n.Type, n.Priority })
+                .HasDatabaseName("IX_Notification_Type_Priority");
+
+            modelBuilder.Entity<NotificationEntity>()
+                .HasIndex(n => n.IsRead)
+                .HasDatabaseName("IX_Notification_IsRead");
+
+            // Customer Risk Profile relationships
+            modelBuilder.Entity<CustomerRiskProfileEntity>()
+                .HasOne(crp => crp.Customer)
+                .WithMany()
+                .HasForeignKey(crp => crp.CustomerId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<CustomerRiskProfileEntity>()
+                .HasIndex(crp => crp.CustomerId)
+                .IsUnique()
+                .HasDatabaseName("IX_CustomerRiskProfile_CustomerId");
+
+            modelBuilder.Entity<CustomerRiskProfileEntity>()
+                .HasIndex(crp => crp.RiskLevel)
+                .HasDatabaseName("IX_CustomerRiskProfile_RiskLevel");
+
+            modelBuilder.Entity<CustomerRiskProfileEntity>()
+                .HasIndex(crp => crp.NextAssessmentDue)
+                .HasDatabaseName("IX_CustomerRiskProfile_NextAssessmentDue");
+
+            // AI Model Metrics indexes
+            modelBuilder.Entity<AIModelMetricsEntity>()
+                .HasIndex(amm => new { amm.ModelVersion, amm.MetricDate })
+                .HasDatabaseName("IX_AIModelMetrics_Version_Date");
+
+            // Risk Factor Templates indexes
+            modelBuilder.Entity<RiskFactorTemplateEntity>()
+                .HasIndex(rft => rft.Category)
+                .HasDatabaseName("IX_RiskFactorTemplate_Category");
+
+            modelBuilder.Entity<RiskFactorTemplateEntity>()
+                .HasIndex(rft => rft.IsActive)
+                .HasDatabaseName("IX_RiskFactorTemplate_IsActive");
         }
     }
 }
