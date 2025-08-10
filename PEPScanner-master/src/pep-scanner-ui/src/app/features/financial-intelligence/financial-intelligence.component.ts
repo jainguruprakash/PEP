@@ -20,6 +20,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatListModule } from '@angular/material/list';
 import { FinancialIntelligenceService } from '../../services/financial-intelligence.service';
 import { ActivatedRoute } from '@angular/router';
+import { CibilComponent } from './cibil.component';
 
 @Component({
   selector: 'app-financial-intelligence',
@@ -28,7 +29,8 @@ import { ActivatedRoute } from '@angular/router';
     CommonModule, ReactiveFormsModule, MatTableModule, MatButtonModule, MatIconModule, 
     MatCardModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatChipsModule,
     MatTabsModule, MatProgressSpinnerModule, MatProgressBarModule, MatSnackBarModule, 
-    MatBadgeModule, MatTooltipModule, MatExpansionModule, MatDividerModule, MatListModule
+    MatBadgeModule, MatTooltipModule, MatExpansionModule, MatDividerModule, MatListModule,
+    CibilComponent
   ],
   template: `
     <mat-card>
@@ -145,7 +147,12 @@ import { ActivatedRoute } from '@angular/router';
           </mat-tab>
 
           <!-- CIBIL Report -->
-          <mat-tab label="CIBIL Report" [matBadge]="cibilReport() ? '✓' : ''" matBadgeColor="accent">
+          <mat-tab label="CIBIL Report">
+            <app-cibil></app-cibil>
+          </mat-tab>
+          
+          <!-- Legacy CIBIL Tab -->
+          <mat-tab label="Legacy CIBIL" [matBadge]="cibilReport() ? '✓' : ''" matBadgeColor="accent">
             <div class="tab-content">
               <div *ngIf="cibilReport(); else noCibilData">
                 <mat-card class="cibil-overview">

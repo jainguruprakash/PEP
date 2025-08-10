@@ -23,28 +23,21 @@ namespace PEPScanner.API.Controllers
         {
             try
             {
-                // Temporary mock data to test API
-                var customers = new[]
-                {
-                    new
+                var customers = await _context.Customers
+                    .Where(c => !c.IsDeleted)
+                    .Select(c => new
                     {
-                        Id = Guid.NewGuid(),
-                        FullName = "John Doe",
-                        EmailAddress = "john.doe@email.com",
-                        Country = "United States",
-                        RiskLevel = "Low",
-                        CreatedAtUtc = DateTime.UtcNow
-                    },
-                    new
-                    {
-                        Id = Guid.NewGuid(),
-                        FullName = "Jane Smith",
-                        EmailAddress = "jane.smith@email.com",
-                        Country = "United Kingdom",
-                        RiskLevel = "Medium",
-                        CreatedAtUtc = DateTime.UtcNow
-                    }
-                };
+                        c.Id,
+                        c.FullName,
+                        c.EmailAddress,
+                        c.Country,
+                        c.RiskLevel,
+                        c.CreatedAtUtc,
+                        c.LastScreeningDate,
+                        c.RequiresEdd
+                    })
+                    .OrderByDescending(c => c.CreatedAtUtc)
+                    .ToListAsync();
 
                 return Ok(customers);
             }
@@ -80,19 +73,34 @@ namespace PEPScanner.API.Controllers
         {
             try
             {
-                // Temporary mock response to test API
-                var customer = new
+                var customer = new Customer
                 {
                     Id = Guid.NewGuid(),
+                    OrganizationId = Guid.NewGuid(), // TODO: Get from user context
                     FullName = $"{request.FirstName} {request.LastName}".Trim(),
                     EmailAddress = request.Email,
                     Country = request.Country,
+                    PhoneNumber = request.PhoneNumber,
+                    DateOfBirth = request.DateOfBirth,
+                    Nationality = request.Nationality,
+                    IdentificationNumber = request.IdentificationNumber,
+                    IdentificationType = request.IdentificationType,
+                    Address = request.Address,
+                    City = request.City,
+                    State = request.State,
+                    PostalCode = request.PostalCode,
                     RiskLevel = "Low",
-                    CreatedAtUtc = DateTime.UtcNow
+                    IsActive = true,
+                    CreatedAtUtc = DateTime.UtcNow,
+                    UpdatedAtUtc = DateTime.UtcNow,
+                    CreatedBy = "System" // TODO: Get from user context
                 };
 
-                _logger.LogInformation("Customer created: {Name}", customer.FullName);
-                return Ok(new { message = "Customer created successfully", customer });
+                _context.Customers.Add(customer);
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("Customer created: {Name} with ID: {Id}", customer.FullName, customer.Id);
+                return Ok(new { message = "Customer created successfully", customerId = customer.Id });
             }
             catch (Exception ex)
             {
@@ -106,7 +114,7 @@ namespace PEPScanner.API.Controllers
         {
             try
             {
-                var customer = await _context.Customers.FindAsync(id);
+                var customer = await _context.Customers.FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
                 if (customer == null)
                 {
                     return NotFound(new { error = "Customer not found" });
@@ -115,10 +123,20 @@ namespace PEPScanner.API.Controllers
                 customer.FullName = $"{request.FirstName} {request.LastName}".Trim();
                 customer.EmailAddress = request.Email;
                 customer.Country = request.Country;
+                customer.PhoneNumber = request.PhoneNumber;
+                customer.DateOfBirth = request.DateOfBirth;
+                customer.Nationality = request.Nationality;
+                customer.IdentificationNumber = request.IdentificationNumber;
+                customer.IdentificationType = request.IdentificationType;
+                customer.Address = request.Address;
+                customer.City = request.City;
+                customer.State = request.State;
+                customer.PostalCode = request.PostalCode;
                 customer.UpdatedAtUtc = DateTime.UtcNow;
+                customer.UpdatedBy = "System"; // TODO: Get from user context
 
                 await _context.SaveChangesAsync();
-                return NoContent();
+                return Ok(new { message = "Customer updated successfully" });
             }
             catch (Exception ex)
             {
@@ -132,20 +150,60 @@ namespace PEPScanner.API.Controllers
         {
             try
             {
-                var customer = await _context.Customers.FindAsync(id);
+                var customer = await _context.Customers.FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
                 if (customer == null)
                 {
                     return NotFound(new { error = "Customer not found" });
                 }
 
-                _context.Customers.Remove(customer);
+                // Soft delete
+                customer.IsDeleted = true;
+                customer.DeletedAtUtc = DateTime.UtcNow;
+                customer.UpdatedAtUtc = DateTime.UtcNow;
+                customer.UpdatedBy = "System"; // TODO: Get from user context
+
                 await _context.SaveChangesAsync();
-                return NoContent();
+                return Ok(new { message = "Customer deleted successfully" });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error deleting customer {Id}", id);
                 return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        [HttpPost("test-create")]
+        public async Task<IActionResult> TestCreate()
+        {
+            try
+            {
+                var testCustomer = new Customer
+                {
+                    Id = Guid.NewGuid(),
+                    OrganizationId = Guid.NewGuid(),
+                    FullName = "Test Customer",
+                    EmailAddress = "test@example.com",
+                    Country = "India",
+                    RiskLevel = "Low",
+                    IsActive = true,
+                    CreatedAtUtc = DateTime.UtcNow,
+                    UpdatedAtUtc = DateTime.UtcNow,
+                    CreatedBy = "TestEndpoint"
+                };
+
+                _context.Customers.Add(testCustomer);
+                var result = await _context.SaveChangesAsync();
+
+                return Ok(new { 
+                    message = "Test customer created successfully", 
+                    customerId = testCustomer.Id,
+                    recordsAffected = result
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating test customer");
+                return StatusCode(500, new { error = "Internal server error", details = ex.Message, stackTrace = ex.StackTrace });
             }
         }
 
@@ -167,6 +225,7 @@ namespace PEPScanner.API.Controllers
                     Errors = new List<string>()
                 };
 
+                var customersToAdd = new List<Customer>();
                 using var stream = file.OpenReadStream();
                 using var reader = new StreamReader(stream);
 
@@ -188,34 +247,70 @@ namespace PEPScanner.API.Controllers
                     try
                     {
                         var fields = line.Split(',');
-                        if (fields.Length < 4)
+                        if (fields.Length < 3)
                         {
                             result.FailedCount++;
-                            result.Errors.Add($"Line {lineNumber}: Insufficient data fields");
+                            result.Errors.Add($"Line {lineNumber}: Insufficient data fields (minimum: FullName, Email, Country)");
                             continue;
                         }
 
-                        // Mock processing - just validate the data
-                        var customerName = $"{fields[0].Trim()} {fields[1].Trim()}".Trim();
-                        var email = fields[2].Trim();
-                        var country = fields[3].Trim();
+                        var fullName = fields[0].Trim();
+                        var email = fields[1].Trim();
+                        var country = fields[2].Trim();
+                        var phoneNumber = fields.Length > 3 ? fields[3].Trim() : null;
+                        var nationality = fields.Length > 4 ? fields[4].Trim() : null;
 
-                        if (string.IsNullOrEmpty(customerName) || string.IsNullOrEmpty(email))
+                        if (string.IsNullOrEmpty(fullName) || string.IsNullOrEmpty(email))
                         {
                             result.FailedCount++;
-                            result.Errors.Add($"Line {lineNumber}: Missing required fields");
+                            result.Errors.Add($"Line {lineNumber}: Missing required fields (FullName, Email)");
                             continue;
                         }
 
-                        // Simulate successful processing
+                        // Check for duplicate email
+                        var existingCustomer = await _context.Customers
+                            .FirstOrDefaultAsync(c => c.EmailAddress == email && !c.IsDeleted);
+                        
+                        if (existingCustomer != null)
+                        {
+                            result.FailedCount++;
+                            result.Errors.Add($"Line {lineNumber}: Customer with email {email} already exists");
+                            continue;
+                        }
+
+                        var customer = new Customer
+                        {
+                            Id = Guid.NewGuid(),
+                            OrganizationId = Guid.NewGuid(), // TODO: Get from user context
+                            FullName = fullName,
+                            EmailAddress = email,
+                            Country = country,
+                            PhoneNumber = phoneNumber,
+                            Nationality = nationality,
+                            RiskLevel = "Low",
+                            IsActive = true,
+                            CreatedAtUtc = DateTime.UtcNow,
+                            UpdatedAtUtc = DateTime.UtcNow,
+                            CreatedBy = "BulkUpload"
+                        };
+
+                        customersToAdd.Add(customer);
                         result.SuccessCount++;
-                        _logger.LogInformation("Processed customer: {Name}", customerName);
+                        _logger.LogInformation("Prepared customer for bulk insert: {Name}", fullName);
                     }
                     catch (Exception ex)
                     {
                         result.FailedCount++;
                         result.Errors.Add($"Line {lineNumber}: {ex.Message}");
                     }
+                }
+
+                // Bulk insert customers
+                if (customersToAdd.Any())
+                {
+                    _context.Customers.AddRange(customersToAdd);
+                    await _context.SaveChangesAsync();
+                    _logger.LogInformation("Bulk inserted {Count} customers", customersToAdd.Count);
                 }
 
                 _logger.LogInformation("Bulk upload completed: {Success} success, {Failed} failed",
@@ -237,6 +332,15 @@ namespace PEPScanner.API.Controllers
         public string LastName { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string Country { get; set; } = string.Empty;
+        public string? PhoneNumber { get; set; }
+        public DateTime? DateOfBirth { get; set; }
+        public string? Nationality { get; set; }
+        public string? IdentificationNumber { get; set; }
+        public string? IdentificationType { get; set; }
+        public string? Address { get; set; }
+        public string? City { get; set; }
+        public string? State { get; set; }
+        public string? PostalCode { get; set; }
     }
 
     public class UpdateCustomerRequest
@@ -245,6 +349,15 @@ namespace PEPScanner.API.Controllers
         public string LastName { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string Country { get; set; } = string.Empty;
+        public string? PhoneNumber { get; set; }
+        public DateTime? DateOfBirth { get; set; }
+        public string? Nationality { get; set; }
+        public string? IdentificationNumber { get; set; }
+        public string? IdentificationType { get; set; }
+        public string? Address { get; set; }
+        public string? City { get; set; }
+        public string? State { get; set; }
+        public string? PostalCode { get; set; }
     }
 
     public class BulkUploadResult

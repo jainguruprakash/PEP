@@ -206,8 +206,91 @@ namespace PEPScanner.API.Controllers
         {
             try
             {
+                if (file == null || file.Length == 0)
+                {
+                    return BadRequest(new { error = "No file uploaded" });
+                }
+
                 var results = new List<object>();
-                // Process file and return batch results
+                using var stream = file.OpenReadStream();
+                using var reader = new StreamReader(stream);
+
+                // Skip header row
+                var header = await reader.ReadLineAsync();
+                if (string.IsNullOrEmpty(header))
+                {
+                    return BadRequest(new { error = "File is empty or invalid" });
+                }
+
+                var lineNumber = 1;
+                string line;
+
+                while ((line = await reader.ReadLineAsync()) != null)
+                {
+                    lineNumber++;
+
+                    try
+                    {
+                        var fields = line.Split(',');
+                        if (fields.Length < 2)
+                        {
+                            continue;
+                        }
+
+                        var fullName = fields[0].Trim();
+                        var country = fields.Length > 1 ? fields[1].Trim() : "";
+
+                        if (string.IsNullOrEmpty(fullName))
+                        {
+                            continue;
+                        }
+
+                        // Perform screening for each customer
+                        var searchName = fullName.ToUpper();
+                        var watchlistMatches = await _context.WatchlistEntries
+                            .Where(w => w.IsActive &&
+                                       (w.PrimaryName.ToUpper().Contains(searchName) ||
+                                        (w.AlternateNames != null && w.AlternateNames.ToUpper().Contains(searchName))))
+                            .Take(10) // Limit matches for performance
+                            .ToListAsync();
+
+                        var matches = new List<object>();
+                        foreach (var match in watchlistMatches)
+                        {
+                            var matchScore = CalculateMatchScore(searchName, match.PrimaryName, match.AlternateNames, new CustomerScreeningRequest());
+                            if (matchScore >= 0.7)
+                            {
+                                matches.Add(new
+                                {
+                                    matchedName = match.PrimaryName,
+                                    source = match.Source,
+                                    listType = match.ListType,
+                                    matchScore = Math.Round(matchScore, 2)
+                                });
+                            }
+                        }
+
+                        var riskScore = CalculateRiskScore(matches);
+                        var status = DetermineStatus(riskScore, matches.Count);
+
+                        results.Add(new
+                        {
+                            customerName = fullName,
+                            country = country,
+                            riskScore = Math.Round(riskScore * 100, 0),
+                            matchCount = matches.Count,
+                            status = status,
+                            matches = matches.Take(5).ToList(), // Limit matches in response
+                            screenedAt = DateTime.UtcNow
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error processing line {LineNumber}", lineNumber);
+                    }
+                }
+
+                _logger.LogInformation("Batch screening completed: {Count} customers processed", results.Count);
                 return Ok(results);
             }
             catch (Exception ex)
