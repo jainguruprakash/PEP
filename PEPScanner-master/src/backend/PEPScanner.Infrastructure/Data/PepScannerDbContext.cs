@@ -12,13 +12,25 @@ namespace PEPScanner.Infrastructure.Data
         public DbSet<Customer> Customers => Set<Customer>();
         public DbSet<WatchlistEntry> WatchlistEntries => Set<WatchlistEntry>();
         public DbSet<Alert> Alerts => Set<Alert>();
+        public DbSet<AlertAction> AlertActions => Set<AlertAction>();
+        public DbSet<User> Users => Set<User>();
         public DbSet<CustomerRelationship> CustomerRelationships => Set<CustomerRelationship>();
         public DbSet<CustomerDocument> CustomerDocuments => Set<CustomerDocument>();
         public DbSet<ScreeningJob> ScreeningJobs => Set<ScreeningJob>();
 
         public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
         public DbSet<NotificationLog> NotificationLogs => Set<NotificationLog>();
-        
+
+        // OpenSanctions Integration
+        public DbSet<OpenSanctionsEntity> OpenSanctionsEntities => Set<OpenSanctionsEntity>();
+
+        // System Configuration
+        public DbSet<SystemConfiguration> SystemConfigurations => Set<SystemConfiguration>();
+
+        // Organization Custom Lists
+        public DbSet<OrganizationCustomList> OrganizationCustomLists => Set<OrganizationCustomList>();
+        public DbSet<OrganizationCustomListEntry> OrganizationCustomListEntries => Set<OrganizationCustomListEntry>();
+
         // Organization and Multi-tenant support
         public DbSet<Organization> Organizations => Set<Organization>();
         public DbSet<OrganizationUser> OrganizationUsers => Set<OrganizationUser>();
@@ -43,6 +55,9 @@ namespace PEPScanner.Infrastructure.Data
 
             // Configure Screening relationships
             ConfigureScreeningRelationships(modelBuilder);
+
+            // Configure OpenSanctions relationships
+            ConfigureOpenSanctionsRelationships(modelBuilder);
         }
 
         private void ConfigureCustomerRelationships(ModelBuilder modelBuilder)
@@ -159,6 +174,31 @@ namespace PEPScanner.Infrastructure.Data
             modelBuilder.Entity<ScreeningJob>()
                 .HasIndex(sj => sj.CreatedAtUtc)
                 .HasDatabaseName("IX_ScreeningJob_CreatedAtUtc");
+        }
+
+        private void ConfigureOpenSanctionsRelationships(ModelBuilder modelBuilder)
+        {
+            // Configure OpenSanctionsEntity indexes
+            modelBuilder.Entity<OpenSanctionsEntity>()
+                .HasIndex(os => os.Name)
+                .HasDatabaseName("IX_OpenSanctionsEntity_Name");
+
+            modelBuilder.Entity<OpenSanctionsEntity>()
+                .HasIndex(os => os.Schema)
+                .HasDatabaseName("IX_OpenSanctionsEntity_Schema");
+
+            modelBuilder.Entity<OpenSanctionsEntity>()
+                .HasIndex(os => os.LastChange)
+                .HasDatabaseName("IX_OpenSanctionsEntity_LastChange");
+
+            // Configure Alert OpenSanctions indexes
+            modelBuilder.Entity<Alert>()
+                .HasIndex(a => a.OpenSanctionsEntityId)
+                .HasDatabaseName("IX_Alert_OpenSanctionsEntityId");
+
+            modelBuilder.Entity<Alert>()
+                .HasIndex(a => a.OpenSanctionsScore)
+                .HasDatabaseName("IX_Alert_OpenSanctionsScore");
         }
     }
 }

@@ -5,12 +5,14 @@ import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ScreeningService } from '../../services/screening.service';
+import { ScreeningResultsComponent } from './screening-results.component';
 
 @Component({
   selector: 'app-transaction-screening',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, MatCardModule, MatFormFieldModule, MatInputModule, MatButtonModule],
+  imports: [CommonModule, ReactiveFormsModule, MatCardModule, MatFormFieldModule, MatInputModule, MatButtonModule, MatProgressSpinnerModule, ScreeningResultsComponent],
   template: `
   <mat-card>
     <mat-card-title>Transaction Screening</mat-card-title>
@@ -45,17 +47,45 @@ import { ScreeningService } from '../../services/screening.service';
           <input matInput formControlName="destinationCountry" />
         </mat-form-field>
       </div>
-      <button mat-raised-button color="primary" type="submit" [disabled]="form.invalid">Screen</button>
+      <button mat-raised-button color="primary" type="submit" [disabled]="form.invalid || isLoading">
+        <mat-spinner diameter="20" *ngIf="isLoading"></mat-spinner>
+        <span *ngIf="!isLoading">Screen</span>
+        <span *ngIf="isLoading">Screening...</span>
+      </button>
     </form>
-    <div *ngIf="result" class="result">
-      <h3>Result</h3>
-      <pre>{{ result | json }}</pre>
+
+    <!-- Loading indicator -->
+    <div *ngIf="isLoading" class="loading-section">
+      <mat-spinner></mat-spinner>
+      <p>Screening transaction participants...</p>
     </div>
+
+    <!-- Results -->
+    <app-screening-results [result]="result" *ngIf="result && !isLoading"></app-screening-results>
   </mat-card>
   `,
   styles: [`
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
-    .result { margin-top: 16px; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .loading-section {
+      text-align: center;
+      padding: 32px;
+      margin-top: 16px;
+    }
+
+    .loading-section p {
+      margin-top: 16px;
+      color: #666;
+    }
+
+    button[disabled] {
+      opacity: 0.6;
+    }
   `]
 })
 export class TransactionScreeningComponent {
@@ -73,10 +103,25 @@ export class TransactionScreeningComponent {
   });
 
   result: any = null;
+  isLoading = false;
 
   submit() {
     if (this.form.invalid) return;
-    this.screeningService.screenTransaction(this.form.value).subscribe(res => this.result = res);
+
+    this.isLoading = true;
+    this.result = null;
+
+    this.screeningService.screenTransaction(this.form.value).subscribe({
+      next: (res) => {
+        this.result = res;
+        this.isLoading = false;
+      },
+      error: (error) => {
+        console.error('Screening error:', error);
+        this.isLoading = false;
+        // You could show an error message here
+      }
+    });
   }
 }
 

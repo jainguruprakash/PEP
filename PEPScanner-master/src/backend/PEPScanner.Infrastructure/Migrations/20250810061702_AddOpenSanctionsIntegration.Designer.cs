@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PEPScanner.Infrastructure.Data;
 
@@ -10,9 +11,11 @@ using PEPScanner.Infrastructure.Data;
 namespace PEPScanner.Infrastructure.Migrations
 {
     [DbContext(typeof(PepScannerDbContext))]
-    partial class PepScannerDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250810061702_AddOpenSanctionsIntegration")]
+    partial class AddOpenSanctionsIntegration
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.7");
@@ -1400,44 +1403,6 @@ namespace PEPScanner.Infrastructure.Migrations
                         .HasDatabaseName("IX_ScreeningJob_Status");
 
                     b.ToTable("ScreeningJobs");
-                });
-
-            modelBuilder.Entity("PEPScanner.Domain.Entities.SystemConfiguration", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("CreatedBy")
-                        .HasMaxLength(100)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Key")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("UpdatedAtUtc")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasMaxLength(100)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Value")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("SystemConfigurations");
                 });
 
             modelBuilder.Entity("PEPScanner.Domain.Entities.User", b =>

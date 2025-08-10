@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PEPScanner.Infrastructure.Data;
 
@@ -10,9 +11,11 @@ using PEPScanner.Infrastructure.Data;
 namespace PEPScanner.Infrastructure.Migrations
 {
     [DbContext(typeof(PepScannerDbContext))]
-    partial class PepScannerDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250810054910_AddAlertWorkflowEntities")]
+    partial class AddAlertWorkflowEntities
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.7");
@@ -108,53 +111,6 @@ namespace PEPScanner.Infrastructure.Migrations
                     b.Property<string>("MatchingDetails")
                         .HasMaxLength(1000)
                         .HasColumnType("TEXT");
-
-                    b.Property<string>("OpenSanctionsAddresses")
-                        .HasMaxLength(2000)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("OpenSanctionsAliases")
-                        .HasMaxLength(2000)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("OpenSanctionsCountries")
-                        .HasMaxLength(2000)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("OpenSanctionsDatasets")
-                        .HasMaxLength(2000)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("OpenSanctionsEntityId")
-                        .HasMaxLength(100)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("OpenSanctionsEntityType")
-                        .HasMaxLength(50)
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime?>("OpenSanctionsFirstSeen")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime?>("OpenSanctionsLastChange")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime?>("OpenSanctionsLastChecked")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime?>("OpenSanctionsLastSeen")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("OpenSanctionsMatchFeatures")
-                        .HasMaxLength(2000)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("OpenSanctionsSanctions")
-                        .HasMaxLength(2000)
-                        .HasColumnType("TEXT");
-
-                    b.Property<double?>("OpenSanctionsScore")
-                        .HasColumnType("REAL");
 
                     b.Property<string>("Outcome")
                         .HasMaxLength(50)
@@ -297,12 +253,6 @@ namespace PEPScanner.Infrastructure.Migrations
                         .HasDatabaseName("IX_Alert_CreatedAtUtc");
 
                     b.HasIndex("CustomerId");
-
-                    b.HasIndex("OpenSanctionsEntityId")
-                        .HasDatabaseName("IX_Alert_OpenSanctionsEntityId");
-
-                    b.HasIndex("OpenSanctionsScore")
-                        .HasDatabaseName("IX_Alert_OpenSanctionsScore");
 
                     b.HasIndex("Status")
                         .HasDatabaseName("IX_Alert_Status");
@@ -818,81 +768,6 @@ namespace PEPScanner.Infrastructure.Migrations
                     b.ToTable("NotificationLogs");
                 });
 
-            modelBuilder.Entity("PEPScanner.Domain.Entities.OpenSanctionsEntity", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasMaxLength(100)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Addresses")
-                        .HasMaxLength(2000)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Aliases")
-                        .HasMaxLength(2000)
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime?>("BirthDate")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Countries")
-                        .HasMaxLength(1000)
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Datasets")
-                        .HasMaxLength(1000)
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime?>("FirstSeen")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Identifiers")
-                        .HasMaxLength(1000)
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime?>("LastChange")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime?>("LastSeen")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Sanctions")
-                        .HasMaxLength(2000)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Schema")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("TEXT");
-
-                    b.Property<double>("Score")
-                        .HasColumnType("REAL");
-
-                    b.Property<DateTime>("UpdatedAtUtc")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("LastChange")
-                        .HasDatabaseName("IX_OpenSanctionsEntity_LastChange");
-
-                    b.HasIndex("Name")
-                        .HasDatabaseName("IX_OpenSanctionsEntity_Name");
-
-                    b.HasIndex("Schema")
-                        .HasDatabaseName("IX_OpenSanctionsEntity_Schema");
-
-                    b.ToTable("OpenSanctionsEntities");
-                });
-
             modelBuilder.Entity("PEPScanner.Domain.Entities.Organization", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1400,44 +1275,6 @@ namespace PEPScanner.Infrastructure.Migrations
                         .HasDatabaseName("IX_ScreeningJob_Status");
 
                     b.ToTable("ScreeningJobs");
-                });
-
-            modelBuilder.Entity("PEPScanner.Domain.Entities.SystemConfiguration", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("CreatedBy")
-                        .HasMaxLength(100)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Key")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("UpdatedAtUtc")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasMaxLength(100)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Value")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("SystemConfigurations");
                 });
 
             modelBuilder.Entity("PEPScanner.Domain.Entities.User", b =>

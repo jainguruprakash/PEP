@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CORS Test - OpenSanctions API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 3px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        pre {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>CORS Test - OpenSanctions API</h1>
+    <p>This page tests CORS functionality for the OpenSanctions API endpoints.</p>
+
+    <div class="test-section">
+        <h3>Test 1: Get API Status</h3>
+        <button onclick="testStatus()">Test GET /api/opensanctionsdata/status</button>
+        <div id="status-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test 2: Test Integration</h3>
+        <button onclick="testIntegration()">Test GET /api/opensanctionsdata/test</button>
+        <div id="integration-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test 3: Match Person</h3>
+        <button onclick="testPersonMatch()">Test POST /api/opensanctionsdata/match/person</button>
+        <div id="person-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test 4: Download Data</h3>
+        <button onclick="testDownload()">Test POST /api/opensanctionsdata/download</button>
+        <div id="download-result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5097';
+
+        async function makeRequest(url, options = {}) {
+            try {
+                const response = await fetch(url, {
+                    ...options,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    }
+                });
+
+                const data = await response.json();
+                return {
+                    success: true,
+                    status: response.status,
+                    data: data
+                };
+            } catch (error) {
+                return {
+                    success: false,
+                    error: error.message
+                };
+            }
+        }
+
+        function displayResult(elementId, result) {
+            const element = document.getElementById(elementId);
+            if (result.success) {
+                element.className = 'test-section success';
+                element.innerHTML = `
+                    <h4>✅ Success (Status: ${result.status})</h4>
+                    <pre>${JSON.stringify(result.data, null, 2)}</pre>
+                `;
+            } else {
+                element.className = 'test-section error';
+                element.innerHTML = `
+                    <h4>❌ Error</h4>
+                    <pre>${result.error}</pre>
+                `;
+            }
+        }
+
+        async function testStatus() {
+            const result = await makeRequest(`${API_BASE}/api/opensanctionsdata/status`);
+            displayResult('status-result', result);
+        }
+
+        async function testIntegration() {
+            const result = await makeRequest(`${API_BASE}/api/opensanctionsdata/test`);
+            displayResult('integration-result', result);
+        }
+
+        async function testPersonMatch() {
+            const result = await makeRequest(`${API_BASE}/api/opensanctionsdata/match/person`, {
+                method: 'POST',
+                body: JSON.stringify({
+                    name: 'Vladimir Putin',
+                    nationality: 'Russian'
+                })
+            });
+            displayResult('person-result', result);
+        }
+
+        async function testDownload() {
+            const result = await makeRequest(`${API_BASE}/api/opensanctionsdata/download`, {
+                method: 'POST'
+            });
+            displayResult('download-result', result);
+        }
+
+        // Auto-run basic tests on page load
+        window.onload = function() {
+            console.log('Running automatic CORS tests...');
+            testStatus();
+            testIntegration();
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PEP Scanner - Enhanced with OpenSanctions</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .alert-card { border-left: 4px solid #dc3545; }
+        .match-score { font-weight: bold; }
+        .score-high { color: #dc3545; }
+        .score-medium { color: #fd7e14; }
+        .score-low { color: #198754; }
+        .data-source-badge { font-size: 0.75rem; }
+        .opensanctions-section { background-color: #f8f9fa; border-radius: 8px; padding: 15px; margin-top: 15px; }
+        .match-details { font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
+            <div class="container">
+                <a class="navbar-brand" href="#"><i class="fas fa-shield-alt"></i> PEP Scanner</a>
+                <span class="navbar-text">Enhanced with OpenSanctions</span>
+            </div>
+        </nav>
+
+        <div class="container">
+            <div class="row">
+                <div class="col-12">
+                    <h2>Alert Details - Enhanced View</h2>
+                    
+                    <!-- Main Alert Card -->
+                    <div class="card alert-card mb-4">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="fas fa-exclamation-triangle text-danger"></i>
+                                High Priority Alert - PEP Match
+                            </h5>
+                            <div>
+                                <span class="badge bg-danger">Critical</span>
+                                <span class="badge bg-warning">Pending Review</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6>Customer Information</h6>
+                                    <p><strong>Name:</strong> Vladimir Petrov</p>
+                                    <p><strong>DOB:</strong> 1965-03-15</p>
+                                    <p><strong>Nationality:</strong> Russian</p>
+                                    <p><strong>Context:</strong> Onboarding</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6>Alert Metadata</h6>
+                                    <p><strong>Created:</strong> 2025-08-10 14:30:00</p>
+                                    <p><strong>Assigned To:</strong> sarah.johnson@pepscanner.com</p>
+                                    <p><strong>Due Date:</strong> 2025-08-11 14:30:00</p>
+                                    <p><strong>SLA Status:</strong> <span class="badge bg-success">On Time</span></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Traditional Screening Results -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6><i class="fas fa-search"></i> Traditional Screening Results</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="text-center">
+                                        <div class="match-score score-high">95%</div>
+                                        <small>OFAC SDN Match</small>
+                                        <br><span class="badge bg-primary data-source-badge">OFAC</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="text-center">
+                                        <div class="match-score score-medium">78%</div>
+                                        <small>EU Sanctions</small>
+                                        <br><span class="badge bg-info data-source-badge">EU</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="text-center">
+                                        <div class="match-score score-low">45%</div>
+                                        <small>UK HMT</small>
+                                        <br><span class="badge bg-secondary data-source-badge">UK</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- OpenSanctions Enhanced Results -->
+                    <div class="opensanctions-section">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6><i class="fas fa-globe"></i> OpenSanctions Enhanced Screening</h6>
+                            <span class="badge bg-success">✓ Verified</span>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="card">
+                                    <div class="card-header bg-danger text-white">
+                                        <strong>High Confidence Match Found</strong>
+                                        <span class="float-end">Score: 97.8%</span>
+                                    </div>
+                                    <div class="card-body">
+                                        <h6>Vladimir Vladimirovich Petrov</h6>
+                                        <p class="mb-2"><strong>Entity ID:</strong> NK-RU-PETROV-001</p>
+                                        <p class="mb-2"><strong>Aliases:</strong> V. Petrov, Vladimir V. Petrov, Владимир Петров</p>
+                                        <p class="mb-2"><strong>Birth Date:</strong> 1965-03-15</p>
+                                        <p class="mb-2"><strong>Nationality:</strong> Russian Federation</p>
+                                        
+                                        <div class="mt-3">
+                                            <h6>Sanctions Details:</h6>
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <ul class="list-unstyled match-details">
+                                                        <li><span class="badge bg-danger me-2">OFAC</span> Asset Freeze</li>
+                                                        <li><span class="badge bg-warning me-2">EU</span> Travel Ban</li>
+                                                        <li><span class="badge bg-info me-2">UK</span> Financial Sanctions</li>
+                                                        <li><span class="badge bg-secondary me-2">CA</span> Special Economic Measures</li>
+                                                    </ul>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <ul class="list-unstyled match-details">
+                                                        <li><span class="badge bg-dark me-2">AU</span> Autonomous Sanctions</li>
+                                                        <li><span class="badge bg-primary me-2">JP</span> Asset Freeze</li>
+                                                        <li><span class="badge bg-success me-2">CH</span> Ordinance Sanctions</li>
+                                                        <li><span class="badge bg-danger me-2">UA</span> National Sanctions</li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="mt-3">
+                                            <h6>Match Features:</h6>
+                                            <div class="progress mb-2">
+                                                <div class="progress-bar bg-success" style="width: 98%">Name Match: 98%</div>
+                                            </div>
+                                            <div class="progress mb-2">
+                                                <div class="progress-bar bg-success" style="width: 100%">Date of Birth: 100%</div>
+                                            </div>
+                                            <div class="progress mb-2">
+                                                <div class="progress-bar bg-success" style="width: 95%">Nationality: 95%</div>
+                                            </div>
+                                            <div class="progress mb-2">
+                                                <div class="progress-bar bg-warning" style="width: 85%">Address: 85%</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <strong>Data Sources (8 of 83)</strong>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-2">
+                                            <span class="badge bg-danger">US OFAC SDN</span>
+                                            <small class="text-muted d-block">Updated: 2025-08-10</small>
+                                        </div>
+                                        <div class="mb-2">
+                                            <span class="badge bg-primary">EU Consolidated</span>
+                                            <small class="text-muted d-block">Updated: 2025-08-10</small>
+                                        </div>
+                                        <div class="mb-2">
+                                            <span class="badge bg-info">UK HMT/OFSI</span>
+                                            <small class="text-muted d-block">Updated: 2025-08-09</small>
+                                        </div>
+                                        <div class="mb-2">
+                                            <span class="badge bg-secondary">Canada SEMA</span>
+                                            <small class="text-muted d-block">Updated: 2025-08-10</small>
+                                        </div>
+                                        <div class="mb-2">
+                                            <span class="badge bg-dark">Australia</span>
+                                            <small class="text-muted d-block">Updated: 2025-08-09</small>
+                                        </div>
+                                        <div class="text-center mt-3">
+                                            <button class="btn btn-sm btn-outline-primary">View All Sources</button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="card mt-3">
+                                    <div class="card-header">
+                                        <strong>Related Entities</strong>
+                                    </div>
+                                    <div class="card-body">
+                                        <small class="text-muted">
+                                            <i class="fas fa-users"></i> 3 Associated Persons<br>
+                                            <i class="fas fa-building"></i> 2 Related Companies<br>
+                                            <i class="fas fa-map-marker-alt"></i> 5 Known Addresses
+                                        </small>
+                                        <div class="text-center mt-2">
+                                            <button class="btn btn-sm btn-outline-info">View Network</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="card mt-4">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <h6>Review Actions</h6>
+                                    <div class="mb-3">
+                                        <label class="form-label">Comments</label>
+                                        <textarea class="form-control" rows="3" placeholder="Add your review comments..."></textarea>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <h6>Decision</h6>
+                                    <div class="d-grid gap-2">
+                                        <button class="btn btn-danger">
+                                            <i class="fas fa-times"></i> Reject Transaction
+                                        </button>
+                                        <button class="btn btn-warning">
+                                            <i class="fas fa-arrow-up"></i> Escalate to Manager
+                                        </button>
+                                        <button class="btn btn-success">
+                                            <i class="fas fa-check"></i> Approve with Conditions
+                                        </button>
+                                        <button class="btn btn-info">
+                                            <i class="fas fa-clock"></i> Request More Information
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
