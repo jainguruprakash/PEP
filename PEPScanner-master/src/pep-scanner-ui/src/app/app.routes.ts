@@ -2,6 +2,11 @@ import { Routes } from '@angular/router';
 import { authGuard, loginGuard, roleGuard } from './core/auth.guard';
 
 export const routes: Routes = [
+  // Auth routes (no guard)
+  { path: 'login', loadComponent: () => import('./features/auth/login.component').then(m => m.LoginComponent), canActivate: [loginGuard] },
+  { path: 'signup', loadComponent: () => import('./features/auth/signup.component').then(m => m.SignupComponent), canActivate: [loginGuard] },
+
+  // Protected routes
   {
     path: '',
     loadComponent: () => import('./layout/app-shell.component').then(m => m.AppShellComponent),
