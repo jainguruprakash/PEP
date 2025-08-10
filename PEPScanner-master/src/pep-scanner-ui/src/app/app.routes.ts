@@ -19,6 +19,8 @@ export const routes: Routes = [
       { path: 'screening/transaction', loadComponent: () => import('./features/screening/transaction-screening.component').then(m => m.TransactionScreeningComponent) },
       { path: 'adverse-media', loadComponent: () => import('./features/adverse-media/adverse-media.component').then(m => m.AdverseMediaComponent) },
       { path: 'customer-media-scan', loadComponent: () => import('./features/customer-media-scan/customer-media-scan.component').then(m => m.CustomerMediaScanComponent) },
+      { path: 'financial-intelligence', loadComponent: () => import('./features/financial-intelligence/financial-intelligence.component').then(m => m.FinancialIntelligenceComponent) },
+      { path: 'financial-intelligence/:customerId', loadComponent: () => import('./features/financial-intelligence/financial-intelligence.component').then(m => m.FinancialIntelligenceComponent) },
       { path: 'search', loadComponent: () => import('./features/search/search.component').then(m => m.SearchComponent) },
       { path: 'watchlists', loadComponent: () => import('./features/watchlists/watchlists.component').then(m => m.WatchlistsComponent) },
       { path: 'sanctions', loadComponent: () => import('./features/sanctions/sanctions.component').then(m => m.SanctionsComponent) },

@@ -16,6 +16,9 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// SignalR for real-time notifications
+builder.Services.AddSignalR();
+
 // Database
 builder.Services.AddDbContext<PepScannerDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -43,6 +46,12 @@ builder.Services.AddScoped<PEPScanner.API.Services.IOpenSanctionsUpdateService, 
 builder.Services.AddScoped<PEPScanner.Infrastructure.Services.IOrganizationCustomListService, PEPScanner.Infrastructure.Services.OrganizationCustomListService>();
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 builder.Services.AddScoped<PEPScanner.Infrastructure.Services.IReportService, PEPScanner.Infrastructure.Services.ReportService>();
+
+// AI Risk Scoring and Financial Intelligence Services
+builder.Services.AddScoped<PEPScanner.Application.Services.IAIRiskScoringService, PEPScanner.Application.Services.AIRiskScoringService>();
+builder.Services.AddScoped<PEPScanner.Application.Services.IRealTimeNotificationService, PEPScanner.Application.Services.RealTimeNotificationService>();
+builder.Services.AddScoped<PEPScanner.Application.Services.IFinancialIntelligenceService, PEPScanner.Application.Services.FinancialIntelligenceService>();
+
 // Dashboard service removed - using simple controller implementation
 
 // JWT Authentication
@@ -128,6 +137,9 @@ app.UseAuthorization();
 
 // Controllers
 app.MapControllers();
+
+// SignalR Hub
+app.MapHub<PEPScanner.Application.Services.NotificationHub>("/notificationHub");
 
 // Health check endpoints
 app.MapGet("/api/health", () => new { status = "PEP Scanner Backend is running!", timestamp = DateTime.UtcNow });

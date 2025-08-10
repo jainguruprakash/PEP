@@ -376,6 +376,9 @@ import { AlertsService } from '../../services/alerts.service';
     .checkbox-group { display: grid; grid-template-columns: 1fr; gap: 8px; }
     .action-buttons { display: flex; gap: 12px; margin-top: 24px; }
     .results-section { margin-top: 32px; }
+    .results-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .bulk-actions { display: flex; gap: 8px; }
+    .bulk-actions button { margin-left: 8px; }
     .results-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 16px; }
     .result-card { margin-bottom: 16px; }
     .result-card mat-card-subtitle { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }

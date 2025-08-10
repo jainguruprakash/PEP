@@ -103,7 +103,19 @@ namespace PEPScanner.Domain.Entities
         
         public decimal? MonthlyTransactionVolume { get; set; }
         public decimal? AverageTransactionAmount { get; set; }
-        
+
+        // Financial Intelligence Properties
+        [MaxLength(20)]
+        public string? PanNumber { get; set; }
+
+        [MaxLength(20)]
+        public string? GstNumber { get; set; }
+
+        [MaxLength(30)]
+        public string? CinNumber { get; set; }
+
+        public DateTime? LastMediaScanDate { get; set; }
+
         // Relationships and Associations
         public ICollection<CustomerRelationship> Relationships { get; set; } = new List<CustomerRelationship>();
         public ICollection<Alert> Alerts { get; set; } = new List<Alert>();

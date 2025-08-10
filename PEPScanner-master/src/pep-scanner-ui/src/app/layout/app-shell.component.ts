@@ -60,6 +60,10 @@ import { Router } from '@angular/router';
           <mat-icon matListItemIcon>scanner</mat-icon>
           <span matListItemTitle>Customer Media Scan</span>
         </a>
+        <a mat-list-item routerLink="/financial-intelligence" routerLinkActive="active">
+          <mat-icon matListItemIcon>account_balance</mat-icon>
+          <span matListItemTitle>Financial Intelligence</span>
+        </a>
         <a mat-list-item routerLink="/search" routerLinkActive="active">
           <mat-icon matListItemIcon>search</mat-icon>
           <span matListItemTitle>Search</span>
