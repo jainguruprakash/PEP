@@ -541,8 +541,7 @@ export class AdverseMediaComponent {
           `Alert created successfully for ${alertRequest.EntityName}`,
           'View Alert',
           {
-            duration: 5000,
-            action: 'View Alert'
+            duration: 5000
           }
         ).onAction().subscribe(() => {
           // Navigate to alert details
@@ -615,8 +614,7 @@ export class AdverseMediaComponent {
           `Created ${response.createdCount} alerts, skipped ${response.skippedCount}`,
           'View Alerts',
           {
-            duration: 7000,
-            action: 'View Alerts'
+            duration: 7000
           }
         ).onAction().subscribe(() => {
           // Navigate to alerts list

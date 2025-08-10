@@ -1,6 +1,6 @@
 import { Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { ReactiveFormsModule } from '@angular/forms';
 import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -527,7 +527,7 @@ import { RealTimeNotificationService } from '../../services/real-time-notificati
 })
 export class CustomerMediaScanComponent implements OnInit, OnDestroy {
   private scanService = inject(CustomerMediaScanService);
-  private aiRiskService = inject(AIRiskScoringService);
+  public aiRiskService = inject(AIRiskScoringService);
   private notificationService = inject(RealTimeNotificationService);
   private snackBar = inject(MatSnackBar);
 
