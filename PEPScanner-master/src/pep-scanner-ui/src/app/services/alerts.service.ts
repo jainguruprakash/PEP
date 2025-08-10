@@ -39,6 +39,15 @@ export class AlertsService {
   getPendingApproval(): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/pending-approval`);
   }
+
+  // Adverse Media Alert Creation
+  createFromMedia(alertData: any): Observable<any> {
+    return this.http.post(`${this.baseUrl}/create-from-media`, alertData);
+  }
+
+  bulkCreateFromMedia(bulkData: any): Observable<any> {
+    return this.http.post(`${this.baseUrl}/bulk-create-from-media`, bulkData);
+  }
 }
 
 
