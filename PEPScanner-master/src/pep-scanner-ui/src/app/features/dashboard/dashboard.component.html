@@ -1,0 +1,217 @@
+<div class="dashboard-container">
+  <!-- Header -->
+  <div class="dashboard-header">
+    <h1>Dashboard</h1>
+    <button mat-raised-button color="primary" (click)="refreshDashboard()" [disabled]="loading()">
+      <mat-icon>refresh</mat-icon>
+      Refresh
+    </button>
+  </div>
+
+  <!-- Loading Spinner -->
+  <div *ngIf="loading()" class="loading-container">
+    <mat-spinner></mat-spinner>
+    <p>Loading dashboard data...</p>
+  </div>
+
+  <!-- Dashboard Content -->
+  <div *ngIf="!loading()" class="dashboard-content">
+    
+    <!-- KPI Cards -->
+    <div class="kpi-grid" *ngIf="kpis() as kpiData">
+      <mat-card class="kpi-card">
+        <mat-card-content>
+          <div class="kpi-header">
+            <mat-icon color="primary">warning</mat-icon>
+            <span class="kpi-title">Total Alerts</span>
+          </div>
+          <div class="kpi-value">{{ formatNumber(kpiData.totalAlerts) }}</div>
+          <div class="kpi-trend" [ngClass]="formatTrend(kpiData.alertsTrend).color">
+            <mat-icon>{{ formatTrend(kpiData.alertsTrend).icon }}</mat-icon>
+            <span>{{ formatTrend(kpiData.alertsTrend).text }}</span>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="kpi-card">
+        <mat-card-content>
+          <div class="kpi-header">
+            <mat-icon color="warn">priority_high</mat-icon>
+            <span class="kpi-title">Pending Alerts</span>
+          </div>
+          <div class="kpi-value">{{ formatNumber(kpiData.pendingAlerts) }}</div>
+          <div class="kpi-subtitle">{{ formatNumber(kpiData.highRiskAlerts) }} High Risk</div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="kpi-card">
+        <mat-card-content>
+          <div class="kpi-header">
+            <mat-icon color="accent">description</mat-icon>
+            <span class="kpi-title">Total Reports</span>
+          </div>
+          <div class="kpi-value">{{ formatNumber(kpiData.totalReports) }}</div>
+          <div class="kpi-subtitle">{{ formatNumber(kpiData.pendingReports) }} Pending</div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="kpi-card">
+        <mat-card-content>
+          <div class="kpi-header">
+            <mat-icon color="primary">verified</mat-icon>
+            <span class="kpi-title">Compliance Score</span>
+          </div>
+          <div class="kpi-value">{{ formatPercentage(kpiData.complianceScore) }}</div>
+          <div class="kpi-subtitle">{{ formatPercentage(kpiData.accuracyRate) }} Accuracy</div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="kpi-card">
+        <mat-card-content>
+          <div class="kpi-header">
+            <mat-icon color="accent">search</mat-icon>
+            <span class="kpi-title">Total Screenings</span>
+          </div>
+          <div class="kpi-value">{{ formatNumber(kpiData.totalScreenings) }}</div>
+          <div class="kpi-subtitle">{{ formatPercentage(kpiData.matchRate) }} Match Rate</div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="kpi-card">
+        <mat-card-content>
+          <div class="kpi-header">
+            <mat-icon color="primary">schedule</mat-icon>
+            <span class="kpi-title">Avg Resolution</span>
+          </div>
+          <div class="kpi-value">{{ kpiData.averageResolutionTime.toFixed(1) }}h</div>
+          <div class="kpi-subtitle">Resolution Time</div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="charts-section">
+      <mat-tab-group>
+        <!-- Alert Trends Tab -->
+        <mat-tab label="Alert Trends">
+          <div class="chart-container">
+            <mat-card>
+              <mat-card-header>
+                <mat-card-title>Alert Generation Trends (Last 30 Days)</mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <app-chart 
+                  *ngIf="alertTrendsData()"
+                  type="line"
+                  [data]="alertTrendsData()"
+                  [options]="lineChartOptions"
+                  [height]="300">
+                </app-chart>
+              </mat-card-content>
+            </mat-card>
+          </div>
+        </mat-tab>
+
+        <!-- Screening Metrics Tab -->
+        <mat-tab label="Screening Metrics">
+          <div class="chart-container">
+            <mat-card>
+              <mat-card-header>
+                <mat-card-title>Screening Performance (Last 30 Days)</mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <app-chart 
+                  *ngIf="screeningMetricsData()"
+                  type="bar"
+                  [data]="screeningMetricsData()"
+                  [options]="lineChartOptions"
+                  [height]="300">
+                </app-chart>
+              </mat-card-content>
+            </mat-card>
+          </div>
+        </mat-tab>
+
+        <!-- Report Status Tab -->
+        <mat-tab label="Report Status">
+          <div class="chart-container">
+            <mat-card>
+              <mat-card-header>
+                <mat-card-title>Report Status Distribution</mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <app-chart 
+                  *ngIf="reportStatusData()"
+                  type="doughnut"
+                  [data]="reportStatusData()"
+                  [options]="pieChartOptions"
+                  [height]="300">
+                </app-chart>
+              </mat-card-content>
+            </mat-card>
+          </div>
+        </mat-tab>
+
+        <!-- Compliance Score Tab -->
+        <mat-tab label="Compliance Score">
+          <div class="chart-container">
+            <mat-card>
+              <mat-card-header>
+                <mat-card-title>Compliance Score History (Last 6 Months)</mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <app-chart 
+                  *ngIf="complianceScoreData()"
+                  type="line"
+                  [data]="complianceScoreData()"
+                  [options]="lineChartOptions"
+                  [height]="300">
+                </app-chart>
+              </mat-card-content>
+            </mat-card>
+          </div>
+        </mat-tab>
+      </mat-tab-group>
+    </div>
+
+    <!-- Recent Activities -->
+    <div class="recent-activities-section">
+      <mat-card>
+        <mat-card-header>
+          <mat-card-title>Recent Activities</mat-card-title>
+          <mat-card-subtitle>Latest system activities and alerts</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="activities-list" *ngIf="recentActivities().length > 0; else noActivities">
+            <div 
+              *ngFor="let activity of recentActivities()" 
+              class="activity-item"
+              [routerLink]="activity.url">
+              <div class="activity-icon">
+                <mat-icon [color]="getStatusColor(activity.priority)">
+                  {{ getStatusIcon(activity.type) }}
+                </mat-icon>
+              </div>
+              <div class="activity-content">
+                <div class="activity-title">{{ activity.title }}</div>
+                <div class="activity-description">{{ activity.description }}</div>
+                <div class="activity-timestamp">{{ activity.timestamp | date:'short' }}</div>
+              </div>
+              <div class="activity-priority">
+                <span class="priority-badge" [ngClass]="'priority-' + activity.priority.toLowerCase()">
+                  {{ activity.priority }}
+                </span>
+              </div>
+            </div>
+          </div>
+          <ng-template #noActivities>
+            <div class="no-activities">
+              <mat-icon>info</mat-icon>
+              <p>No recent activities to display</p>
+            </div>
+          </ng-template>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </div>
+</div>
