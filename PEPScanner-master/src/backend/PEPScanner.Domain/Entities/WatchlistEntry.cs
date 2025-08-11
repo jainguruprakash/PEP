@@ -43,6 +43,9 @@ namespace PEPScanner.Domain.Entities
         public string? RiskLevel { get; set; } // Critical, High, Medium, Low
         
         [MaxLength(100)]
+        public string? Category { get; set; } // For compatibility
+        
+        [MaxLength(100)]
         public string? EntityType { get; set; } // Individual, Organization, Vessel, Aircraft
         
         [MaxLength(100)]

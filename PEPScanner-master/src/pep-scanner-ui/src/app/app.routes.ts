@@ -2,6 +2,10 @@ import { Routes } from '@angular/router';
 import { authGuard, loginGuard, roleGuard } from './core/auth.guard';
 
 export const routes: Routes = [
+  // Landing page (no guard)
+  { path: '', pathMatch: 'full', redirectTo: 'home' },
+  { path: 'home', loadComponent: () => import('./features/home/home.component').then(m => m.HomeComponent) },
+  
   // Auth routes (no guard)
   { path: 'login', loadComponent: () => import('./features/auth/login.component').then(m => m.LoginComponent), canActivate: [loginGuard] },
   { path: 'signup', loadComponent: () => import('./features/auth/signup.component').then(m => m.SignupComponent), canActivate: [loginGuard] },
@@ -9,12 +13,12 @@ export const routes: Routes = [
 
   // Protected routes
   {
-    path: '',
+    path: 'dashboard',
     loadComponent: () => import('./layout/app-shell.component').then(m => m.AppShellComponent),
     canActivate: [authGuard],
     children: [
-      { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
-      { path: 'dashboard', loadComponent: () => import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent) },
+      { path: '', pathMatch: 'full', redirectTo: 'overview' },
+      { path: 'overview', loadComponent: () => import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent) },
       { path: 'screening', redirectTo: 'screening/customer' },
       { path: 'screening/customer', loadComponent: () => import('./features/screening/customer-screening.component').then(m => m.CustomerScreeningComponent) },
       { path: 'screening/transaction', loadComponent: () => import('./features/screening/transaction-screening.component').then(m => m.TransactionScreeningComponent) },

@@ -53,7 +53,6 @@ namespace PEPScanner.Infrastructure.Data
 
         // AI Risk Scoring and Real-time Notifications
         public DbSet<RiskAssessmentEntity> RiskAssessments => Set<RiskAssessmentEntity>();
-        public DbSet<NotificationEntity> NotificationEntities => Set<NotificationEntity>();
         public DbSet<Notification> Notifications => Set<Notification>();
         public DbSet<AIModelMetricsEntity> AIModelMetrics => Set<AIModelMetricsEntity>();
         public DbSet<RiskFactorTemplateEntity> RiskFactorTemplates => Set<RiskFactorTemplateEntity>();
@@ -429,22 +428,16 @@ namespace PEPScanner.Infrastructure.Data
                 .HasIndex(ra => new { ra.CustomerId, ra.CalculatedAt })
                 .HasDatabaseName("IX_RiskAssessment_Customer_Date");
 
-            // Notification relationships
-            modelBuilder.Entity<NotificationEntity>()
-                .HasOne(n => n.Customer)
-                .WithMany()
-                .HasForeignKey(n => n.CustomerId)
-                .OnDelete(DeleteBehavior.SetNull);
+            // Notification relationships - using simple Notification entity
+            modelBuilder.Entity<Notification>()
+                .HasIndex(n => n.CreatedAtUtc)
+                .HasDatabaseName("IX_Notification_CreatedAtUtc");
 
-            modelBuilder.Entity<NotificationEntity>()
-                .HasIndex(n => n.Timestamp)
-                .HasDatabaseName("IX_Notification_Timestamp");
-
-            modelBuilder.Entity<NotificationEntity>()
+            modelBuilder.Entity<Notification>()
                 .HasIndex(n => new { n.Type, n.Priority })
                 .HasDatabaseName("IX_Notification_Type_Priority");
 
-            modelBuilder.Entity<NotificationEntity>()
+            modelBuilder.Entity<Notification>()
                 .HasIndex(n => n.IsRead)
                 .HasDatabaseName("IX_Notification_IsRead");
 

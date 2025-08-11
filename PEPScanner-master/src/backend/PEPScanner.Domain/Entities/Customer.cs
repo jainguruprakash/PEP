@@ -55,6 +55,15 @@ namespace PEPScanner.Domain.Entities
         [MaxLength(100)]
         public string? EmailAddress { get; set; }
         
+        // Additional properties for compatibility
+        public string? FirstName { get; set; }
+        public string? LastName { get; set; }
+        public string? Email { get; set; }
+        public string? Phone { get; set; }
+        public string? CustomerType { get; set; }
+        public string? Status { get; set; }
+        public DateTime? OnboardingDate { get; set; }
+        
         // PEP and Risk Assessment
         public bool IsPep { get; set; }
         public int RiskScore { get; set; } = 0;

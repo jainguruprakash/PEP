@@ -162,7 +162,7 @@ namespace PEPScanner.API.Controllers
         {
             try
             {
-                var query = _context.Alerts
+                IQueryable<Alert> query = _context.Alerts
                     .Where(a => a.WorkflowStatus == "PendingReview" || a.WorkflowStatus == "UnderReview")
                     .Include(a => a.Customer);
 
