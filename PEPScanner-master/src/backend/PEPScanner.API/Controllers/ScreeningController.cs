@@ -504,7 +504,7 @@ namespace PEPScanner.API.Controllers
             var alertIds = new List<Guid>();
             
             // Find a senior user to assign alerts to (Manager or ComplianceOfficer)
-            var seniorUser = await _context.Users
+            var seniorUser = await _context.OrganizationUsers
                 .Where(u => u.Role == "Manager" || u.Role == "ComplianceOfficer")
                 .OrderBy(u => u.CreatedAtUtc)
                 .FirstOrDefaultAsync();
@@ -524,7 +524,7 @@ namespace PEPScanner.API.Controllers
                     SourceCategory = match.listType?.ToString(),
                     MatchingDetails = $"Customer: {request.FullName} matched with {match.matchedName} (Score: {match.matchScore})",
                     WorkflowStatus = "PendingReview",
-                    AssignedToUserId = seniorUser?.Id,
+                    AssignedTo = seniorUser?.Email,
                     CreatedAtUtc = DateTime.UtcNow,
                     UpdatedAtUtc = DateTime.UtcNow,
                     DueDate = DateTime.UtcNow.AddHours(GetSlaHours(riskScore)),
@@ -537,7 +537,7 @@ namespace PEPScanner.API.Controllers
             
             await _context.SaveChangesAsync();
             _logger.LogInformation("Created {Count} alerts for customer {CustomerName}, assigned to {AssignedUser}", 
-                alertIds.Count, request.FullName, seniorUser?.Username ?? "System");
+                alertIds.Count, request.FullName, seniorUser?.Email ?? "System");
             return alertIds;
         }
         
