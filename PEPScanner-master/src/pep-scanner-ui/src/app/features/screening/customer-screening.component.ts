@@ -27,7 +27,9 @@ import { AlertsService } from '../../services/alerts.service';
 import { ReportService } from '../../services/report.service';
 import { WebSocketService } from '../../services/websocket.service';
 import { AiSuggestionsService } from '../../services/ai-suggestions.service';
+import { ToastService } from '../../services/toast.service';
 import { ScreeningResultsComponent } from './screening-results.component';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-customer-screening',
@@ -52,6 +54,7 @@ import { ScreeningResultsComponent } from './screening-results.component';
     MatMenuModule,
     MatChipsModule,
     MatTableModule,
+    MatSnackBarModule,
     ScreeningResultsComponent
   ],
   templateUrl: './customer-screening.component.html',
@@ -64,6 +67,7 @@ export class CustomerScreeningComponent implements OnInit {
   private reportService = inject(ReportService);
   private webSocketService = inject(WebSocketService);
   private aiService = inject(AiSuggestionsService);
+  private toastService = inject(ToastService);
 
   // Signals for reactive state management
   isLoading = signal(false);
@@ -163,19 +167,28 @@ export class CustomerScreeningComponent implements OnInit {
         this.result.set(res);
         this.isLoading.set(false);
         
+        // Show success message
+        this.toastService.success(`Screening completed for ${formValue.fullName}`);
+        
+        // Show alert creation notification if alerts were auto-created
+        if ((res as any).alertsCreated?.length > 0) {
+          this.toastService.success(`${(res as any).alertsCreated.length} alert(s) created and assigned to senior for review`);
+        }
+        
+        // Show existing alert notification if customer was already screened
+        if ((res as any).existingAlerts?.length > 0) {
+          this.toastService.warning(`${(res as any).existingAlerts.length} existing alert(s) found for this customer`);
+        }
+        
         // Load AI suggestions and history
         this.getAISuggestions();
         if (res.customerId) {
           this.loadScreeningHistory(res.customerId);
         }
-        
-        // Show alert creation notification if alerts were auto-created
-        if ((res as any).alertsCreated?.length > 0) {
-          this.addNotification(`${(res as any).alertsCreated.length} alert(s) created automatically`);
-        }
       },
       error: (error) => {
         console.error('Screening error:', error);
+        this.toastService.error('Screening failed. Please try again.');
         this.isLoading.set(false);
       }
     });

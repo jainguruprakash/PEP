@@ -110,9 +110,20 @@ namespace PEPScanner.API.Controllers
                 var riskScore = CalculateRiskScore(matches);
                 var status = DetermineStatus(riskScore, matches.Count);
 
-                // Auto-create alerts for matches above threshold
+                // Check for existing alerts
+                var existingAlerts = new List<object>();
+                if (!string.IsNullOrEmpty(request.FullName))
+                {
+                    var existingAlertsList = await _context.Alerts
+                        .Where(a => a.MatchingDetails != null && a.MatchingDetails.Contains(request.FullName) && a.Status == "Open")
+                        .Select(a => new { a.Id, a.AlertType, a.CreatedAtUtc, a.WorkflowStatus })
+                        .ToListAsync();
+                    existingAlerts.AddRange(existingAlertsList);
+                }
+
+                // Auto-create alerts for matches above threshold (only if no existing alerts)
                 var alertIds = new List<Guid>();
-                if (matches.Count > 0 && riskScore >= 0.5) // Create alerts for medium+ risk
+                if (matches.Count > 0 && riskScore >= 0.5 && !existingAlerts.Any()) // Create alerts for medium+ risk
                 {
                     alertIds = await CreateAlertsForMatches(request, matches, riskScore);
                 }
@@ -132,6 +143,7 @@ namespace PEPScanner.API.Controllers
                     matchCount = matches.Count,
                     status = status,
                     alertsCreated = alertIds,
+                    existingAlerts = existingAlerts,
                     screenedAt = DateTime.UtcNow,
                     screeningDetails = new
                     {
@@ -491,6 +503,12 @@ namespace PEPScanner.API.Controllers
         {
             var alertIds = new List<Guid>();
             
+            // Find a senior user to assign alerts to (Manager or ComplianceOfficer)
+            var seniorUser = await _context.Users
+                .Where(u => u.Role == "Manager" || u.Role == "ComplianceOfficer")
+                .OrderBy(u => u.CreatedAtUtc)
+                .FirstOrDefaultAsync();
+            
             foreach (dynamic match in matches)
             {
                 var alert = new Alert
@@ -504,8 +522,9 @@ namespace PEPScanner.API.Controllers
                     RiskLevel = DetermineRiskLevel(riskScore),
                     SourceList = match.source?.ToString(),
                     SourceCategory = match.listType?.ToString(),
-                    MatchingDetails = $"Matched: {match.matchedName} (Score: {match.matchScore})",
+                    MatchingDetails = $"Customer: {request.FullName} matched with {match.matchedName} (Score: {match.matchScore})",
                     WorkflowStatus = "PendingReview",
+                    AssignedToUserId = seniorUser?.Id,
                     CreatedAtUtc = DateTime.UtcNow,
                     UpdatedAtUtc = DateTime.UtcNow,
                     DueDate = DateTime.UtcNow.AddHours(GetSlaHours(riskScore)),
@@ -517,6 +536,8 @@ namespace PEPScanner.API.Controllers
             }
             
             await _context.SaveChangesAsync();
+            _logger.LogInformation("Created {Count} alerts for customer {CustomerName}, assigned to {AssignedUser}", 
+                alertIds.Count, request.FullName, seniorUser?.Username ?? "System");
             return alertIds;
         }
         
@@ -639,19 +660,20 @@ namespace PEPScanner.API.Controllers
                 // Mock MCA director search - replace with actual MCA API call
                 var directors = new List<McaDirector>();
                 
-                if (searchName.Contains("AMIT"))
+                if (searchName.Contains("AMIT") && searchName.Contains("SHAH"))
                 {
+                    // Return PEP data for Amit Shah (Home Minister)
                     directors.Add(new McaDirector
                     {
-                        Din = "00123456",
+                        Din = "PEP001",
                         Name = "Amit Shah",
-                        CompanyName = "ABC Private Limited",
-                        Cin = "U12345MH2020PTC123456",
-                        Designation = "Managing Director",
-                        AppointmentDate = "2020-01-15",
+                        CompanyName = "Government of India",
+                        Cin = "GOI-HM-2019",
+                        Designation = "Union Home Minister",
+                        AppointmentDate = "2019-05-30",
                         Status = "Active",
                         Nationality = "Indian",
-                        RiskLevel = "Medium"
+                        RiskLevel = "High"
                     });
                 }
                 
@@ -773,6 +795,19 @@ namespace PEPScanner.API.Controllers
     {
         public string Name { get; set; } = string.Empty;
         public object Config { get; set; } = new();
+    }
+
+    public class McaDirector
+    {
+        public string Din { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string CompanyName { get; set; } = string.Empty;
+        public string Cin { get; set; } = string.Empty;
+        public string Designation { get; set; } = string.Empty;
+        public string AppointmentDate { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+        public string Nationality { get; set; } = string.Empty;
+        public string RiskLevel { get; set; } = string.Empty;
     }
 
 }
