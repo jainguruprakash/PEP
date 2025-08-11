@@ -164,7 +164,7 @@
                 type="line" 
                 [data]="complianceScoreData()" 
                 [options]="lineChartOptions"
-                height="300">
+                [height]="300">
               </app-chart>
             } @else {
               <div class="chart-placeholder">
@@ -192,17 +192,17 @@
               @for (activity of recentActivities(); track activity.id) {
                 <div class="activity-item" [routerLink]="['/dashboard/alerts', activity.id]">
                   <div class="activity-icon">
-                    <mat-icon [color]="getStatusColor(activity.status)">
+                    <mat-icon [color]="getStatusColor(activity.priority)">
                       {{ getStatusIcon(activity.type) }}
                     </mat-icon>
                   </div>
                   <div class="activity-content">
                     <div class="activity-title">{{ activity.type }} Alert</div>
                     <div class="activity-description">
-                      Customer: {{ activity.customer || 'Unknown' }}
+                      {{ activity.description || 'Unknown' }}
                     </div>
                     <div class="activity-meta">
-                      Status: {{ activity.status }} • {{ formatDate(activity.timestamp) }}
+                      {{ activity.title }} • {{ formatDate(activity.timestamp) }}
                     </div>
                   </div>
                   <div class="activity-actions">
