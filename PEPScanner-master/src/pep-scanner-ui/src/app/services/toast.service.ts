@@ -42,4 +42,9 @@ export class ToastService {
       verticalPosition: 'top'
     });
   }
+
+  showSuccess = this.success;
+  showError = this.error;
+  showWarning = this.warning;
+  showInfo = this.info;
 }

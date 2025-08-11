@@ -35,8 +35,12 @@ export class AlertsService {
     return this.http.post(`${this.baseUrl}/${id}/reject`, request);
   }
 
-  assign(id: string, request: { assignedTo: string; assignedBy: string }): Observable<any> {
+  assign(id: string, request: { assignedTo: string; assignedBy: string; comments?: string }): Observable<any> {
     return this.http.post(`${this.baseUrl}/${id}/assign`, request);
+  }
+
+  escalate(id: string, request: { escalatedBy: string; reason: string }): Observable<any> {
+    return this.http.post(`${this.baseUrl}/${id}/escalate`, request);
   }
 
   getPendingApproval(): Observable<any[]> {

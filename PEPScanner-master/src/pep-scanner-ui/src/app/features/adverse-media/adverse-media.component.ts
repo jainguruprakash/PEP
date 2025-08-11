@@ -1,630 +1,516 @@
 import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
-import { MatTableModule } from '@angular/material/table';
+import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
+import { MatTableModule } from '@angular/material/table';
 import { MatChipsModule } from '@angular/material/chips';
-import { MatTabsModule } from '@angular/material/tabs';
-import { MatDatepickerModule } from '@angular/material/datepicker';
-import { MatNativeDateModule } from '@angular/material/core';
-import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
-import { AdverseMediaService } from '../../services/adverse-media.service';
-import { AlertsService } from '../../services/alerts.service';
+import { MatTabsModule } from '@angular/material/tabs';
+import { MatExpansionModule } from '@angular/material/expansion';
+import { MatDividerModule } from '@angular/material/divider';
+import { HttpClient } from '@angular/common/http';
+import { ToastService } from '../../services/toast.service';
 
 @Component({
   selector: 'app-adverse-media',
   standalone: true,
   imports: [
-    CommonModule, ReactiveFormsModule, MatTableModule, MatButtonModule, MatIconModule, 
-    MatCardModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatChipsModule,
-    MatTabsModule, MatDatepickerModule, MatNativeDateModule, MatCheckboxModule,
-    MatProgressSpinnerModule, MatSnackBarModule
+    CommonModule, ReactiveFormsModule, MatCardModule, MatButtonModule, 
+    MatIconModule, MatFormFieldModule, MatInputModule, MatSelectModule,
+    MatTableModule, MatChipsModule, MatProgressSpinnerModule, MatSnackBarModule,
+    MatTabsModule, MatExpansionModule, MatDividerModule
   ],
   template: `
-    <mat-card>
-      <mat-card-header>
-        <mat-card-title>
-          <mat-icon>newspaper</mat-icon>
-          Adverse Media Scanning
-        </mat-card-title>
-        <mat-card-subtitle>
-          AI-powered news and media monitoring for compliance risks
-        </mat-card-subtitle>
-      </mat-card-header>
-      
-      <mat-card-content>
-        <mat-tab-group>
-          <!-- Real-time Scanning -->
-          <mat-tab label="Real-time Scan">
-            <div class="tab-content">
-              <form [formGroup]="scanForm" (ngSubmit)="performScan()">
-                <div class="scan-section">
-                  <h3>Search Parameters</h3>
-                  <div class="form-grid">
-                    <mat-form-field appearance="outline">
-                      <mat-label>Entity Name *</mat-label>
-                      <input matInput formControlName="entityName" required 
-                             placeholder="Enter person or company name">
-                    </mat-form-field>
+    <div class="adverse-media-container">
+      <mat-card class="header-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>newspaper</mat-icon>
+            Adverse Media Screening
+          </mat-card-title>
+          <mat-card-subtitle>
+            Screen individuals and entities against adverse media sources
+          </mat-card-subtitle>
+        </mat-card-header>
+      </mat-card>
+
+      <mat-tab-group>
+        <mat-tab label="Screen Individual">
+          <div class="tab-content">
+            <mat-card class="screening-form-card">
+              <mat-card-title>Individual Screening</mat-card-title>
+              <form [formGroup]="screeningForm" (ngSubmit)="performScreening()">
+                <div class="form-grid">
+                  <mat-form-field appearance="outline">
+                    <mat-label>Full Name</mat-label>
+                    <input matInput formControlName="fullName" required>
+                    <mat-hint>Enter the complete name of the individual</mat-hint>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>Country</mat-label>
+                    <mat-select formControlName="country">
+                      <mat-option value="">All Countries</mat-option>
+                      @for (country of countries; track country) {
+                        <mat-option [value]="country">{{ country }}</mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>Date of Birth</mat-label>
+                    <input matInput type="date" formControlName="dateOfBirth">
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>Nationality</mat-label>
+                    <mat-select formControlName="nationality">
+                      <mat-option value="">Any Nationality</mat-option>
+                      @for (country of countries; track country) {
+                        <mat-option [value]="country">{{ country }}</mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>Similarity Threshold (%)</mat-label>
+                    <input matInput type="number" formControlName="threshold" min="50" max="100">
+                    <mat-hint>Minimum match percentage (50-100)</mat-hint>
+                  </mat-form-field>
+                </div>
+
+                <div class="advanced-options">
+                  <mat-expansion-panel>
+                    <mat-expansion-panel-header>
+                      <mat-panel-title>Advanced Options</mat-panel-title>
+                    </mat-expansion-panel-header>
                     
-                    <mat-form-field appearance="outline">
-                      <mat-label>Entity Type</mat-label>
-                      <mat-select formControlName="entityType">
-                        <mat-option value="person">Individual</mat-option>
-                        <mat-option value="company">Company</mat-option>
-                        <mat-option value="both">Both</mat-option>
-                      </mat-select>
-                    </mat-form-field>
+                    <div class="advanced-form-grid">
+                      <mat-form-field appearance="outline">
+                        <mat-label>Sources</mat-label>
+                        <mat-select formControlName="sources" multiple>
+                          @for (source of mediaSources; track source.name) {
+                            <mat-option [value]="source.name">{{ source.name }}</mat-option>
+                          }
+                        </mat-select>
+                        <mat-hint>Select specific media sources (leave empty for all)</mat-hint>
+                      </mat-form-field>
 
-                    <mat-form-field appearance="outline">
-                      <mat-label>Date Range</mat-label>
-                      <mat-select formControlName="dateRange">
-                        <mat-option value="7">Last 7 days</mat-option>
-                        <mat-option value="30">Last 30 days</mat-option>
-                        <mat-option value="90">Last 3 months</mat-option>
-                        <mat-option value="365">Last year</mat-option>
-                        <mat-option value="all">All time</mat-option>
-                      </mat-select>
-                    </mat-form-field>
-
-                    <mat-form-field appearance="outline">
-                      <mat-label>Risk Threshold</mat-label>
-                      <mat-select formControlName="riskThreshold">
-                        <mat-option value="low">Low (60%+)</mat-option>
-                        <mat-option value="medium">Medium (75%+)</mat-option>
-                        <mat-option value="high">High (90%+)</mat-option>
-                      </mat-select>
-                    </mat-form-field>
-                  </div>
-
-                  <!-- Advanced Filters -->
-                  <mat-card class="filters-card">
-                    <mat-card-title>Advanced Filters</mat-card-title>
-                    <div class="filters-grid">
-                      <div class="filter-group">
-                        <label>Risk Categories</label>
-                        <div class="checkbox-group">
-                          <mat-checkbox formControlName="includeFinancialCrime">Financial Crime</mat-checkbox>
-                          <mat-checkbox formControlName="includeCorruption">Corruption</mat-checkbox>
-                          <mat-checkbox formControlName="includeTerrorism">Terrorism</mat-checkbox>
-                          <mat-checkbox formControlName="includeFraud">Fraud</mat-checkbox>
-                          <mat-checkbox formControlName="includeSanctions">Sanctions Violations</mat-checkbox>
-                          <mat-checkbox formControlName="includeMoneyLaundering">Money Laundering</mat-checkbox>
-                        </div>
-                      </div>
-
-                      <div class="filter-group">
-                        <label>Media Sources</label>
-                        <div class="checkbox-group">
-                          <mat-checkbox formControlName="includeMainstream">Mainstream Media</mat-checkbox>
-                          <mat-checkbox formControlName="includeRegulatory">Regulatory Announcements</mat-checkbox>
-                          <mat-checkbox formControlName="includeLegal">Legal Proceedings</mat-checkbox>
-                          <mat-checkbox formControlName="includeSocial">Social Media (Premium)</mat-checkbox>
-                          <mat-checkbox formControlName="includeBlogs">Blogs & Forums</mat-checkbox>
-                        </div>
-                      </div>
-
-                      <div class="filter-group">
-                        <label>Languages</label>
-                        <div class="checkbox-group">
-                          <mat-checkbox formControlName="langEnglish" checked>English</mat-checkbox>
-                          <mat-checkbox formControlName="langSpanish">Spanish</mat-checkbox>
-                          <mat-checkbox formControlName="langFrench">French</mat-checkbox>
-                          <mat-checkbox formControlName="langGerman">German</mat-checkbox>
-                          <mat-checkbox formControlName="langChinese">Chinese</mat-checkbox>
-                          <mat-checkbox formControlName="langArabic">Arabic</mat-checkbox>
-                        </div>
-                      </div>
+                      <mat-form-field appearance="outline">
+                        <mat-label>Categories</mat-label>
+                        <mat-select formControlName="categories" multiple>
+                          @for (category of mediaCategories; track category) {
+                            <mat-option [value]="category">{{ category }}</mat-option>
+                          }
+                        </mat-select>
+                        <mat-hint>Filter by specific categories</mat-hint>
+                      </mat-form-field>
                     </div>
-                  </mat-card>
+                  </mat-expansion-panel>
+                </div>
 
-                  <div class="action-buttons">
-                    <button mat-raised-button color="primary" type="submit" 
-                            [disabled]="scanForm.invalid || isScanning()">
-                      <mat-spinner diameter="20" *ngIf="isScanning()"></mat-spinner>
-                      <mat-icon *ngIf="!isScanning()">search</mat-icon>
-                      <span *ngIf="!isScanning()">Start AI Scan</span>
-                      <span *ngIf="isScanning()">Scanning...</span>
-                    </button>
-                    <button mat-button (click)="clearForm()">Clear</button>
-                  </div>
+                <div class="form-actions">
+                  <button mat-raised-button color="primary" type="submit" 
+                          [disabled]="screeningForm.invalid || isScreening()">
+                    @if (isScreening()) {
+                      <mat-spinner diameter="20"></mat-spinner>
+                      Screening...
+                    } @else {
+                      <mat-icon>search</mat-icon>
+                      Start Screening
+                    }
+                  </button>
+                  <button mat-button type="button" (click)="clearForm()">
+                    <mat-icon>clear</mat-icon>
+                    Clear
+                  </button>
                 </div>
               </form>
+            </mat-card>
 
-              <!-- Real-time Results -->
-              <div *ngIf="scanResults().length > 0" class="results-section">
-                <div class="results-header">
-                  <h3>Scan Results ({{ scanResults().length }} articles found)</h3>
-                  <div class="bulk-actions">
-                    <button mat-raised-button color="warn" (click)="createBulkAlerts()"
-                            [disabled]="getHighRiskResults().length === 0">
-                      <mat-icon>warning</mat-icon>
-                      Create Alerts for High Risk ({{ getHighRiskResults().length }})
-                    </button>
-                    <button mat-button (click)="selectAllHighRisk()">
-                      <mat-icon>select_all</mat-icon>
-                      Select High Risk
-                    </button>
+            @if (screeningResults()) {
+              <mat-card class="results-card">
+                <mat-card-header>
+                  <mat-card-title>Screening Results</mat-card-title>
+                  <div class="results-summary">
+                    <mat-chip [color]="getOverallRiskColor(screeningResults()?.overallRiskLevel)">
+                      {{ screeningResults()?.overallRiskLevel }} Risk
+                    </mat-chip>
+                    <span class="match-count">{{ screeningResults()?.totalMatches }} matches found</span>
                   </div>
-                </div>
-                <div class="results-grid">
-                  <mat-card *ngFor="let result of scanResults()" class="result-card">
-                    <mat-card-header>
-                      <mat-card-title>{{ result.headline }}</mat-card-title>
-                      <mat-card-subtitle>
-                        <mat-chip [color]="getRiskColor(result.riskScore)">
-                          Risk: {{ result.riskScore }}%
-                        </mat-chip>
-                        <span class="source">{{ result.source }}</span>
-                        <span class="date">{{ formatDate(result.publishedDate) }}</span>
-                      </mat-card-subtitle>
-                    </mat-card-header>
-                    <mat-card-content>
-                      <p class="excerpt">{{ result.excerpt }}</p>
-                      <div class="risk-indicators">
-                        <mat-chip-set>
-                          <mat-chip *ngFor="let category of result.riskCategories" 
-                                    [color]="getCategoryColor(category)">
-                            {{ category }}
-                          </mat-chip>
-                        </mat-chip-set>
-                      </div>
-                    </mat-card-content>
-                    <mat-card-actions>
-                      <button mat-button (click)="viewFullArticle(result)">
-                        <mat-icon>open_in_new</mat-icon>
-                        Read Full Article
-                      </button>
-                      <button mat-raised-button color="warn" (click)="createAlert(result)">
-                        <mat-icon>warning</mat-icon>
-                        Create Alert
-                      </button>
-                      <button mat-button (click)="addToMonitoring(result)">
-                        <mat-icon>visibility</mat-icon>
-                        Monitor
-                      </button>
-                    </mat-card-actions>
-                  </mat-card>
-                </div>
-              </div>
-            </div>
-          </mat-tab>
+                </mat-card-header>
 
-          <!-- Continuous Monitoring -->
-          <mat-tab label="Monitoring">
-            <div class="tab-content">
-              <div class="monitoring-header">
-                <h3>Continuous Monitoring Setup</h3>
-                <button mat-raised-button color="primary" (click)="showMonitoringForm = !showMonitoringForm">
-                  <mat-icon>add</mat-icon>
-                  Add Entity to Monitor
-                </button>
-              </div>
+                <mat-card-content>
+                  <div class="screening-summary">
+                    <div class="summary-item">
+                      <label>Screened Name:</label>
+                      <span>{{ screeningResults()?.fullName }}</span>
+                    </div>
+                    <div class="summary-item">
+                      <label>Screening Date:</label>
+                      <span>{{ formatDate(screeningResults()?.screeningDate) }}</span>
+                    </div>
+                    <div class="summary-item">
+                      <label>High Risk Matches:</label>
+                      <span>{{ screeningResults()?.highRiskMatches }}</span>
+                    </div>
+                    <div class="summary-item">
+                      <label>Recommended Action:</label>
+                      <mat-chip [color]="getActionColor(screeningResults()?.recommendedAction)">
+                        {{ screeningResults()?.recommendedAction }}
+                      </mat-chip>
+                    </div>
+                  </div>
 
-              <!-- Add Monitoring Form -->
-              <mat-card *ngIf="showMonitoringForm" class="monitoring-form">
-                <form [formGroup]="monitoringForm" (ngSubmit)="addToMonitoring()">
-                  <div class="form-grid">
-                    <mat-form-field appearance="outline">
-                      <mat-label>Entity Name</mat-label>
-                      <input matInput formControlName="entityName" required>
-                    </mat-form-field>
-                    <mat-form-field appearance="outline">
-                      <mat-label>Monitoring Frequency</mat-label>
-                      <mat-select formControlName="frequency">
-                        <mat-option value="realtime">Real-time</mat-option>
-                        <mat-option value="hourly">Hourly</mat-option>
-                        <mat-option value="daily">Daily</mat-option>
-                        <mat-option value="weekly">Weekly</mat-option>
-                      </mat-select>
-                    </mat-form-field>
-                    <mat-form-field appearance="outline">
-                      <mat-label>Alert Threshold</mat-label>
-                      <mat-select formControlName="alertThreshold">
-                        <mat-option value="60">Low Risk (60%+)</mat-option>
-                        <mat-option value="75">Medium Risk (75%+)</mat-option>
-                        <mat-option value="90">High Risk (90%+)</mat-option>
-                      </mat-select>
-                    </mat-form-field>
-                  </div>
-                  <div class="form-actions">
-                    <button mat-raised-button color="primary" type="submit">Add to Monitoring</button>
-                    <button mat-button (click)="showMonitoringForm = false">Cancel</button>
-                  </div>
-                </form>
+                  @if (screeningResults()?.results && screeningResults()?.results.length > 0) {
+                    <mat-divider></mat-divider>
+                    <h3>Detailed Matches</h3>
+                    
+                    <div class="matches-list">
+                      @for (match of screeningResults()?.results; track match.id) {
+                        <mat-expansion-panel class="match-panel">
+                          <mat-expansion-panel-header>
+                            <mat-panel-title>
+                              <div class="match-header">
+                                <span class="match-name">{{ match.matchedName }}</span>
+                                <mat-chip [color]="getSeverityColor(match.severity)" class="severity-chip">
+                                  {{ match.severity }}
+                                </mat-chip>
+                                <span class="similarity-score">{{ match.similarityScore }}% match</span>
+                              </div>
+                            </mat-panel-title>
+                          </mat-expansion-panel-header>
+
+                          <div class="match-details">
+                            <div class="match-info-grid">
+                              <div class="info-item">
+                                <label>Source:</label>
+                                <span>{{ match.source }}</span>
+                              </div>
+                              <div class="info-item">
+                                <label>Category:</label>
+                                <span>{{ match.category }}</span>
+                              </div>
+                              <div class="info-item">
+                                <label>Publication Date:</label>
+                                <span>{{ formatDate(match.publicationDate) }}</span>
+                              </div>
+                              <div class="info-item">
+                                <label>Country:</label>
+                                <span>{{ match.country || 'N/A' }}</span>
+                              </div>
+                            </div>
+
+                            <div class="match-content">
+                              <h4>{{ match.headline }}</h4>
+                              <p>{{ match.summary }}</p>
+                              @if (match.url) {
+                                <a [href]="match.url" target="_blank" mat-button color="primary">
+                                  <mat-icon>open_in_new</mat-icon>
+                                  Read Full Article
+                                </a>
+                              }
+                            </div>
+
+                            <div class="match-actions">
+                              <button mat-raised-button color="warn" (click)="createAlert(match)">
+                                <mat-icon>warning</mat-icon>
+                                Create Alert
+                              </button>
+                              <button mat-button (click)="markAsFalsePositive(match)">
+                                <mat-icon>block</mat-icon>
+                                Mark as False Positive
+                              </button>
+                            </div>
+                          </div>
+                        </mat-expansion-panel>
+                      }
+                    </div>
+                  } @else {
+                    <div class="no-matches">
+                      <mat-icon>check_circle</mat-icon>
+                      <p>No adverse media matches found for this individual.</p>
+                    </div>
+                  }
+                </mat-card-content>
               </mat-card>
+            }
+          </div>
+        </mat-tab>
 
-              <!-- Monitored Entities Table -->
-              <table mat-table [dataSource]="monitoredEntities()" class="mat-elevation-z2">
-                <ng-container matColumnDef="entityName">
-                  <th mat-header-cell *matHeaderCellDef>Entity</th>
-                  <td mat-cell *matCellDef="let row">{{ row.entityName }}</td>
-                </ng-container>
-                <ng-container matColumnDef="frequency">
-                  <th mat-header-cell *matHeaderCellDef>Frequency</th>
-                  <td mat-cell *matCellDef="let row">{{ row.frequency }}</td>
-                </ng-container>
-                <ng-container matColumnDef="lastScan">
-                  <th mat-header-cell *matHeaderCellDef>Last Scan</th>
-                  <td mat-cell *matCellDef="let row">{{ formatDate(row.lastScan) }}</td>
-                </ng-container>
-                <ng-container matColumnDef="alertsCount">
-                  <th mat-header-cell *matHeaderCellDef>Alerts</th>
-                  <td mat-cell *matCellDef="let row">
-                    <mat-chip [color]="row.alertsCount > 0 ? 'warn' : 'primary'">
-                      {{ row.alertsCount }}
-                    </mat-chip>
-                  </td>
-                </ng-container>
-                <ng-container matColumnDef="status">
-                  <th mat-header-cell *matHeaderCellDef>Status</th>
-                  <td mat-cell *matCellDef="let row">
-                    <mat-chip [color]="row.status === 'active' ? 'primary' : 'accent'">
-                      {{ row.status }}
-                    </mat-chip>
-                  </td>
-                </ng-container>
-                <ng-container matColumnDef="actions">
-                  <th mat-header-cell *matHeaderCellDef>Actions</th>
-                  <td mat-cell *matCellDef="let row">
-                    <button mat-icon-button (click)="viewMonitoringDetails(row)">
-                      <mat-icon>visibility</mat-icon>
-                    </button>
-                    <button mat-icon-button (click)="pauseMonitoring(row)">
-                      <mat-icon>pause</mat-icon>
-                    </button>
-                    <button mat-icon-button color="warn" (click)="removeMonitoring(row)">
-                      <mat-icon>delete</mat-icon>
-                    </button>
-                  </td>
-                </ng-container>
-                <tr mat-header-row *matHeaderRowDef="monitoringColumns"></tr>
-                <tr mat-row *matRowDef="let row; columns: monitoringColumns;"></tr>
-              </table>
-            </div>
-          </mat-tab>
+        <mat-tab label="Screening History">
+          <div class="tab-content">
+            <mat-card>
+              <mat-card-title>Recent Screenings</mat-card-title>
+              <mat-card-content>
+                @if (screeningHistory().length > 0) {
+                  <table mat-table [dataSource]="screeningHistory()" class="mat-elevation-z2">
+                    <ng-container matColumnDef="name">
+                      <th mat-header-cell *matHeaderCellDef>Name</th>
+                      <td mat-cell *matCellDef="let row">{{ row.fullName }}</td>
+                    </ng-container>
+                    <ng-container matColumnDef="date">
+                      <th mat-header-cell *matHeaderCellDef>Date</th>
+                      <td mat-cell *matCellDef="let row">{{ formatDate(row.screeningDate) }}</td>
+                    </ng-container>
+                    <ng-container matColumnDef="matches">
+                      <th mat-header-cell *matHeaderCellDef>Matches</th>
+                      <td mat-cell *matCellDef="let row">{{ row.totalMatches }}</td>
+                    </ng-container>
+                    <ng-container matColumnDef="risk">
+                      <th mat-header-cell *matHeaderCellDef>Risk Level</th>
+                      <td mat-cell *matCellDef="let row">
+                        <mat-chip [color]="getOverallRiskColor(row.overallRiskLevel)">
+                          {{ row.overallRiskLevel }}
+                        </mat-chip>
+                      </td>
+                    </ng-container>
+                    <ng-container matColumnDef="actions">
+                      <th mat-header-cell *matHeaderCellDef>Actions</th>
+                      <td mat-cell *matCellDef="let row">
+                        <button mat-icon-button (click)="viewScreeningDetails(row)">
+                          <mat-icon>visibility</mat-icon>
+                        </button>
+                      </td>
+                    </ng-container>
+                    <tr mat-header-row *matHeaderRowDef="historyColumns"></tr>
+                    <tr mat-row *matRowDef="let row; columns: historyColumns;"></tr>
+                  </table>
+                } @else {
+                  <div class="no-history">
+                    <mat-icon>history</mat-icon>
+                    <p>No screening history available.</p>
+                  </div>
+                }
+              </mat-card-content>
+            </mat-card>
+          </div>
+        </mat-tab>
 
-          <!-- AI Analytics -->
-          <mat-tab label="AI Analytics">
-            <div class="tab-content">
-              <div class="analytics-dashboard">
-                <h3>AI-Powered Risk Analytics</h3>
-                
-                <!-- Future-Ready Features -->
-                <div class="feature-cards">
-                  <mat-card class="feature-card">
-                    <mat-card-header>
-                      <mat-card-title>
-                        <mat-icon>psychology</mat-icon>
-                        Sentiment Analysis
-                      </mat-card-title>
-                    </mat-card-header>
-                    <mat-card-content>
-                      <p>AI analyzes sentiment trends in media coverage to predict reputation risks</p>
-                      <div class="feature-status">
-                        <mat-chip color="primary">Active</mat-chip>
+        <mat-tab label="Sources & Settings">
+          <div class="tab-content">
+            <mat-card>
+              <mat-card-title>Available Media Sources</mat-card-title>
+              <mat-card-content>
+                <div class="sources-grid">
+                  @for (source of mediaSources; track source.name) {
+                    <div class="source-card">
+                      <div class="source-info">
+                        <h4>{{ source.name }}</h4>
+                        <p>{{ source.type }} • {{ source.coverage }}</p>
                       </div>
-                    </mat-card-content>
-                  </mat-card>
-
-                  <mat-card class="feature-card">
-                    <mat-card-header>
-                      <mat-card-title>
-                        <mat-icon>trending_up</mat-icon>
-                        Predictive Risk Modeling
-                      </mat-card-title>
-                    </mat-card-header>
-                    <mat-card-content>
-                      <p>Machine learning predicts future compliance risks based on patterns</p>
-                      <div class="feature-status">
-                        <mat-chip color="accent">Beta</mat-chip>
-                      </div>
-                    </mat-card-content>
-                  </mat-card>
-
-                  <mat-card class="feature-card">
-                    <mat-card-header>
-                      <mat-card-title>
-                        <mat-icon>language</mat-icon>
-                        Multi-language NLP
-                      </mat-card-title>
-                    </mat-card-header>
-                    <mat-card-content>
-                      <p>Natural language processing in 50+ languages for global coverage</p>
-                      <div class="feature-status">
-                        <mat-chip color="primary">Active</mat-chip>
-                      </div>
-                    </mat-card-content>
-                  </mat-card>
-
-                  <mat-card class="feature-card">
-                    <mat-card-header>
-                      <mat-card-title>
-                        <mat-icon>auto_awesome</mat-icon>
-                        Smart Alerts
-                      </mat-card-title>
-                    </mat-card-header>
-                    <mat-card-content>
-                      <p>AI reduces false positives by 85% with contextual understanding</p>
-                      <div class="feature-status">
-                        <mat-chip color="primary">Active</mat-chip>
-                      </div>
-                    </mat-card-content>
-                  </mat-card>
+                      <mat-icon class="source-status" color="primary">check_circle</mat-icon>
+                    </div>
+                  }
                 </div>
-              </div>
-            </div>
-          </mat-tab>
-        </mat-tab-group>
-      </mat-card-content>
-    </mat-card>
+              </mat-card-content>
+            </mat-card>
+
+            <mat-card>
+              <mat-card-title>Screening Categories</mat-card-title>
+              <mat-card-content>
+                <div class="categories-list">
+                  @for (category of mediaCategories; track category) {
+                    <mat-chip>{{ category }}</mat-chip>
+                  }
+                </div>
+              </mat-card-content>
+            </mat-card>
+          </div>
+        </mat-tab>
+      </mat-tab-group>
+    </div>
   `,
   styles: [`
-    .tab-content { padding: 24px 0; }
-    .scan-section { margin-bottom: 32px; }
-    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 16px; }
-    .filters-card { margin: 16px 0; }
-    .filters-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
-    .filter-group label { font-weight: 500; margin-bottom: 8px; display: block; }
-    .checkbox-group { display: grid; grid-template-columns: 1fr; gap: 8px; }
-    .action-buttons { display: flex; gap: 12px; margin-top: 24px; }
-    .results-section { margin-top: 32px; }
-    .results-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-    .bulk-actions { display: flex; gap: 8px; }
-    .bulk-actions button { margin-left: 8px; }
-    .results-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 16px; }
-    .result-card { margin-bottom: 16px; }
-    .result-card mat-card-subtitle { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-    .excerpt { margin: 12px 0; color: #666; }
-    .risk-indicators { margin-top: 12px; }
-    .monitoring-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-    .monitoring-form { margin-bottom: 24px; }
-    .form-actions { margin-top: 16px; }
-    .form-actions button { margin-right: 8px; }
+    .adverse-media-container { padding: 20px; }
+    .header-card { margin-bottom: 20px; }
+    .tab-content { padding: 20px 0; }
+    .screening-form-card { margin-bottom: 20px; }
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 20px; }
+    .advanced-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-top: 16px; }
+    .form-actions { display: flex; gap: 10px; margin-top: 20px; }
+    .results-card { margin-top: 20px; }
+    .results-summary { display: flex; align-items: center; gap: 15px; }
+    .match-count { color: #666; font-size: 0.875rem; }
+    .screening-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
+    .summary-item { display: flex; flex-direction: column; }
+    .summary-item label { font-weight: 500; color: #666; margin-bottom: 5px; }
+    .matches-list { margin-top: 20px; }
+    .match-panel { margin-bottom: 15px; }
+    .match-header { display: flex; align-items: center; gap: 15px; width: 100%; }
+    .match-name { font-weight: 500; }
+    .severity-chip { font-size: 0.75rem; }
+    .similarity-score { color: #666; font-size: 0.875rem; margin-left: auto; }
+    .match-details { padding: 15px 0; }
+    .match-info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 15px; }
+    .info-item { display: flex; flex-direction: column; }
+    .info-item label { font-weight: 500; color: #666; margin-bottom: 5px; }
+    .match-content { margin: 20px 0; }
+    .match-content h4 { margin: 0 0 10px 0; color: #333; }
+    .match-content p { margin: 0 0 15px 0; color: #666; line-height: 1.5; }
+    .match-actions { display: flex; gap: 10px; }
+    .no-matches, .no-history { display: flex; flex-direction: column; align-items: center; padding: 40px; color: #999; }
+    .no-matches mat-icon, .no-history mat-icon { font-size: 48px; width: 48px; height: 48px; margin-bottom: 10px; }
+    .historyColumns { width: 100%; }
+    .sources-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; }
+    .source-card { display: flex; justify-content: space-between; align-items: center; padding: 15px; border: 1px solid #e0e0e0; border-radius: 8px; }
+    .source-info h4 { margin: 0 0 5px 0; }
+    .source-info p { margin: 0; color: #666; font-size: 0.875rem; }
+    .categories-list { display: flex; flex-wrap: wrap; gap: 10px; }
     table { width: 100%; margin-top: 16px; }
-    .analytics-dashboard { padding: 16px 0; }
-    .feature-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-top: 24px; }
-    .feature-card { height: 200px; }
-    .feature-status { margin-top: 16px; }
-    .mat-mdc-chip { font-size: 0.75rem; }
   `]
 })
 export class AdverseMediaComponent {
-  private adverseMediaService = inject(AdverseMediaService);
   private fb = inject(FormBuilder);
+  private http = inject(HttpClient);
   private snackBar = inject(MatSnackBar);
-  private alertsService = inject(AlertsService);
-  
-  isScanning = signal(false);
-  scanResults = signal<any[]>([]);
-  monitoredEntities = signal<any[]>([]);
-  showMonitoringForm = false;
-  
-  monitoringColumns = ['entityName', 'frequency', 'lastScan', 'alertsCount', 'status', 'actions'];
-  
-  scanForm = this.fb.group({
-    entityName: ['', Validators.required],
-    entityType: ['person'],
-    dateRange: ['30'],
-    riskThreshold: ['medium'],
-    includeFinancialCrime: [true],
-    includeCorruption: [true],
-    includeTerrorism: [true],
-    includeFraud: [true],
-    includeSanctions: [true],
-    includeMoneyLaundering: [true],
-    includeMainstream: [true],
-    includeRegulatory: [true],
-    includeLegal: [true],
-    includeSocial: [false],
-    includeBlogs: [false],
-    langEnglish: [true],
-    langSpanish: [false],
-    langFrench: [false],
-    langGerman: [false],
-    langChinese: [false],
-    langArabic: [false]
+  private toastService = inject(ToastService);
+
+  isScreening = signal(false);
+  screeningResults = signal<any>(null);
+  screeningHistory = signal<any[]>([]);
+
+  countries = [
+    'United States', 'United Kingdom', 'Canada', 'Australia', 'Germany',
+    'France', 'India', 'China', 'Japan', 'Brazil', 'Russia', 'South Africa'
+  ];
+
+  mediaSources = [
+    { name: 'Reuters', type: 'News Agency', coverage: 'Global' },
+    { name: 'BBC News', type: 'News Agency', coverage: 'Global' },
+    { name: 'Financial Times', type: 'Financial News', coverage: 'Global' },
+    { name: 'Bloomberg', type: 'Financial News', coverage: 'Global' },
+    { name: 'Wall Street Journal', type: 'Financial News', coverage: 'Global' },
+    { name: 'Associated Press', type: 'News Agency', coverage: 'Global' },
+    { name: 'CNN', type: 'News Network', coverage: 'Global' },
+    { name: 'CNBC', type: 'Financial News', coverage: 'Global' }
+  ];
+
+  mediaCategories = [
+    'Financial Crime', 'Corruption', 'Money Laundering', 'Sanctions Violation',
+    'Fraud', 'Tax Evasion', 'Bribery', 'Embezzlement', 'Terrorism Financing',
+    'Drug Trafficking', 'Human Trafficking', 'Cybercrime'
+  ];
+
+  historyColumns = ['name', 'date', 'matches', 'risk', 'actions'];
+
+  screeningForm = this.fb.group({
+    fullName: ['', Validators.required],
+    country: [''],
+    dateOfBirth: [''],
+    nationality: [''],
+    threshold: [75, [Validators.min(50), Validators.max(100)]],
+    sources: [null],
+    categories: [null]
   });
 
-  monitoringForm = this.fb.group({
-    entityName: ['', Validators.required],
-    frequency: ['daily'],
-    alertThreshold: ['75']
-  });
+  performScreening() {
+    if (this.screeningForm.valid) {
+      this.isScreening.set(true);
+      const formData = this.screeningForm.value;
 
-  constructor() {
-    this.loadMonitoredEntities();
-  }
-
-  performScan() {
-    if (this.scanForm.invalid) return;
-    
-    this.isScanning.set(true);
-    const formValue = this.scanForm.value;
-    
-    // Simulate AI scanning with realistic results
-    setTimeout(() => {
-      const mockResults = [
-        {
-          headline: `${formValue.entityName} faces regulatory investigation`,
-          source: 'Financial Times',
-          publishedDate: new Date(),
-          riskScore: 85,
-          riskCategories: ['Financial Crime', 'Regulatory'],
-          excerpt: 'Recent developments suggest potential compliance issues...',
-          url: 'https://example.com/article1'
+      this.http.post('http://localhost:5098/api/adverse-media/screen', formData).subscribe({
+        next: (response: any) => {
+          this.screeningResults.set(response);
+          this.addToHistory(response);
+          this.isScreening.set(false);
+          this.toastService.showSuccess(`Screening completed. Found ${response.totalMatches} matches.`);
         },
-        {
-          headline: `${formValue.entityName} mentioned in sanctions report`,
-          source: 'Reuters',
-          publishedDate: new Date(Date.now() - 86400000),
-          riskScore: 92,
-          riskCategories: ['Sanctions', 'Legal'],
-          excerpt: 'Government sources indicate ongoing investigation...',
-          url: 'https://example.com/article2'
+        error: (error) => {
+          console.error('Screening error:', error);
+          this.isScreening.set(false);
+          this.toastService.showError('Screening failed. Please try again.');
         }
-      ];
-      
-      this.scanResults.set(mockResults);
-      this.isScanning.set(false);
-      this.snackBar.open(`Found ${mockResults.length} relevant articles`, 'Close', { duration: 3000 });
-    }, 3000);
+      });
+    }
   }
 
-  loadMonitoredEntities() {
-    // Load from service
-    const mockEntities = [
-      {
-        entityName: 'ABC Corporation',
-        frequency: 'daily',
-        lastScan: new Date(),
-        alertsCount: 3,
-        status: 'active'
+  createAlert(match: any) {
+    const alertRequest = {
+      customerName: this.screeningResults()?.fullName,
+      source: match.source,
+      category: match.category,
+      severity: match.severity,
+      similarityScore: match.similarityScore,
+      headline: match.headline,
+      summary: match.summary,
+      url: match.url,
+      publicationDate: match.publicationDate,
+      createdBy: 'AdverseMediaUser'
+    };
+
+    this.http.post('http://localhost:5098/api/adverse-media/create-alert', alertRequest).subscribe({
+      next: (response: any) => {
+        this.toastService.showSuccess('Alert created successfully');
+      },
+      error: (error) => {
+        console.error('Alert creation error:', error);
+        this.toastService.showError('Failed to create alert. Please try again.');
       }
-    ];
-    this.monitoredEntities.set(mockEntities);
+    });
+  }
+
+  markAsFalsePositive(match: any) {
+    // In a real implementation, this would mark the match as a false positive
+    this.toastService.showInfo('Match marked as false positive');
   }
 
   clearForm() {
-    this.scanForm.reset();
-    this.scanResults.set([]);
-  }
-
-  getRiskColor(score: number): string {
-    if (score >= 90) return 'warn';
-    if (score >= 75) return 'accent';
-    return 'primary';
-  }
-
-  getCategoryColor(category: string): string {
-    const colors: any = {
-      'Financial Crime': 'warn',
-      'Sanctions': 'warn',
-      'Regulatory': 'accent',
-      'Legal': 'accent'
-    };
-    return colors[category] || 'primary';
-  }
-
-  formatDate(date: Date): string {
-    return new Date(date).toLocaleDateString();
-  }
-
-  viewFullArticle(result: any) {
-    window.open(result.url, '_blank');
-  }
-
-  createAlert(result: any) {
-    const alertRequest = {
-      EntityName: result.entities?.[0] || this.scanForm.value.entityName,
-      EntityType: this.scanForm.value.entityType === 'person' ? 'Individual' : 'Organization',
-      RiskScore: result.riskScore,
-      MediaHeadline: result.headline,
-      MediaSource: result.source,
-      PublishedDate: result.publishedDate,
-      RiskCategories: result.riskCategories,
-      Excerpt: result.excerpt,
-      ArticleUrl: result.url,
-      Sentiment: result.sentiment || 'Negative'
-    };
-
-    this.alertsService.createFromMedia(alertRequest).subscribe({
-      next: (response) => {
-        this.snackBar.open(
-          `Alert created successfully for ${alertRequest.EntityName}`,
-          'View Alert',
-          {
-            duration: 5000
-          }
-        ).onAction().subscribe(() => {
-          // Navigate to alert details
-          window.open(`/alerts/${response.id}`, '_blank');
-        });
-      },
-      error: (error) => {
-        console.error('Error creating alert:', error);
-        this.snackBar.open('Failed to create alert. Please try again.', 'Close', { duration: 5000 });
-      }
+    this.screeningForm.reset();
+    this.screeningForm.patchValue({
+      threshold: 75,
+      sources: null,
+      categories: null
     });
+    this.screeningResults.set(null);
   }
 
-  addToMonitoring(result?: any) {
-    if (this.monitoringForm.valid) {
-      this.snackBar.open('Entity added to monitoring', 'Close', { duration: 3000 });
-      this.showMonitoringForm = false;
-      this.loadMonitoredEntities();
+  viewScreeningDetails(screening: any) {
+    this.screeningResults.set(screening);
+  }
+
+  private addToHistory(result: any) {
+    const history = this.screeningHistory();
+    history.unshift(result);
+    this.screeningHistory.set(history.slice(0, 50)); // Keep last 50 screenings
+  }
+
+  getSeverityColor(severity: string): string {
+    switch(severity?.toLowerCase()) {
+      case 'critical': return 'warn';
+      case 'high': return 'warn';
+      case 'medium': return 'accent';
+      default: return 'primary';
     }
   }
 
-  viewMonitoringDetails(entity: any) {
-    console.log('View details:', entity);
-  }
-
-  pauseMonitoring(entity: any) {
-    this.snackBar.open('Monitoring paused', 'Close', { duration: 3000 });
-  }
-
-  removeMonitoring(entity: any) {
-    this.snackBar.open('Monitoring removed', 'Close', { duration: 3000 });
-  }
-
-  getHighRiskResults() {
-    return this.scanResults().filter(result => result.riskScore >= 75);
-  }
-
-  selectAllHighRisk() {
-    // This could be used to select checkboxes if we add them to the UI
-    this.snackBar.open('High risk results selected', 'Close', { duration: 2000 });
-  }
-
-  createBulkAlerts() {
-    const highRiskResults = this.getHighRiskResults();
-
-    if (highRiskResults.length === 0) {
-      this.snackBar.open('No high-risk results to create alerts for', 'Close', { duration: 3000 });
-      return;
+  getOverallRiskColor(risk: string): string {
+    switch(risk?.toLowerCase()) {
+      case 'critical': return 'warn';
+      case 'high': return 'warn';
+      case 'medium': return 'accent';
+      default: return 'primary';
     }
+  }
 
-    const bulkRequest = {
-      MediaResults: highRiskResults.map(result => ({
-        EntityName: result.entities?.[0] || this.scanForm.value.entityName,
-        EntityType: this.scanForm.value.entityType === 'person' ? 'Individual' : 'Organization',
-        RiskScore: result.riskScore,
-        MediaHeadline: result.headline,
-        MediaSource: result.source,
-        PublishedDate: result.publishedDate,
-        RiskCategories: result.riskCategories,
-        Excerpt: result.excerpt,
-        ArticleUrl: result.url,
-        Sentiment: result.sentiment || 'Negative'
-      })),
-      MinimumRiskThreshold: 75
-    };
+  getActionColor(action: string): string {
+    switch(action?.toLowerCase()) {
+      case 'reject': return 'warn';
+      case 'enhanced due diligence': return 'accent';
+      case 'additional review': return 'accent';
+      default: return 'primary';
+    }
+  }
 
-    this.alertsService.bulkCreateFromMedia(bulkRequest).subscribe({
-      next: (response) => {
-        this.snackBar.open(
-          `Created ${response.createdCount} alerts, skipped ${response.skippedCount}`,
-          'View Alerts',
-          {
-            duration: 7000
-          }
-        ).onAction().subscribe(() => {
-          // Navigate to alerts list
-          window.open('/alerts', '_blank');
-        });
-      },
-      error: (error) => {
-        console.error('Error creating bulk alerts:', error);
-        this.snackBar.open('Failed to create alerts. Please try again.', 'Close', { duration: 5000 });
-      }
-    });
+  formatDate(date: string | Date): string {
+    if (!date) return 'N/A';
+    const d = typeof date === 'string' ? new Date(date) : date;
+    return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
 }

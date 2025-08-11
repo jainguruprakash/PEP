@@ -1,15 +1,14 @@
 import { Component, Input, OnInit, OnDestroy, ElementRef, ViewChild, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Chart, ChartConfiguration, ChartType, registerables } from 'chart.js';
 
-Chart.register(...registerables);
+declare var Chart: any;
 
 @Component({
   selector: 'app-chart',
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="chart-container">
+    <div class="chart-container" [style.height.px]="height">
       <canvas #chartCanvas></canvas>
     </div>
   `,
@@ -17,7 +16,6 @@ Chart.register(...registerables);
     .chart-container {
       position: relative;
       width: 100%;
-      height: 100%;
     }
     canvas {
       max-width: 100%;
@@ -28,20 +26,24 @@ Chart.register(...registerables);
 export class ChartComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('chartCanvas', { static: true }) chartCanvas!: ElementRef<HTMLCanvasElement>;
   
-  @Input() type: ChartType = 'line';
+  @Input() type: 'line' | 'bar' | 'pie' | 'doughnut' | 'radar' | 'polarArea' = 'line';
   @Input() data: any;
   @Input() options: any = {};
   @Input() height: number = 400;
-  @Input() width?: number;
 
-  private chart?: Chart;
+  private chart: any;
 
   ngOnInit() {
-    // Component initialization
+    // Load Chart.js if not already loaded
+    if (typeof Chart === 'undefined') {
+      this.loadChartJS();
+    }
   }
 
   ngAfterViewInit() {
-    this.createChart();
+    if (typeof Chart !== 'undefined') {
+      this.createChart();
+    }
   }
 
   ngOnDestroy() {
@@ -50,162 +52,134 @@ export class ChartComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  private loadChartJS() {
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+    script.onload = () => {
+      this.createChart();
+    };
+    document.head.appendChild(script);
+  }
+
   private createChart() {
-    if (!this.chartCanvas || !this.data) return;
+    if (!this.data || typeof Chart === 'undefined') {
+      return;
+    }
 
     const ctx = this.chartCanvas.nativeElement.getContext('2d');
     if (!ctx) return;
 
-    // Set canvas dimensions
-    this.chartCanvas.nativeElement.height = this.height;
-    if (this.width) {
-      this.chartCanvas.nativeElement.width = this.width;
+    // Destroy existing chart
+    if (this.chart) {
+      this.chart.destroy();
     }
 
+    // Default options
     const defaultOptions = {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
         legend: {
-          display: true,
           position: 'top' as const,
         },
-        tooltip: {
-          mode: 'index' as const,
-          intersect: false,
-        },
-      },
-      scales: this.getScalesConfig(),
-      interaction: {
-        mode: 'nearest' as const,
-        axis: 'x' as const,
-        intersect: false,
       },
     };
 
-    const config: ChartConfiguration = {
+    // Merge with provided options
+    const chartOptions = { ...defaultOptions, ...this.options };
+
+    this.chart = new Chart(ctx, {
       type: this.type,
       data: this.data,
-      options: { ...defaultOptions, ...this.options }
-    };
-
-    this.chart = new Chart(ctx, config);
-  }
-
-  private getScalesConfig() {
-    switch (this.type) {
-      case 'line':
-      case 'bar':
-        return {
-          x: {
-            display: true,
-            grid: {
-              display: true,
-              color: 'rgba(0, 0, 0, 0.1)',
-            },
-          },
-          y: {
-            display: true,
-            beginAtZero: true,
-            grid: {
-              display: true,
-              color: 'rgba(0, 0, 0, 0.1)',
-            },
-          },
-        };
-      case 'pie':
-      case 'doughnut':
-        return {};
-      default:
-        return {
-          x: {
-            display: true,
-          },
-          y: {
-            display: true,
-            beginAtZero: true,
-          },
-        };
-    }
+      options: chartOptions
+    });
   }
 
   updateChart(newData: any) {
-    if (this.chart) {
+    if (this.chart && newData) {
       this.chart.data = newData;
-      this.chart.update();
-    }
-  }
-
-  updateOptions(newOptions: any) {
-    if (this.chart) {
-      this.chart.options = { ...this.chart.options, ...newOptions };
       this.chart.update();
     }
   }
 }
 
-// Chart data helper functions
+// Helper class for creating chart data
 export class ChartDataHelper {
-  static createLineChartData(labels: string[], datasets: { label: string; data: number[]; borderColor?: string; backgroundColor?: string; }[]) {
+  static createLineChartData(labels: string[], datasets: any[]) {
     return {
       labels,
       datasets: datasets.map(dataset => ({
-        label: dataset.label,
-        data: dataset.data,
-        borderColor: dataset.borderColor || '#3b82f6',
-        backgroundColor: dataset.backgroundColor || 'rgba(59, 130, 246, 0.1)',
-        borderWidth: 2,
-        fill: true,
-        tension: 0.4,
+        ...dataset,
+        fill: false,
+        tension: 0.1
       }))
     };
   }
 
-  static createBarChartData(labels: string[], datasets: { label: string; data: number[]; backgroundColor?: string[]; }[]) {
+  static createBarChartData(labels: string[], datasets: any[]) {
     return {
       labels,
-      datasets: datasets.map(dataset => ({
-        label: dataset.label,
-        data: dataset.data,
-        backgroundColor: dataset.backgroundColor || [
-          '#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#06b6d4'
-        ],
-        borderWidth: 1,
-      }))
+      datasets
     };
   }
 
-  static createPieChartData(labels: string[], data: number[], backgroundColor?: string[]) {
+  static createPieChartData(labels: string[], data: number[]) {
     return {
       labels,
       datasets: [{
         data,
-        backgroundColor: backgroundColor || [
-          '#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#06b6d4',
-          '#ec4899', '#84cc16', '#f97316', '#6366f1'
-        ],
-        borderWidth: 2,
-        borderColor: '#ffffff',
+        backgroundColor: this.getDefaultColors().palette,
+        borderWidth: 1
       }]
     };
   }
 
-  static createDoughnutChartData(labels: string[], data: number[], backgroundColor?: string[]) {
-    return this.createPieChartData(labels, data, backgroundColor);
+  static createDoughnutChartData(labels: string[], data: number[]) {
+    return {
+      labels,
+      datasets: [{
+        data,
+        backgroundColor: this.getDefaultColors().palette,
+        borderWidth: 2,
+        borderColor: '#fff'
+      }]
+    };
   }
 
   static getDefaultColors() {
     return {
-      primary: '#3b82f6',
+      primary: '#1976d2',
+      secondary: '#dc004e',
       success: '#10b981',
       warning: '#f59e0b',
       danger: '#ef4444',
       info: '#06b6d4',
-      purple: '#8b5cf6',
-      pink: '#ec4899',
-      lime: '#84cc16',
-      orange: '#f97316',
-      indigo: '#6366f1',
+      palette: [
+        '#1976d2', '#dc004e', '#10b981', '#f59e0b', 
+        '#ef4444', '#06b6d4', '#8b5cf6', '#f97316',
+        '#84cc16', '#ec4899', '#6366f1', '#14b8a6'
+      ]
     };
+  }
+
+  static generateSampleLineData(labels: string[], datasetLabel: string = 'Sample Data') {
+    return this.createLineChartData(labels, [{
+      label: datasetLabel,
+      data: labels.map(() => Math.floor(Math.random() * 100)),
+      borderColor: this.getDefaultColors().primary,
+      backgroundColor: 'rgba(25, 118, 210, 0.1)'
+    }]);
+  }
+
+  static generateSampleBarData(labels: string[], datasetLabel: string = 'Sample Data') {
+    return this.createBarChartData(labels, [{
+      label: datasetLabel,
+      data: labels.map(() => Math.floor(Math.random() * 100)),
+      backgroundColor: this.getDefaultColors().primary
+    }]);
+  }
+
+  static generateSamplePieData(labels: string[]) {
+    return this.createPieChartData(labels, labels.map(() => Math.floor(Math.random() * 100)));
   }
 }

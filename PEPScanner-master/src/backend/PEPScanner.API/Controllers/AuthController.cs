@@ -149,8 +149,10 @@ namespace PEPScanner.API.Controllers
                 var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 var userName = User.FindFirst(ClaimTypes.Name)?.Value;
                 var email = User.FindFirst(ClaimTypes.Email)?.Value;
-                var roles = User.FindAll(ClaimTypes.Role).Select(c => c.Value).ToList();
+                var role = User.FindFirst(ClaimTypes.Role)?.Value;
                 var organizationId = User.FindFirst("OrganizationId")?.Value;
+                var firstName = User.FindFirst("FirstName")?.Value;
+                var lastName = User.FindFirst("LastName")?.Value;
 
                 if (string.IsNullOrEmpty(userId))
                 {
@@ -162,7 +164,9 @@ namespace PEPScanner.API.Controllers
                     Id = userId,
                     Username = userName,
                     Email = email,
-                    Roles = roles,
+                    FirstName = firstName,
+                    LastName = lastName,
+                    Role = role,
                     OrganizationId = organizationId,
                     IsAuthenticated = true
                 };
