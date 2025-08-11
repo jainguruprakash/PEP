@@ -47,60 +47,67 @@ import { filter } from 'rxjs/operators';
           <mat-icon matListItemIcon>dashboard</mat-icon>
           <span matListItemTitle>Dashboard</span>
         </a>
-        <a mat-list-item routerLink="screening/customer" routerLinkActive="active">
-          <mat-icon matListItemIcon>person_search</mat-icon>
-          <span matListItemTitle>Customer Screening</span>
-        </a>
-        <a mat-list-item routerLink="screening/transaction" routerLinkActive="active">
-          <mat-icon matListItemIcon>account_balance</mat-icon>
-          <span matListItemTitle>Transaction Screening</span>
-        </a>
-        <a mat-list-item routerLink="adverse-media" routerLinkActive="active">
-          <mat-icon matListItemIcon>newspaper</mat-icon>
-          <span matListItemTitle>Adverse Media</span>
-        </a>
-        <a mat-list-item routerLink="customer-media-scan" routerLinkActive="active">
-          <mat-icon matListItemIcon>scanner</mat-icon>
-          <span matListItemTitle>Customer Media Scan</span>
-        </a>
-        <a mat-list-item routerLink="financial-intelligence" routerLinkActive="active">
-          <mat-icon matListItemIcon>account_balance</mat-icon>
-          <span matListItemTitle>Financial Intelligence</span>
-        </a>
-        <a mat-list-item routerLink="search" routerLinkActive="active">
-          <mat-icon matListItemIcon>search</mat-icon>
-          <span matListItemTitle>Search</span>
-        </a>
-        <a mat-list-item routerLink="watchlists" routerLinkActive="active">
-          <mat-icon matListItemIcon>list</mat-icon>
-          <span matListItemTitle>Watchlists</span>
-        </a>
-        <a mat-list-item routerLink="sanctions" routerLinkActive="active">
-          <mat-icon matListItemIcon>gavel</mat-icon>
-          <span matListItemTitle>Sanctions</span>
-        </a>
-        <a mat-list-item routerLink="alerts" routerLinkActive="active">
-          <mat-icon matListItemIcon>warning</mat-icon>
-          <span matListItemTitle>Alerts</span>
-        </a>
-        <a mat-list-item routerLink="customers" routerLinkActive="active">
-          <mat-icon matListItemIcon>people</mat-icon>
-          <span matListItemTitle>Customers</span>
-        </a>
-        <a mat-list-item routerLink="reports" routerLinkActive="active">
-          <mat-icon matListItemIcon>description</mat-icon>
-          <span matListItemTitle>SAR/STR Reports</span>
-        </a>
-        <a mat-list-item routerLink="future-features" routerLinkActive="active">
-          <mat-icon matListItemIcon>rocket_launch</mat-icon>
-          <span matListItemTitle>Future Features</span>
-        </a>
+        
+        @if (authService.hasAnyRole(['Admin', 'Manager', 'Analyst'])) {
+          <a mat-list-item routerLink="screening/customer" routerLinkActive="active">
+            <mat-icon matListItemIcon>person_search</mat-icon>
+            <span matListItemTitle>Customer Screening</span>
+          </a>
+          <a mat-list-item routerLink="screening/transaction" routerLinkActive="active">
+            <mat-icon matListItemIcon>account_balance</mat-icon>
+            <span matListItemTitle>Transaction Screening</span>
+          </a>
+          <a mat-list-item routerLink="adverse-media" routerLinkActive="active">
+            <mat-icon matListItemIcon>newspaper</mat-icon>
+            <span matListItemTitle>Adverse Media</span>
+          </a>
+          <a mat-list-item routerLink="customer-media-scan" routerLinkActive="active">
+            <mat-icon matListItemIcon>scanner</mat-icon>
+            <span matListItemTitle>Customer Media Scan</span>
+          </a>
+          <a mat-list-item routerLink="financial-intelligence" routerLinkActive="active">
+            <mat-icon matListItemIcon>account_balance</mat-icon>
+            <span matListItemTitle>Financial Intelligence</span>
+          </a>
+          <a mat-list-item routerLink="search" routerLinkActive="active">
+            <mat-icon matListItemIcon>search</mat-icon>
+            <span matListItemTitle>Search</span>
+          </a>
+          <a mat-list-item routerLink="customers" routerLinkActive="active">
+            <mat-icon matListItemIcon>people</mat-icon>
+            <span matListItemTitle>Customers</span>
+          </a>
+        }
+        
+        @if (authService.hasAnyRole(['Admin', 'Manager'])) {
+          <a mat-list-item routerLink="watchlists" routerLinkActive="active">
+            <mat-icon matListItemIcon>list</mat-icon>
+            <span matListItemTitle>Watchlists</span>
+          </a>
+          <a mat-list-item routerLink="sanctions" routerLinkActive="active">
+            <mat-icon matListItemIcon>gavel</mat-icon>
+            <span matListItemTitle>Sanctions</span>
+          </a>
+        }
+        
+        @if (authService.hasAnyRole(['Admin', 'Manager', 'ComplianceOfficer'])) {
+          <a mat-list-item routerLink="alerts" routerLinkActive="active">
+            <mat-icon matListItemIcon>warning</mat-icon>
+            <span matListItemTitle>Alerts</span>
+          </a>
+          <a mat-list-item routerLink="reports" routerLinkActive="active">
+            <mat-icon matListItemIcon>description</mat-icon>
+            <span matListItemTitle>SAR/STR Reports</span>
+          </a>
+        }
+        
         @if (authService.hasAnyRole(['Admin'])) {
           <a mat-list-item routerLink="organizations" routerLinkActive="active">
             <mat-icon matListItemIcon>business</mat-icon>
             <span matListItemTitle>Organizations</span>
           </a>
         }
+        
         @if (authService.hasAnyRole(['Admin', 'Manager'])) {
           <a mat-list-item routerLink="settings" routerLinkActive="active">
             <mat-icon matListItemIcon>settings</mat-icon>

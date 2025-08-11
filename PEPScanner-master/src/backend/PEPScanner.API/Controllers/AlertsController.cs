@@ -25,11 +25,18 @@ namespace PEPScanner.API.Controllers
             [FromQuery] string? assignedTo = null,
             [FromQuery] string? priority = null,
             [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 50)
+            [FromQuery] int pageSize = 50,
+            [FromQuery] string? organizationId = null)
         {
             try
             {
                 var alertsQuery = _context.Alerts.Include(a => a.Customer).AsQueryable();
+                
+                // Filter by organization if provided
+                if (!string.IsNullOrEmpty(organizationId))
+                {
+                    alertsQuery = alertsQuery.Where(a => a.Customer != null && a.Customer.OrganizationId.ToString() == organizationId);
+                }
 
                 // Apply filters
                 if (!string.IsNullOrEmpty(status))
@@ -200,12 +207,19 @@ namespace PEPScanner.API.Controllers
         }
 
         [HttpGet("status/{status}")]
-        public async Task<IActionResult> GetByStatus(string status)
+        public async Task<IActionResult> GetByStatus(string status, [FromQuery] string? organizationId = null)
         {
             try
             {
-                var alerts = await _context.Alerts
-                    .Where(a => a.Status == status)
+                var alertsQuery = _context.Alerts
+                    .Where(a => a.Status == status);
+                    
+                if (!string.IsNullOrEmpty(organizationId))
+                {
+                    alertsQuery = alertsQuery.Where(a => a.Customer != null && a.Customer.OrganizationId.ToString() == organizationId);
+                }
+                
+                var alerts = await alertsQuery
                     .Select(a => new
                     {
                         a.Id,
@@ -236,12 +250,17 @@ namespace PEPScanner.API.Controllers
         // Workflow Management Endpoints
 
         [HttpGet("pending-review")]
-        public async Task<IActionResult> GetPendingReview([FromQuery] string? reviewerEmail = null)
+        public async Task<IActionResult> GetPendingReview([FromQuery] string? reviewerEmail = null, [FromQuery] string? organizationId = null)
         {
             try
             {
                 var query = _context.Alerts
                     .Where(a => a.WorkflowStatus == "PendingReview" || a.WorkflowStatus == "UnderReview");
+                    
+                if (!string.IsNullOrEmpty(organizationId))
+                {
+                    query = query.Where(a => a.Customer != null && a.Customer.OrganizationId.ToString() == organizationId);
+                }
 
                 if (!string.IsNullOrEmpty(reviewerEmail))
                 {
@@ -280,12 +299,17 @@ namespace PEPScanner.API.Controllers
         }
 
         [HttpGet("pending-approval")]
-        public async Task<IActionResult> GetPendingApproval([FromQuery] string? approverEmail = null)
+        public async Task<IActionResult> GetPendingApproval([FromQuery] string? approverEmail = null, [FromQuery] string? organizationId = null)
         {
             try
             {
                 var query = _context.Alerts
                     .Where(a => a.WorkflowStatus == "PendingApproval");
+                    
+                if (!string.IsNullOrEmpty(organizationId))
+                {
+                    query = query.Where(a => a.Customer != null && a.Customer.OrganizationId.ToString() == organizationId);
+                }
 
                 if (!string.IsNullOrEmpty(approverEmail))
                 {

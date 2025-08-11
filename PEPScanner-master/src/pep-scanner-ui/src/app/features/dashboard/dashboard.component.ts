@@ -10,6 +10,8 @@ import { MatGridListModule } from '@angular/material/grid-list';
 
 import { ChartComponent, ChartDataHelper } from '../../shared/components/chart.component';
 import { DashboardService, DashboardOverview, ChartData, RecentActivity, DashboardKpis } from '../../services/dashboard.service';
+import { AuthService } from '../../services/auth.service';
+import { PermissionsService } from '../../services/permissions.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -30,12 +32,18 @@ import { DashboardService, DashboardOverview, ChartData, RecentActivity, Dashboa
 })
 export class DashboardComponent implements OnInit {
   private dashboardService = inject(DashboardService);
+  private authService = inject(AuthService);
+  private permissionsService = inject(PermissionsService);
 
   // Signals for reactive state management
   loading = signal(true);
   overview = signal<DashboardOverview | null>(null);
   kpis = signal<DashboardKpis | null>(null);
   recentActivities = signal<RecentActivity[]>([]);
+  
+  // Role-based visibility
+  currentUser = this.authService.currentUser$;
+  userRole = signal<string>('');
 
   // Chart data signals
   alertTrendsData = signal<any>(null);
@@ -76,7 +84,47 @@ export class DashboardComponent implements OnInit {
   };
 
   ngOnInit() {
+    const user = this.authService.getCurrentUser();
+    if (user) {
+      this.userRole.set(user.role);
+    }
     this.loadDashboardData();
+  }
+  
+  hasPermission(permission: string): boolean {
+    return this.permissionsService.hasPermission(permission);
+  }
+  
+  canViewScreening(): boolean {
+    return this.hasPermission('screening.customer');
+  }
+  
+  canViewAlerts(): boolean {
+    return this.hasPermission('alerts.view');
+  }
+  
+  canViewReports(): boolean {
+    return this.hasPermission('reports.view');
+  }
+  
+  canManageSettings(): boolean {
+    return this.hasPermission('settings.manage');
+  }
+  
+  getRoleBasedWelcomeMessage(): string {
+    const role = this.userRole();
+    switch (role) {
+      case 'Admin':
+        return 'Welcome to your administrative dashboard';
+      case 'Manager':
+        return 'Welcome to your management dashboard';
+      case 'Analyst':
+        return 'Welcome to your analysis dashboard';
+      case 'ComplianceOfficer':
+        return 'Welcome to your compliance dashboard';
+      default:
+        return 'Welcome to your dashboard';
+    }
   }
 
   async loadDashboardData() {

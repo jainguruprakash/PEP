@@ -7,10 +7,13 @@
   } @else {
     <!-- Header Section -->
     <div class="dashboard-header">
-      <h1>
-        <mat-icon>dashboard</mat-icon>
-        Compliance Dashboard
-      </h1>
+      <div>
+        <h1>
+          <mat-icon>dashboard</mat-icon>
+          Compliance Dashboard
+        </h1>
+        <p class="welcome-message">{{ getRoleBasedWelcomeMessage() }}</p>
+      </div>
       <div class="header-actions">
         <button mat-raised-button color="primary" (click)="refreshDashboard()">
           <mat-icon>refresh</mat-icon>
@@ -22,50 +25,56 @@
     <!-- KPI Cards -->
     @if (kpis()) {
       <div class="kpi-grid">
-        <mat-card class="kpi-card alerts-card" [routerLink]="['/dashboard/alerts']">
-          <mat-card-content>
-            <div class="kpi-content">
-              <div class="kpi-icon">
-                <mat-icon>warning</mat-icon>
+        @if (canViewAlerts()) {
+          <mat-card class="kpi-card alerts-card" [routerLink]="['/dashboard/alerts']">
+            <mat-card-content>
+              <div class="kpi-content">
+                <div class="kpi-icon">
+                  <mat-icon>warning</mat-icon>
+                </div>
+                <div class="kpi-details">
+                  <div class="kpi-value">{{ formatNumber(kpis()?.totalAlerts || 0) }}</div>
+                  <div class="kpi-label">Total Alerts</div>
+                  <div class="kpi-sublabel">{{ formatNumber(kpis()?.pendingAlerts || 0) }} pending</div>
+                </div>
               </div>
-              <div class="kpi-details">
-                <div class="kpi-value">{{ formatNumber(kpis()?.totalAlerts || 0) }}</div>
-                <div class="kpi-label">Total Alerts</div>
-                <div class="kpi-sublabel">{{ formatNumber(kpis()?.pendingAlerts || 0) }} pending</div>
-              </div>
-            </div>
-          </mat-card-content>
-        </mat-card>
+            </mat-card-content>
+          </mat-card>
+        }
 
-        <mat-card class="kpi-card customers-card" [routerLink]="['/dashboard/customers']">
-          <mat-card-content>
-            <div class="kpi-content">
-              <div class="kpi-icon">
-                <mat-icon>people</mat-icon>
+        @if (canViewScreening()) {
+          <mat-card class="kpi-card customers-card" [routerLink]="['/dashboard/customers']">
+            <mat-card-content>
+              <div class="kpi-content">
+                <div class="kpi-icon">
+                  <mat-icon>people</mat-icon>
+                </div>
+                <div class="kpi-details">
+                  <div class="kpi-value">{{ formatNumber(overview()?.totalCustomers || 0) }}</div>
+                  <div class="kpi-label">Total Customers</div>
+                  <div class="kpi-sublabel">{{ formatNumber(overview()?.highRiskAlerts || 0) }} high risk</div>
+                </div>
               </div>
-              <div class="kpi-details">
-                <div class="kpi-value">{{ formatNumber(overview()?.totalCustomers || 0) }}</div>
-                <div class="kpi-label">Total Customers</div>
-                <div class="kpi-sublabel">{{ formatNumber(overview()?.highRiskAlerts || 0) }} high risk</div>
-              </div>
-            </div>
-          </mat-card-content>
-        </mat-card>
+            </mat-card-content>
+          </mat-card>
+        }
 
-        <mat-card class="kpi-card screening-card">
-          <mat-card-content>
-            <div class="kpi-content">
-              <div class="kpi-icon">
-                <mat-icon>search</mat-icon>
+        @if (canViewScreening()) {
+          <mat-card class="kpi-card screening-card">
+            <mat-card-content>
+              <div class="kpi-content">
+                <div class="kpi-icon">
+                  <mat-icon>search</mat-icon>
+                </div>
+                <div class="kpi-details">
+                  <div class="kpi-value">{{ formatNumber(kpis()?.totalScreenings || 0) }}</div>
+                  <div class="kpi-label">Screenings Today</div>
+                  <div class="kpi-sublabel">0 today</div>
+                </div>
               </div>
-              <div class="kpi-details">
-                <div class="kpi-value">{{ formatNumber(kpis()?.totalScreenings || 0) }}</div>
-                <div class="kpi-label">Screenings Today</div>
-                <div class="kpi-sublabel">0 today</div>
-              </div>
-            </div>
-          </mat-card-content>
-        </mat-card>
+            </mat-card-content>
+          </mat-card>
+        }
 
         <mat-card class="kpi-card compliance-card">
           <mat-card-content>
@@ -229,22 +238,28 @@
         </mat-card-header>
         <mat-card-content>
           <div class="quick-actions-grid">
-            <button mat-raised-button color="primary" [routerLink]="['/dashboard/customers']">
-              <mat-icon>person_add</mat-icon>
-              Add Customer
-            </button>
-            <button mat-raised-button color="accent" [routerLink]="['/dashboard/screening']">
-              <mat-icon>search</mat-icon>
-              Screen Customer
-            </button>
-            <button mat-raised-button [routerLink]="['/dashboard/alerts']">
-              <mat-icon>warning</mat-icon>
-              Review Alerts
-            </button>
-            <button mat-raised-button [routerLink]="['/dashboard/reports']">
-              <mat-icon>assessment</mat-icon>
-              Generate Report
-            </button>
+            @if (canViewScreening()) {
+              <button mat-raised-button color="primary" [routerLink]="['/dashboard/customers']">
+                <mat-icon>person_add</mat-icon>
+                Add Customer
+              </button>
+              <button mat-raised-button color="accent" [routerLink]="['/dashboard/screening']">
+                <mat-icon>search</mat-icon>
+                Screen Customer
+              </button>
+            }
+            @if (canViewAlerts()) {
+              <button mat-raised-button [routerLink]="['/dashboard/alerts']">
+                <mat-icon>warning</mat-icon>
+                Review Alerts
+              </button>
+            }
+            @if (canViewReports()) {
+              <button mat-raised-button [routerLink]="['/dashboard/reports']">
+                <mat-icon>assessment</mat-icon>
+                Generate Report
+              </button>
+            }
           </div>
         </mat-card-content>
       </mat-card>

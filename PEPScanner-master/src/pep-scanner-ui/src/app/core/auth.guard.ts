@@ -1,15 +1,47 @@
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { CanActivateFn } from '@angular/router';
+import { AuthService } from '../services/auth.service';
 
 export const authGuard: CanActivateFn = () => {
-  return true; // Simplified for now
+  const authService = inject(AuthService);
+  const router = inject(Router);
+  
+  if (authService.isAuthenticated()) {
+    return true;
+  }
+  
+  router.navigate(['/login']);
+  return false;
 };
 
 export const loginGuard: CanActivateFn = () => {
-  return true; // Simplified for now
+  const authService = inject(AuthService);
+  const router = inject(Router);
+  
+  if (authService.isAuthenticated()) {
+    router.navigate(['/dashboard']);
+    return false;
+  }
+  
+  return true;
 };
 
-export const roleGuard = (roles: string[]): CanActivateFn => {
-  return () => true; // Simplified for now
+export const roleGuard = (allowedRoles: string[]): CanActivateFn => {
+  return () => {
+    const authService = inject(AuthService);
+    const router = inject(Router);
+    
+    if (!authService.isAuthenticated()) {
+      router.navigate(['/login']);
+      return false;
+    }
+    
+    if (authService.hasAnyRole(allowedRoles)) {
+      return true;
+    }
+    
+    router.navigate(['/dashboard']);
+    return false;
+  };
 };

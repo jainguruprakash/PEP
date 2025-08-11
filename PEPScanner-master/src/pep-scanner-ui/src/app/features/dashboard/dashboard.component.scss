@@ -20,7 +20,7 @@
 .dashboard-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 30px;
   
   h1 {
@@ -36,6 +36,13 @@
       width: 32px;
       height: 32px;
     }
+  }
+  
+  .welcome-message {
+    margin: 8px 0 0 0;
+    color: #666;
+    font-size: 14px;
+    font-weight: 400;
   }
   
   .header-actions {

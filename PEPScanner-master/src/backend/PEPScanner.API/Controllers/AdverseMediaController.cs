@@ -141,7 +141,22 @@ namespace PEPScanner.API.Controllers
 
                 if (customer == null)
                 {
-                    return BadRequest(new { error = "Customer not found" });
+                    // Create customer if not exists
+                    customer = new Customer
+                    {
+                        Id = Guid.NewGuid(),
+                        FullName = request.CustomerName,
+                        CustomerType = "Individual",
+                        RiskLevel = "Medium",
+                        Status = "Active",
+                        OnboardingDate = DateTime.UtcNow,
+                        CreatedAtUtc = DateTime.UtcNow,
+                        UpdatedAtUtc = DateTime.UtcNow,
+                        CreatedBy = "AdverseMediaSystem",
+                        IsDeleted = false
+                    };
+                    _context.Customers.Add(customer);
+                    await _context.SaveChangesAsync();
                 }
 
                 // Check if alert already exists for this customer and source
