@@ -1,4 +1,4 @@
-@PEPScanner.API_HostAddress = http://localhost:5097
+@PEPScanner.API_HostAddress = http://localhost:5098
 
 GET {{PEPScanner.API_HostAddress}}/weatherforecast/
 Accept: application/json

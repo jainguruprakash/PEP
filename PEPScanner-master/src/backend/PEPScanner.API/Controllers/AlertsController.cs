@@ -343,6 +343,15 @@ namespace PEPScanner.API.Controllers
                     return NotFound(new { error = "Alert not found" });
                 }
 
+                // Validate that the assignee exists in the system
+                var assignee = await _context.OrganizationUsers
+                    .FirstOrDefaultAsync(u => u.Id.ToString() == request.AssignedTo && u.IsActive);
+                
+                if (assignee == null)
+                {
+                    return BadRequest(new { error = "Invalid assignee. User not found or inactive." });
+                }
+
                 var previousAssignee = alert.CurrentReviewer;
                 alert.CurrentReviewer = request.AssignedTo;
                 alert.AssignedTo = request.AssignedTo;
@@ -365,10 +374,29 @@ namespace PEPScanner.API.Controllers
                     ActionDateUtc = DateTime.UtcNow
                 };
 
+                // Create notification for assignee
+                var notification = new Notification
+                {
+                    Id = Guid.NewGuid(),
+                    Type = "AlertAssignment",
+                    Title = "Alert Assigned to You",
+                    Message = $"Alert {alert.AlertType} has been assigned to you for review",
+                    TargetUserEmail = assignee.Email,
+                    Data = System.Text.Json.JsonSerializer.Serialize(new
+                    {
+                        alertId = alert.Id,
+                        alertType = alert.AlertType,
+                        priority = alert.Priority
+                    }),
+                    IsRead = false,
+                    CreatedAtUtc = DateTime.UtcNow
+                };
+
                 _context.AlertActions.Add(action);
+                _context.Notifications.Add(notification);
                 await _context.SaveChangesAsync();
 
-                return Ok(new { message = "Alert assigned successfully" });
+                return Ok(new { message = "Alert assigned successfully", assigneeName = assignee.FullName });
             }
             catch (Exception ex)
             {
@@ -524,6 +552,62 @@ namespace PEPScanner.API.Controllers
                 return StatusCode(500, new { error = "Internal server error" });
             }
         }
+
+        [HttpPost("{id}/escalate")]
+        public async Task<IActionResult> EscalateAlert(Guid id, [FromBody] EscalateAlertRequest request)
+        {
+            try
+            {
+                var alert = await _context.Alerts.FindAsync(id);
+                if (alert == null)
+                {
+                    return NotFound(new { error = "Alert not found" });
+                }
+
+                var user = await _context.OrganizationUsers
+                    .FirstOrDefaultAsync(u => u.Id.ToString() == request.EscalatedBy);
+                
+                if (user == null)
+                {
+                    return BadRequest(new { error = "User not found" });
+                }
+
+                var alertAssignmentService = HttpContext.RequestServices.GetRequiredService<PEPScanner.API.Services.IAlertAssignmentService>();
+                var success = await alertAssignmentService.AssignAlertToSeniorAsync(id, request.EscalatedBy);
+
+                if (!success)
+                {
+                    return BadRequest(new { error = "No senior user found for escalation or escalation failed" });
+                }
+
+                alert.EscalationLevel = alert.EscalationLevel + 1;
+                alert.EscalatedAtUtc = DateTime.UtcNow;
+                alert.EscalatedTo = alert.AssignedTo;
+                alert.LastActionType = "Escalated";
+                alert.LastActionDateUtc = DateTime.UtcNow;
+
+                var action = new AlertAction
+                {
+                    Id = Guid.NewGuid(),
+                    AlertId = id,
+                    ActionType = "Escalated",
+                    PerformedBy = request.EscalatedBy,
+                    Comments = request.Reason,
+                    Reason = request.Reason,
+                    ActionDateUtc = DateTime.UtcNow
+                };
+
+                _context.AlertActions.Add(action);
+                await _context.SaveChangesAsync();
+
+                return Ok(new { message = "Alert escalated successfully" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error escalating alert {Id}", id);
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
     }
 
     // Request DTOs
@@ -544,6 +628,12 @@ namespace PEPScanner.API.Controllers
         public string ApprovedBy { get; set; } = string.Empty;
         public string? Comments { get; set; }
         public string? Outcome { get; set; }
+    }
+
+    public class EscalateAlertRequest
+    {
+        public string EscalatedBy { get; set; } = string.Empty;
+        public string Reason { get; set; } = string.Empty;
     }
 }
 

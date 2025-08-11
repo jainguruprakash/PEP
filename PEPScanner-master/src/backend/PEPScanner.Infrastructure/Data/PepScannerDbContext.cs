@@ -50,6 +50,10 @@ namespace PEPScanner.Infrastructure.Data
         public DbSet<OrganizationUser> OrganizationUsers => Set<OrganizationUser>();
         public DbSet<OrganizationWatchlist> OrganizationWatchlists => Set<OrganizationWatchlist>();
         public DbSet<OrganizationConfiguration> OrganizationConfigurations => Set<OrganizationConfiguration>();
+        
+        // Compliance Hierarchy
+        public DbSet<Team> Teams => Set<Team>();
+        public DbSet<NotificationRule> NotificationRules => Set<NotificationRule>();
 
         // AI Risk Scoring and Real-time Notifications
         public DbSet<RiskAssessmentEntity> RiskAssessments => Set<RiskAssessmentEntity>();
@@ -133,6 +137,39 @@ namespace PEPScanner.Infrastructure.Data
                 .HasForeignKey(ou => ou.OrganizationId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            // OrganizationUser hierarchy
+            modelBuilder.Entity<OrganizationUser>()
+                .HasOne(ou => ou.Manager)
+                .WithMany(m => m.Subordinates)
+                .HasForeignKey(ou => ou.ManagerId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<OrganizationUser>()
+                .HasOne(ou => ou.Team)
+                .WithMany(t => t.Members)
+                .HasForeignKey(ou => ou.TeamId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // Team configuration
+            modelBuilder.Entity<Team>()
+                .HasOne(t => t.Organization)
+                .WithMany()
+                .HasForeignKey(t => t.OrganizationId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Team>()
+                .HasOne(t => t.TeamLead)
+                .WithMany(u => u.ManagedTeams)
+                .HasForeignKey(t => t.TeamLeadId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // NotificationRule configuration
+            modelBuilder.Entity<NotificationRule>()
+                .HasOne(nr => nr.Organization)
+                .WithMany()
+                .HasForeignKey(nr => nr.OrganizationId)
+                .OnDelete(DeleteBehavior.Cascade);
+
             // Organization -> OrganizationConfigurations (One-to-Many)
             modelBuilder.Entity<OrganizationConfiguration>()
                 .HasOne<Organization>()
@@ -178,6 +215,13 @@ namespace PEPScanner.Infrastructure.Data
                 .HasOne(a => a.WatchlistEntry)
                 .WithMany()
                 .HasForeignKey(a => a.WatchlistEntryId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // Alert -> Team (Many-to-One, optional)
+            modelBuilder.Entity<Alert>()
+                .HasOne(a => a.Team)
+                .WithMany(t => t.Alerts)
+                .HasForeignKey(a => a.TeamId)
                 .OnDelete(DeleteBehavior.SetNull);
 
             // Configure Alert indexes

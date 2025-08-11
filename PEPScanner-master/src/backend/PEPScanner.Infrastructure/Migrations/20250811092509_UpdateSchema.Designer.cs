@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using PEPScanner.Infrastructure.Data;
@@ -11,9 +12,11 @@ using PEPScanner.Infrastructure.Data;
 namespace PEPScanner.Infrastructure.Migrations
 {
     [DbContext(typeof(PepScannerDbContext))]
-    partial class PepScannerDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250811092509_UpdateSchema")]
+    partial class UpdateSchema
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

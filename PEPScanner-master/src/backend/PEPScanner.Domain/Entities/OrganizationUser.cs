@@ -48,6 +48,19 @@ namespace PEPScanner.Domain.Entities
         
         public DateTime? PasswordChangedAtUtc { get; set; }
         
+        // Hierarchy fields
+        public Guid? ManagerId { get; set; }
+        public Guid? TeamId { get; set; }
+        
+        [MaxLength(100)]
+        public string? Territory { get; set; } // Geographic or product territory
+        
+        public int EscalationLevel { get; set; } = 0; // 0=Analyst, 1=TeamLead, 2=Manager, 3=RiskHead
+        
+        public int CurrentWorkload { get; set; } = 0; // Current number of assigned alerts
+        
+        public int MaxWorkload { get; set; } = 20; // Maximum alerts this user can handle
+        
         public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
         
         public DateTime? UpdatedAtUtc { get; set; }
@@ -79,5 +92,9 @@ namespace PEPScanner.Domain.Entities
         
         // Navigation properties
         public virtual ICollection<AuditLog> AuditLogs { get; set; } = new List<AuditLog>();
+        public virtual OrganizationUser? Manager { get; set; }
+        public virtual ICollection<OrganizationUser> Subordinates { get; set; } = new List<OrganizationUser>();
+        public virtual Team? Team { get; set; }
+        public virtual ICollection<Team> ManagedTeams { get; set; } = new List<Team>();
     }
 }

@@ -70,7 +70,7 @@ export interface DashboardWidgets {
 })
 export class DashboardService {
   private http = inject(HttpClient);
-  private readonly API_BASE = 'http://localhost:5097/api';
+  private readonly API_BASE = 'http://localhost:5098/api';
 
   getDashboardOverview(): Observable<DashboardOverview> {
     return this.http.get<DashboardOverview>(`${this.API_BASE}/dashboard/overview`);

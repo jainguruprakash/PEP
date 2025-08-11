@@ -31,6 +31,9 @@ namespace PEPScanner.API.Services
                 var customer = await _context.Customers.FindAsync(alert.CustomerId);
                 var customerName = customer != null ? $"{customer.FirstName} {customer.LastName}" : "Unknown Customer";
 
+                // Find appropriate user to assign based on priority and hierarchy
+                var targetUser = await GetTargetUserForAlert(alert);
+                
                 var notification = new Notification
                 {
                     Id = Guid.NewGuid(),
@@ -45,15 +48,24 @@ namespace PEPScanner.API.Services
                         priority = alert.Priority,
                         customerName
                     }),
-                    TargetUserRole = GetTargetRole(alert),
+                    TargetUserRole = targetUser?.Role ?? GetTargetRole(alert),
+                    TargetUserEmail = targetUser?.Email,
                     IsRead = false,
                     CreatedAtUtc = DateTime.UtcNow
                 };
 
+                // Auto-assign to the target user if found
+                if (targetUser != null)
+                {
+                    alert.AssignedTo = targetUser.Id.ToString();
+                    alert.CurrentReviewer = targetUser.Id.ToString();
+                    alert.WorkflowStatus = "PendingReview";
+                }
+
                 _context.Notifications.Add(notification);
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation("Notification created for alert: {AlertId}", alert.Id);
+                _logger.LogInformation("Notification created for alert: {AlertId}, assigned to: {UserId}", alert.Id, targetUser?.Id);
             }
             catch (Exception ex)
             {
@@ -159,6 +171,27 @@ namespace PEPScanner.API.Services
             {
                 _logger.LogError(ex, "Error getting unread count");
                 return 0;
+            }
+        }
+
+        private async Task<OrganizationUser?> GetTargetUserForAlert(Alert alert)
+        {
+            try
+            {
+                var targetRole = GetTargetRole(alert);
+                
+                // Find an active user with the target role
+                var targetUser = await _context.OrganizationUsers
+                    .Where(u => u.Role == targetRole && u.IsActive)
+                    .OrderBy(u => u.CreatedAtUtc) // Round-robin or first available
+                    .FirstOrDefaultAsync();
+
+                return targetUser;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error finding target user for alert");
+                return null;
             }
         }
 

@@ -18,6 +18,7 @@ import { AuthService } from '../../services/auth.service';
   <div class="center">
     <mat-card>
       <mat-card-title>Login to PEP Scanner</mat-card-title>
+      <mat-card-subtitle style="color: #666; margin-bottom: 1rem;">Test credentials: admin / admin123</mat-card-subtitle>
       <form [formGroup]="form" (ngSubmit)="submit()">
         <mat-form-field appearance="outline">
           <mat-label>Username or Email</mat-label>
@@ -86,8 +87,8 @@ export class LoginComponent {
   private snackBar = inject(MatSnackBar);
 
   form = this.fb.group({
-    username: ['', [Validators.required]],
-    password: ['', [Validators.required, Validators.minLength(8)]]
+    username: ['admin', [Validators.required]], // Pre-filled with test credentials
+    password: ['admin123', [Validators.required, Validators.minLength(8)]] // Pre-filled with test credentials
   });
 
   isLoading = false;

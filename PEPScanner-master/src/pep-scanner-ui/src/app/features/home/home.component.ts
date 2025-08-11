@@ -168,15 +168,28 @@ import { CommonModule } from '@angular/common';
           </div>
         </div>
         
-        <button class="pepify-cta" (click)="navigateToDashboard()">
-          Enter Pepify Dashboard
-        </button>
+        <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+          <button class="pepify-cta" (click)="navigateToLogin()">
+            Login to Dashboard
+          </button>
+          <button class="pepify-cta" (click)="navigateToSignup()" style="background: rgba(255, 255, 255, 0.1);">
+            Sign Up
+          </button>
+        </div>
       </div>
     </div>
   `
 })
 export class HomeComponent {
   constructor(private router: Router) {}
+
+  navigateToLogin() {
+    this.router.navigate(['/login']);
+  }
+
+  navigateToSignup() {
+    this.router.navigate(['/signup']);
+  }
 
   navigateToDashboard() {
     this.router.navigate(['/dashboard']);

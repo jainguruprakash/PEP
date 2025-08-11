@@ -106,9 +106,16 @@ export class AlertsComponent {
   }
 
   loadAlerts() {
-    this.alertsService.getAll().subscribe(alerts => {
-      this.allAlerts.set(alerts);
-      this.pendingAlerts.set(alerts.filter(a => a.workflowStatus === 'PendingApproval' || a.workflowStatus === 'UnderReview'));
+    this.alertsService.getAll().subscribe({
+      next: (alerts) => {
+        this.allAlerts.set(alerts || []);
+        this.pendingAlerts.set((alerts || []).filter(a => a.workflowStatus === 'PendingApproval' || a.workflowStatus === 'UnderReview'));
+      },
+      error: (error) => {
+        console.error('Error loading alerts:', error);
+        this.allAlerts.set([]);
+        this.pendingAlerts.set([]);
+      }
     });
   }
 

@@ -43,6 +43,9 @@ namespace PEPScanner.Domain.Entities
         [MaxLength(100)]
         public string? Country { get; set; }
         
+        [MaxLength(100)]
+        public string? Territory { get; set; } // Geographic or business territory
+        
         [MaxLength(200)]
         public string? Occupation { get; set; }
         

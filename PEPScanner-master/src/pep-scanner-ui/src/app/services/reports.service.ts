@@ -168,7 +168,7 @@ export interface ReportSearchParams {
 })
 export class ReportsService {
   private http = inject(HttpClient);
-  private readonly API_BASE = 'http://localhost:5097/api';
+  private readonly API_BASE = 'http://localhost:5098/api';
 
   // SAR Methods
   getSars(params?: ReportSearchParams): Observable<{ items: SuspiciousActivityReport[]; totalCount: number }> {

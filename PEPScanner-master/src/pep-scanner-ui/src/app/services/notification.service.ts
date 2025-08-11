@@ -18,7 +18,7 @@ export interface Notification {
 })
 export class NotificationService {
   private http = inject(HttpClient);
-  private readonly API_BASE = 'http://localhost:5097/api';
+  private readonly API_BASE = 'http://localhost:5098/api';
 
   private notificationsSubject = new BehaviorSubject<Notification[]>([]);
   public notifications$ = this.notificationsSubject.asObservable();

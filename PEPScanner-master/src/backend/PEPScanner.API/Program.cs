@@ -41,6 +41,11 @@ builder.Services.AddScoped<PEPScanner.API.Services.IWatchlistUpdateService, PEPS
 builder.Services.AddScoped<PEPScanner.API.Services.IAutomatedScreeningService, PEPScanner.API.Services.AutomatedScreeningService>();
 builder.Services.AddScoped<PEPScanner.API.Services.INotificationService, PEPScanner.API.Services.NotificationService>();
 
+// Compliance Hierarchy Services
+builder.Services.AddScoped<PEPScanner.Infrastructure.Services.ISmartAssignmentService, PEPScanner.Infrastructure.Services.SmartAssignmentService>();
+builder.Services.AddScoped<PEPScanner.Infrastructure.Services.IEscalationService, PEPScanner.Infrastructure.Services.EscalationService>();
+builder.Services.AddScoped<PEPScanner.API.Services.IAlertAssignmentService, PEPScanner.API.Services.AlertAssignmentService>();
+
 // Register OpenSanctions services
 builder.Services.AddHttpClient<PEPScanner.Infrastructure.Services.IOpenSanctionsService, PEPScanner.Infrastructure.Services.OpenSanctionsService>();
 builder.Services.AddHttpClient<PEPScanner.Infrastructure.Services.IOpenSanctionsDataService, PEPScanner.Infrastructure.Services.OpenSanctionsDataService>();
@@ -80,6 +85,19 @@ builder.Services.AddAuthentication(options =>
         ValidateLifetime = true,
         ClockSkew = TimeSpan.Zero
     };
+    
+    // In development, don't require authentication
+    if (builder.Environment.IsDevelopment())
+    {
+        options.Events = new JwtBearerEvents
+        {
+            OnChallenge = context =>
+            {
+                context.HandleResponse();
+                return Task.CompletedTask;
+            }
+        };
+    }
 });
 
 // CORS
@@ -135,8 +153,12 @@ else
 // Hangfire Dashboard
 app.UseHangfireDashboard("/hangfire");
 
-app.UseAuthentication();
-app.UseAuthorization();
+// Only enforce authentication in production
+if (!app.Environment.IsDevelopment())
+{
+    app.UseAuthentication();
+    app.UseAuthorization();
+}
 
 // Controllers
 app.MapControllers();
@@ -159,6 +181,9 @@ using (var scope = app.Services.CreateScope())
     
     // Seed dashboard data
     await PEPScanner.API.Data.DashboardSeedData.SeedDashboardDataAsync(context);
+    
+    // Seed compliance hierarchy
+    await PEPScanner.API.Data.ComplianceHierarchySeedData.SeedComplianceHierarchyAsync(context);
 
     var watchlistUpdateService = scope.ServiceProvider.GetRequiredService<PEPScanner.API.Services.IWatchlistUpdateService>();
     watchlistUpdateService.ScheduleRecurringUpdates();

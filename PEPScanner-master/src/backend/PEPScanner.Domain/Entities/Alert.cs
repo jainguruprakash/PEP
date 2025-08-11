@@ -10,6 +10,8 @@ namespace PEPScanner.Domain.Entities
         public Guid? CustomerId { get; set; }
         public Guid? WatchlistEntryId { get; set; }
         
+        public Guid? TeamId { get; set; } // Team responsible for this alert
+        
         [Required]
         [MaxLength(50)]
         public string Context { get; set; } = string.Empty; // Onboarding, Batch, RealTime, Transaction, Periodic
@@ -194,6 +196,7 @@ namespace PEPScanner.Domain.Entities
         // Navigation Properties
         public Customer? Customer { get; set; }
         public WatchlistEntry? WatchlistEntry { get; set; }
+        public virtual Team? Team { get; set; }
         public virtual ICollection<AlertAction> Actions { get; set; } = new List<AlertAction>();
     }
 }
