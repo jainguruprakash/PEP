@@ -36,10 +36,12 @@ namespace PEPScanner.API.Services
             try
             {
                 using var scope = _serviceProvider.CreateScope();
-                var watchlistController = scope.ServiceProvider.GetRequiredService<WatchlistDataController>();
-
-                // Call the fetch all method
-                var result = await watchlistController.FetchAllData();
+                var context = scope.ServiceProvider.GetRequiredService<PepScannerDbContext>();
+                var httpClient = scope.ServiceProvider.GetRequiredService<HttpClient>();
+                var logger = scope.ServiceProvider.GetRequiredService<ILogger<WatchlistDataController>>();
+                
+                var controller = new WatchlistDataController(context, httpClient, logger);
+                await controller.FetchAllData();
                 
                 _logger.LogInformation("Completed scheduled update for all watchlist sources");
             }
@@ -57,30 +59,42 @@ namespace PEPScanner.API.Services
             try
             {
                 using var scope = _serviceProvider.CreateScope();
-                var watchlistController = scope.ServiceProvider.GetRequiredService<WatchlistDataController>();
+                var context = scope.ServiceProvider.GetRequiredService<PepScannerDbContext>();
+                var httpClient = scope.ServiceProvider.GetRequiredService<HttpClient>();
+                var logger = scope.ServiceProvider.GetRequiredService<ILogger<WatchlistDataController>>();
+                
+                var controller = new WatchlistDataController(context, httpClient, logger);
 
                 switch (source.ToUpper())
                 {
                     case "OFAC":
-                        await watchlistController.FetchOfacData();
+                        await controller.FetchOfacData();
                         break;
                     case "UN":
-                        await watchlistController.FetchUnData();
+                        await controller.FetchUnData();
                         break;
                     case "RBI":
-                        await watchlistController.FetchRbiData();
+                        await controller.FetchRbiData();
                         break;
                     case "EU":
-                        await watchlistController.FetchEuData();
+                        await controller.FetchEuData();
                         break;
                     case "UK":
-                        await watchlistController.FetchUkData();
+                        await controller.FetchUkData();
                         break;
                     case "SEBI":
-                        await watchlistController.FetchSebiData();
+                        await controller.FetchSebiData();
                         break;
                     case "PARLIAMENT":
-                        await watchlistController.FetchParliamentData();
+                        await controller.FetchParliamentData();
+                        break;
+                    case "RISKPRO":
+                        var pepController = new IndianPepController(context, scope.ServiceProvider.GetRequiredService<ILogger<IndianPepController>>());
+                        await pepController.FetchRiskproData();
+                        break;
+                    case "ELECTION_COMMISSION":
+                        var pepController2 = new IndianPepController(context, scope.ServiceProvider.GetRequiredService<ILogger<IndianPepController>>());
+                        await pepController2.FetchElectionCommissionData();
                         break;
                     default:
                         _logger.LogWarning("Unknown watchlist source: {Source}", source);

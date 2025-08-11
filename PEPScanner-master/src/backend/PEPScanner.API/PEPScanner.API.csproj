@@ -49,7 +49,7 @@
                  <!-- Excel Processing -->
         <PackageReference Include="EPPlus" Version="7.0.8" />
         <!-- HTML Parsing for Web Scraping -->
-        <PackageReference Include="HtmlAgilityPack" Version="1.11.59" />
+        <PackageReference Include="HtmlAgilityPack" Version="1.12.2" />
       </ItemGroup>
 
   <ItemGroup>

@@ -38,6 +38,7 @@ builder.Services.AddHttpClient();
 
 // Custom Services
 builder.Services.AddScoped<PEPScanner.API.Services.IWatchlistUpdateService, PEPScanner.API.Services.WatchlistUpdateService>();
+builder.Services.AddScoped<PEPScanner.API.Services.IPublicDataScrapingService, PEPScanner.API.Services.PublicDataScrapingService>();
 builder.Services.AddScoped<PEPScanner.API.Services.IAutomatedScreeningService, PEPScanner.API.Services.AutomatedScreeningService>();
 builder.Services.AddScoped<PEPScanner.API.Services.INotificationService, PEPScanner.API.Services.NotificationService>();
 

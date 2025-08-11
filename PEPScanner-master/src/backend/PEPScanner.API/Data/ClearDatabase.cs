@@ -7,24 +7,32 @@ public static class ClearDatabase
 {
     public static async Task ClearAllDataAsync(PepScannerDbContext context)
     {
-        await context.Database.ExecuteSqlRawAsync("TRUNCATE TABLE \"AlertMetrics\" RESTART IDENTITY CASCADE");
-        await context.Database.ExecuteSqlRawAsync("TRUNCATE TABLE \"Alerts\" RESTART IDENTITY CASCADE");
-        await context.Database.ExecuteSqlRawAsync("TRUNCATE TABLE \"ComplianceReports\" RESTART IDENTITY CASCADE");
-        await context.Database.ExecuteSqlRawAsync("TRUNCATE TABLE \"Customers\" RESTART IDENTITY CASCADE");
-        await context.Database.ExecuteSqlRawAsync("TRUNCATE TABLE \"DashboardMetrics\" RESTART IDENTITY CASCADE");
-        await context.Database.ExecuteSqlRawAsync("TRUNCATE TABLE \"NotificationRules\" RESTART IDENTITY CASCADE");
-        await context.Database.ExecuteSqlRawAsync("TRUNCATE TABLE \"OrganizationUsers\" RESTART IDENTITY CASCADE");
-        await context.Database.ExecuteSqlRawAsync("TRUNCATE TABLE \"Organizations\" RESTART IDENTITY CASCADE");
-        await context.Database.ExecuteSqlRawAsync("TRUNCATE TABLE \"SarComments\" RESTART IDENTITY CASCADE");
-        await context.Database.ExecuteSqlRawAsync("TRUNCATE TABLE \"SarStatusHistories\" RESTART IDENTITY CASCADE");
-        await context.Database.ExecuteSqlRawAsync("TRUNCATE TABLE \"ScreeningMetrics\" RESTART IDENTITY CASCADE");
-        await context.Database.ExecuteSqlRawAsync("TRUNCATE TABLE \"StrComments\" RESTART IDENTITY CASCADE");
-        await context.Database.ExecuteSqlRawAsync("TRUNCATE TABLE \"StrStatusHistories\" RESTART IDENTITY CASCADE");
-        await context.Database.ExecuteSqlRawAsync("TRUNCATE TABLE \"SuspiciousActivityReports\" RESTART IDENTITY CASCADE");
-        await context.Database.ExecuteSqlRawAsync("TRUNCATE TABLE \"SuspiciousTransactionReports\" RESTART IDENTITY CASCADE");
-        await context.Database.ExecuteSqlRawAsync("TRUNCATE TABLE \"Teams\" RESTART IDENTITY CASCADE");
-        await context.Database.ExecuteSqlRawAsync("TRUNCATE TABLE \"Transactions\" RESTART IDENTITY CASCADE");
-        await context.Database.ExecuteSqlRawAsync("TRUNCATE TABLE \"Users\" RESTART IDENTITY CASCADE");
-        await context.Database.ExecuteSqlRawAsync("TRUNCATE TABLE \"WatchlistEntries\" RESTART IDENTITY CASCADE");
+        // Clear using Entity Framework DbSets instead of raw SQL
+        if (context.Users.Any()) 
+        {
+            context.Users.RemoveRange(context.Users);
+        }
+        if (context.OrganizationUsers.Any()) 
+        {
+            context.OrganizationUsers.RemoveRange(context.OrganizationUsers);
+        }
+        if (context.Organizations.Any()) 
+        {
+            context.Organizations.RemoveRange(context.Organizations);
+        }
+        if (context.Alerts.Any()) 
+        {
+            context.Alerts.RemoveRange(context.Alerts);
+        }
+        if (context.Customers.Any()) 
+        {
+            context.Customers.RemoveRange(context.Customers);
+        }
+        if (context.WatchlistEntries.Any()) 
+        {
+            context.WatchlistEntries.RemoveRange(context.WatchlistEntries);
+        }
+        
+        await context.SaveChangesAsync();
     }
 }
