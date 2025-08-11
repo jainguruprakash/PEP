@@ -653,17 +653,17 @@ namespace PEPScanner.API.Controllers
             return sources;
         }
         
-        private async Task<List<McaDirector>> SearchMcaDirectorsAsync(string searchName)
+        private async Task<List<PEPScanner.API.Controllers.McaDirector>> SearchMcaDirectorsAsync(string searchName)
         {
             try
             {
                 // Mock MCA director search - replace with actual MCA API call
-                var directors = new List<McaDirector>();
+                var directors = new List<PEPScanner.API.Controllers.McaDirector>();
                 
                 if (searchName.Contains("AMIT") && searchName.Contains("SHAH"))
                 {
                     // Return PEP data for Amit Shah (Home Minister)
-                    directors.Add(new McaDirector
+                    directors.Add(new PEPScanner.API.Controllers.McaDirector
                     {
                         Din = "PEP001",
                         Name = "Amit Shah",
@@ -682,7 +682,7 @@ namespace PEPScanner.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error searching MCA directors for: {SearchName}", searchName);
-                return new List<McaDirector>();
+                return new List<PEPScanner.API.Controllers.McaDirector>();
             }
         }
 
@@ -797,17 +797,6 @@ namespace PEPScanner.API.Controllers
         public object Config { get; set; } = new();
     }
 
-    public class McaDirector
-    {
-        public string Din { get; set; } = string.Empty;
-        public string Name { get; set; } = string.Empty;
-        public string CompanyName { get; set; } = string.Empty;
-        public string Cin { get; set; } = string.Empty;
-        public string Designation { get; set; } = string.Empty;
-        public string AppointmentDate { get; set; } = string.Empty;
-        public string Status { get; set; } = string.Empty;
-        public string Nationality { get; set; } = string.Empty;
-        public string RiskLevel { get; set; } = string.Empty;
-    }
+    // McaDirector class moved to McaController to avoid duplication
 
 }

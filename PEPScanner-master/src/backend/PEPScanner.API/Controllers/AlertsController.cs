@@ -29,7 +29,7 @@ namespace PEPScanner.API.Controllers
         {
             try
             {
-                var alertsQuery = _context.Alerts.AsQueryable();
+                var alertsQuery = _context.Alerts.Include(a => a.Customer).AsQueryable();
 
                 // Apply filters
                 if (!string.IsNullOrEmpty(status))
@@ -66,7 +66,7 @@ namespace PEPScanner.API.Controllers
                         a.EscalationLevel,
                         a.LastActionType,
                         a.LastActionDateUtc,
-                        CustomerName = a.Customer != null ? a.Customer.FullName : null,
+                        CustomerName = a.Customer != null ? a.Customer.FullName : "Unknown",
                         SourceList = a.SourceList,
                         SimilarityScore = a.SimilarityScore
                     })
@@ -75,14 +75,7 @@ namespace PEPScanner.API.Controllers
                     .Take(pageSize)
                     .ToListAsync();
 
-                return Ok(new
-                {
-                    alerts,
-                    totalCount,
-                    page,
-                    pageSize,
-                    totalPages = (int)Math.Ceiling((double)totalCount / pageSize)
-                });
+                return Ok(alerts);
             }
             catch (Exception ex)
             {

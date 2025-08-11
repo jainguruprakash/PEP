@@ -17,10 +17,7 @@ namespace PEPScanner.Infrastructure.Data
                 await SeedOrganizationUsersAsync(context);
             }
 
-            if (!context.Customers.Any())
-            {
-                await SeedCustomersAsync(context);
-            }
+            // Remove customer seeding - customers should come from bank onboarding only
 
             if (!context.WatchlistEntries.Any())
             {
@@ -209,110 +206,7 @@ namespace PEPScanner.Infrastructure.Data
             await context.SaveChangesAsync();
         }
 
-        private static async Task SeedCustomersAsync(PepScannerDbContext context)
-        {
-            var organizations = await context.Organizations.ToListAsync();
-            
-            var customers = new List<Customer>();
-            
-            foreach (var org in organizations)
-            {
-                customers.AddRange(new[]
-                {
-                    new Customer
-                    {
-                        Id = Guid.NewGuid(),
-                        OrganizationId = org.Id,
-                        FullName = "Rahul Kumar",
-                        AliasNames = "Rahul K, RK",
-                        DateOfBirth = new DateTime(1985, 5, 15),
-                        Nationality = "Indian",
-                        IdentificationNumber = "ABCD123456",
-                        IdentificationType = "PAN",
-                        Address = "123 Main Street, Andheri West",
-                        City = "Mumbai",
-                        State = "Maharashtra",
-                        PostalCode = "400058",
-                        Country = "India",
-                        Occupation = "Software Engineer",
-                        Employer = "Tech Solutions Ltd",
-                        PhoneNumber = "+91-9876543210",
-                        EmailAddress = "rahul.kumar@email.com",
-                        IsPep = false,
-                        RiskScore = 25,
-                        RiskLevel = "Low",
-                        IsActive = true,
-                        ScreeningFrequency = "Monthly",
-                        AccountNumber = $"ACC{org.Code}001",
-                        AccountType = "Savings",
-                        CreatedBy = "System"
-                    },
-                    new Customer
-                    {
-                        Id = Guid.NewGuid(),
-                        OrganizationId = org.Id,
-                        FullName = "Priya Sharma",
-                        AliasNames = "Priya S, PS",
-                        DateOfBirth = new DateTime(1990, 8, 22),
-                        Nationality = "Indian",
-                        IdentificationNumber = "EFGH789012",
-                        IdentificationType = "PAN",
-                        Address = "456 Park Avenue, Bandra East",
-                        City = "Mumbai",
-                        State = "Maharashtra",
-                        PostalCode = "400051",
-                        Country = "India",
-                        Occupation = "Marketing Manager",
-                        Employer = "Global Marketing Inc",
-                        PhoneNumber = "+91-9876543211",
-                        EmailAddress = "priya.sharma@email.com",
-                        IsPep = false,
-                        RiskScore = 30,
-                        RiskLevel = "Low",
-                        IsActive = true,
-                        ScreeningFrequency = "Monthly",
-                        AccountNumber = $"ACC{org.Code}002",
-                        AccountType = "Current",
-                        CreatedBy = "System"
-                    },
-                    new Customer
-                    {
-                        Id = Guid.NewGuid(),
-                        OrganizationId = org.Id,
-                        FullName = "Amit Patel",
-                        AliasNames = "Amit P, AP",
-                        DateOfBirth = new DateTime(1978, 12, 10),
-                        Nationality = "Indian",
-                        IdentificationNumber = "IJKL345678",
-                        IdentificationType = "PAN",
-                        Address = "789 Business Center, Worli",
-                        City = "Mumbai",
-                        State = "Maharashtra",
-                        PostalCode = "400018",
-                        Country = "India",
-                        Occupation = "Business Owner",
-                        Employer = "Patel Enterprises",
-                        PhoneNumber = "+91-9876543212",
-                        EmailAddress = "amit.patel@email.com",
-                        IsPep = true,
-                        RiskScore = 85,
-                        RiskLevel = "High",
-                        PepPosition = "Member of Legislative Assembly",
-                        PepCountry = "India",
-                        PepStartDate = new DateTime(2020, 1, 1),
-                        RequiresEdd = true,
-                        IsActive = true,
-                        ScreeningFrequency = "Weekly",
-                        AccountNumber = $"ACC{org.Code}003",
-                        AccountType = "Business",
-                        CreatedBy = "System"
-                    }
-                });
-            }
-
-            context.Customers.AddRange(customers);
-            await context.SaveChangesAsync();
-        }
+        // Customers removed - will be added through bank onboarding only
 
         private static async Task SeedWatchlistEntriesAsync(PepScannerDbContext context)
         {

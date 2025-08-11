@@ -22,7 +22,7 @@ namespace PEPScanner.API.Controllers
         }
 
         [HttpPost("create-adverse-media")]
-        public async Task<IActionResult> CreateAdverseMediaAlert([FromBody] CreateAdverseMediaAlertRequest request)
+        public async Task<IActionResult> CreateAdverseMediaAlert([FromBody] CreateAdverseMediaAlertRequestOld request)
         {
             try
             {
@@ -240,7 +240,7 @@ namespace PEPScanner.API.Controllers
         }
     }
 
-    public class CreateAdverseMediaAlertRequest
+    public class CreateAdverseMediaAlertRequestOld
     {
         public Guid CustomerId { get; set; }
         public double SimilarityScore { get; set; }

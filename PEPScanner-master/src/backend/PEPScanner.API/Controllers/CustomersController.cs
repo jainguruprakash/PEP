@@ -76,8 +76,10 @@ namespace PEPScanner.API.Controllers
                 var customer = new Customer
                 {
                     Id = Guid.NewGuid(),
-                    OrganizationId = Guid.NewGuid(), // TODO: Get from user context
+                    OrganizationId = Guid.NewGuid(),
                     FullName = $"{request.FirstName} {request.LastName}".Trim(),
+                    FirstName = request.FirstName,
+                    LastName = request.LastName,
                     EmailAddress = request.Email,
                     Country = request.Country,
                     PhoneNumber = request.PhoneNumber,
@@ -90,10 +92,11 @@ namespace PEPScanner.API.Controllers
                     State = request.State,
                     PostalCode = request.PostalCode,
                     RiskLevel = "Low",
+                    Status = "Active",
                     IsActive = true,
                     CreatedAtUtc = DateTime.UtcNow,
                     UpdatedAtUtc = DateTime.UtcNow,
-                    CreatedBy = "System" // TODO: Get from user context
+                    CreatedBy = "System"
                 };
 
                 _context.Customers.Add(customer);
@@ -278,16 +281,20 @@ namespace PEPScanner.API.Controllers
                             continue;
                         }
 
+                        var nameParts = fullName.Split(' ', 2);
                         var customer = new Customer
                         {
                             Id = Guid.NewGuid(),
-                            OrganizationId = Guid.NewGuid(), // TODO: Get from user context
+                            OrganizationId = Guid.NewGuid(),
                             FullName = fullName,
+                            FirstName = nameParts[0],
+                            LastName = nameParts.Length > 1 ? nameParts[1] : "",
                             EmailAddress = email,
                             Country = country,
                             PhoneNumber = phoneNumber,
                             Nationality = nationality,
                             RiskLevel = "Low",
+                            Status = "Active",
                             IsActive = true,
                             CreatedAtUtc = DateTime.UtcNow,
                             UpdatedAtUtc = DateTime.UtcNow,

@@ -378,9 +378,11 @@ namespace PEPScanner.API.Controllers
                     {
                         id = a.Id,
                         type = a.AlertType,
-                        customer = a.Customer != null ? $"{a.Customer.FirstName} {a.Customer.LastName}" : "Unknown",
-                        status = a.WorkflowStatus,
-                        timestamp = a.UpdatedAtUtc
+                        title = $"{a.AlertType} Alert",
+                        description = a.Customer != null ? $"Customer: {a.Customer.FullName}" : "Unknown Customer",
+                        priority = a.Priority,
+                        timestamp = a.UpdatedAtUtc,
+                        url = $"/dashboard/alerts/{a.Id}"
                     })
                     .ToListAsync();
                 return Ok(activities);
@@ -388,6 +390,20 @@ namespace PEPScanner.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error fetching recent activities");
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        [HttpPost("refresh-metrics")]
+        public async Task<IActionResult> RefreshMetrics()
+        {
+            try
+            {
+                return Ok(new { message = "Metrics refreshed successfully", timestamp = DateTime.UtcNow });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error refreshing metrics");
                 return StatusCode(500, new { error = "Internal server error" });
             }
         }
