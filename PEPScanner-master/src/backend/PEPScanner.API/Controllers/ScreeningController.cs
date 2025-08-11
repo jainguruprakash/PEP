@@ -21,55 +21,91 @@ namespace PEPScanner.API.Controllers
         [HttpPost("customer")]
         public async Task<IActionResult> ScreenCustomer([FromBody] CustomerScreeningRequest request)
         {
-            try
-            {
-                var result = new
-                {
-                    customerId = request.CustomerId ?? "",
-                    customerName = request.FullName ?? "",
-                    riskScore = 0.1,
-                    matches = new List<object>(),
-                    status = "Clear",
-                    screenedAt = DateTime.UtcNow
-                };
+            var matches = new List<object>();
+            var riskScore = 0.0;
 
-                return Ok(result);
-            }
-            catch (Exception ex)
+            if (!string.IsNullOrEmpty(request.FullName))
             {
-                _logger.LogError(ex, "Error screening customer");
-                return StatusCode(500, new { error = "Internal server error" });
+                var entries = await _context.WatchlistEntries.Take(1000).ToListAsync();
+
+                foreach (var entry in entries)
+                {
+                    var score = CalculateScore(request.FullName, entry.PrimaryName ?? "");
+                    
+                    if (score >= (request.Threshold ?? 70))
+                    {
+                        matches.Add(new
+                        {
+                            name = entry.PrimaryName,
+                            source = entry.Source,
+                            country = entry.Country,
+                            matchScore = score
+                        });
+                        riskScore = Math.Max(riskScore, score);
+                    }
+                }
             }
+
+            return Ok(new
+            {
+                customerName = request.FullName,
+                riskScore = riskScore,
+                matches = matches.Take(10),
+                status = riskScore >= 70 ? "Risk" : "Clear"
+            });
         }
 
         [HttpPost("batch-file")]
         public async Task<IActionResult> ScreenBatchFile(IFormFile file)
         {
-            try
-            {
-                if (file == null || file.Length == 0)
-                {
-                    return BadRequest(new { error = "No file uploaded" });
-                }
+            if (file == null) return BadRequest("No file");
 
-                var results = new List<object>
+            var results = new List<object>();
+            using var reader = new StreamReader(file.OpenReadStream());
+            var content = await reader.ReadToEndAsync();
+            var lines = content.Split('\n');
+
+            foreach (var line in lines.Skip(1).Take(100))
+            {
+                var fields = line.Split(',');
+                if (fields.Length >= 2)
                 {
-                    new
+                    var name = fields[1]?.Trim();
+                    if (!string.IsNullOrEmpty(name))
                     {
-                        customerName = "Sample Customer",
-                        riskScore = 10,
-                        status = "Clear",
-                        screenedAt = DateTime.UtcNow
+                        results.Add(new { name = name, status = "Processed" });
                     }
-                };
+                }
+            }
 
-                return Ok(results);
-            }
-            catch (Exception ex)
+            return Ok(new { results = results });
+        }
+
+        private double CalculateScore(string name1, string name2)
+        {
+            name1 = name1.ToLower().Trim();
+            name2 = name2.ToLower().Trim();
+
+            if (name1 == name2) return 100;
+            if (name1.Contains(name2) || name2.Contains(name1)) return 90;
+
+            var words1 = name1.Split(' ');
+            var words2 = name2.Split(' ');
+            var matches = 0;
+
+            foreach (var w1 in words1)
             {
-                _logger.LogError(ex, "Error processing batch file");
-                return StatusCode(500, new { error = "Internal server error" });
+                foreach (var w2 in words2)
+                {
+                    if (w1 == w2 && w1.Length > 2)
+                    {
+                        matches++;
+                        break;
+                    }
+                }
             }
+
+            return matches > 0 ? (double)matches / Math.Max(words1.Length, words2.Length) * 80 : 0;
         }
     }
 
@@ -78,11 +114,9 @@ namespace PEPScanner.API.Controllers
         public string? CustomerId { get; set; }
         public string? FullName { get; set; }
         public string? DateOfBirth { get; set; }
-        public string? Nationality { get; set; }
         public string? Country { get; set; }
         public int? Threshold { get; set; } = 70;
         public List<string>? Sources { get; set; }
-        public bool? IncludeAliases { get; set; } = true;
         public bool? IncludeFuzzyMatching { get; set; } = true;
         public bool? IncludePhoneticMatching { get; set; } = true;
     }

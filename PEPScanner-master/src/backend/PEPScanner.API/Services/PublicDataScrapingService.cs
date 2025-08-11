@@ -2,7 +2,6 @@ using Microsoft.EntityFrameworkCore;
 using PEPScanner.Infrastructure.Data;
 using PEPScanner.Domain.Entities;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using HtmlAgilityPack;
 
 namespace PEPScanner.API.Services;
@@ -21,13 +20,16 @@ public class PublicDataScrapingService : IPublicDataScrapingService
     private readonly PepScannerDbContext _context;
     private readonly HttpClient _httpClient;
     private readonly ILogger<PublicDataScrapingService> _logger;
+    private readonly IConfiguration _configuration;
 
-    public PublicDataScrapingService(PepScannerDbContext context, HttpClient httpClient, ILogger<PublicDataScrapingService> logger)
+    public PublicDataScrapingService(PepScannerDbContext context, HttpClient httpClient, ILogger<PublicDataScrapingService> logger, IConfiguration configuration)
     {
         _context = context;
         _httpClient = httpClient;
         _logger = logger;
+        _configuration = configuration;
         _httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
+        _httpClient.Timeout = TimeSpan.FromSeconds(30);
     }
 
     public async Task<int> ScrapeRbiDataAsync()
@@ -37,38 +39,71 @@ public class PublicDataScrapingService : IPublicDataScrapingService
             _logger.LogInformation("Starting RBI data scraping");
             var entries = new List<WatchlistEntry>();
 
-            var sampleRbiEntities = new[]
+            var urls = new[]
             {
-                new { Name = "ABC Financial Services", Reason = "Unauthorized deposit taking" },
-                new { Name = "XYZ Investment Company", Reason = "Fraudulent schemes" },
-                new { Name = "PQR Credit Solutions", Reason = "Illegal money lending" }
+                _configuration["ScrapingUrls:RBI:CautionList"],
+                _configuration["ScrapingUrls:RBI:DefaultersList"]
             };
 
-            foreach (var entity in sampleRbiEntities)
+            foreach (var url in urls.Where(u => !string.IsNullOrEmpty(u)))
             {
-                entries.Add(new WatchlistEntry
+                try
                 {
-                    Id = Guid.NewGuid(),
-                    ExternalId = $"RBI_CAUTION_{entries.Count + 1}",
-                    Source = "RBI",
-                    ListType = "Caution List",
-                    PrimaryName = entity.Name,
-                    Country = "India",
-                    SanctionReason = entity.Reason,
-                    RiskCategory = "High",
-                    IsActive = true,
-                    DateAddedUtc = DateTime.UtcNow,
-                    DateLastUpdatedUtc = DateTime.UtcNow
-                });
+                    var html = await _httpClient.GetStringAsync(url);
+                    var doc = new HtmlDocument();
+                    doc.LoadHtml(html);
+
+                    var tables = doc.DocumentNode.SelectNodes("//table");
+                    if (tables != null)
+                    {
+                        foreach (var table in tables)
+                        {
+                            var rows = table.SelectNodes(".//tr");
+                            if (rows != null)
+                            {
+                                foreach (var row in rows.Skip(1))
+                                {
+                                    var cells = row.SelectNodes(".//td");
+                                    if (cells?.Count >= 2)
+                                    {
+                                        var name = cells[0].InnerText?.Trim();
+                                        var details = cells[1].InnerText?.Trim();
+                                        
+                                        if (!string.IsNullOrEmpty(name) && name.Length > 3)
+                                        {
+                                            entries.Add(new WatchlistEntry
+                                            {
+                                                Id = Guid.NewGuid(),
+                                                ExternalId = $"RBI_{Guid.NewGuid().ToString("N")[..8]}",
+                                                Source = "RBI",
+                                                ListType = url.Contains("Caution") ? "Caution List" : "Defaulters List",
+                                                PrimaryName = name,
+                                                Country = "India",
+                                                SanctionReason = details ?? "RBI Listed Entity",
+                                                RiskCategory = "High",
+                                                IsActive = true,
+                                                DateAddedUtc = DateTime.UtcNow,
+                                                DateLastUpdatedUtc = DateTime.UtcNow
+                                            });
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to scrape RBI URL: {Url}", url);
+                }
             }
 
             await SaveEntries("RBI", entries);
-            _logger.LogInformation("Scraped {Count} RBI entries", entries.Count);
             return entries.Count;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error scraping RBI data: {Error}", ex.Message);
+            _logger.LogError(ex, "Error scraping RBI data");
             return 0;
         }
     }
@@ -80,39 +115,58 @@ public class PublicDataScrapingService : IPublicDataScrapingService
             _logger.LogInformation("Starting SEBI data scraping");
             var entries = new List<WatchlistEntry>();
 
-            var sampleSebiEntities = new[]
+            var urls = new[]
             {
-                new { Name = "DEF Securities Ltd", Reason = "Market manipulation" },
-                new { Name = "GHI Capital Markets", Reason = "Insider trading" },
-                new { Name = "JKL Investment Advisors", Reason = "Fraudulent advisory services" },
-                new { Name = "MNO Broking House", Reason = "Client fund misuse" }
+                _configuration["ScrapingUrls:SEBI:EnforcementOrders"],
+                _configuration["ScrapingUrls:SEBI:DebarredEntities"]
             };
 
-            foreach (var entity in sampleSebiEntities)
+            foreach (var url in urls.Where(u => !string.IsNullOrEmpty(u)))
             {
-                entries.Add(new WatchlistEntry
+                try
                 {
-                    Id = Guid.NewGuid(),
-                    ExternalId = $"SEBI_ORDER_{entries.Count + 1}",
-                    Source = "SEBI",
-                    ListType = "Enforcement Orders",
-                    PrimaryName = entity.Name,
-                    Country = "India",
-                    SanctionReason = entity.Reason,
-                    RiskCategory = "Medium",
-                    IsActive = true,
-                    DateAddedUtc = DateTime.UtcNow,
-                    DateLastUpdatedUtc = DateTime.UtcNow
-                });
+                    var html = await _httpClient.GetStringAsync(url);
+                    var doc = new HtmlDocument();
+                    doc.LoadHtml(html);
+
+                    var links = doc.DocumentNode.SelectNodes("//a[contains(@href, 'order') or contains(text(), 'order') or contains(text(), 'debarred')]");
+                    if (links != null)
+                    {
+                        foreach (var link in links.Take(20))
+                        {
+                            var text = link.InnerText?.Trim();
+                            if (!string.IsNullOrEmpty(text) && text.Length > 10)
+                            {
+                                entries.Add(new WatchlistEntry
+                                {
+                                    Id = Guid.NewGuid(),
+                                    ExternalId = $"SEBI_{Guid.NewGuid().ToString("N")[..8]}",
+                                    Source = "SEBI",
+                                    ListType = url.Contains("enforcement") ? "Enforcement Orders" : "Debarred Entities",
+                                    PrimaryName = text.Length > 100 ? text[..100] : text,
+                                    Country = "India",
+                                    SanctionReason = "SEBI enforcement action",
+                                    RiskCategory = "Medium",
+                                    IsActive = true,
+                                    DateAddedUtc = DateTime.UtcNow,
+                                    DateLastUpdatedUtc = DateTime.UtcNow
+                                });
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to scrape SEBI URL: {Url}", url);
+                }
             }
 
             await SaveEntries("SEBI", entries);
-            _logger.LogInformation("Scraped {Count} SEBI entries", entries.Count);
             return entries.Count;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error scraping SEBI data: {Error}", ex.Message);
+            _logger.LogError(ex, "Error scraping SEBI data");
             return 0;
         }
     }
@@ -124,43 +178,61 @@ public class PublicDataScrapingService : IPublicDataScrapingService
             _logger.LogInformation("Starting Parliament data scraping");
             var entries = new List<WatchlistEntry>();
 
-            var sampleMps = new[]
+            var urls = new[]
             {
-                new { Name = "Narendra Modi", Constituency = "Varanasi", State = "Uttar Pradesh" },
-                new { Name = "Rahul Gandhi", Constituency = "Wayanad", State = "Kerala" },
-                new { Name = "Amit Shah", Constituency = "Gandhinagar", State = "Gujarat" },
-                new { Name = "Smriti Irani", Constituency = "Amethi", State = "Uttar Pradesh" },
-                new { Name = "Shashi Tharoor", Constituency = "Thiruvananthapuram", State = "Kerala" }
+                _configuration["ScrapingUrls:Parliament:LokSabhaMembers"],
+                _configuration["ScrapingUrls:Parliament:RajyaSabhaMembers"]
             };
 
-            foreach (var mp in sampleMps)
+            foreach (var url in urls.Where(u => !string.IsNullOrEmpty(u)))
             {
-                entries.Add(new WatchlistEntry
+                try
                 {
-                    Id = Guid.NewGuid(),
-                    ExternalId = $"PARLIAMENT_MP_{entries.Count + 1}",
-                    Source = "PARLIAMENT",
-                    ListType = "PEP",
-                    PrimaryName = mp.Name,
-                    Country = "India",
-                    PositionOrRole = $"Member of Parliament - {mp.Constituency}",
-                    PepCategory = "Member of Parliament",
-                    PepPosition = $"MP - {mp.Constituency}",
-                    PepCountry = "India",
-                    RiskCategory = "Medium",
-                    IsActive = true,
-                    DateAddedUtc = DateTime.UtcNow,
-                    DateLastUpdatedUtc = DateTime.UtcNow
-                });
+                    var html = await _httpClient.GetStringAsync(url);
+                    var doc = new HtmlDocument();
+                    doc.LoadHtml(html);
+
+                    var memberLinks = doc.DocumentNode.SelectNodes("//a[contains(@href, 'member') or contains(@href, 'Member')]");
+                    if (memberLinks != null)
+                    {
+                        foreach (var link in memberLinks.Take(50))
+                        {
+                            var name = link.InnerText?.Trim();
+                            if (!string.IsNullOrEmpty(name) && name.Length > 3)
+                            {
+                                entries.Add(new WatchlistEntry
+                                {
+                                    Id = Guid.NewGuid(),
+                                    ExternalId = $"PARL_{Guid.NewGuid().ToString("N")[..8]}",
+                                    Source = "PARLIAMENT",
+                                    ListType = "PEP",
+                                    PrimaryName = name,
+                                    Country = "India",
+                                    PositionOrRole = url.Contains("loksabha") ? "Lok Sabha Member" : "Rajya Sabha Member",
+                                    PepCategory = "Member of Parliament",
+                                    PepPosition = url.Contains("loksabha") ? "MP (Lok Sabha)" : "MP (Rajya Sabha)",
+                                    PepCountry = "India",
+                                    RiskCategory = "Medium",
+                                    IsActive = true,
+                                    DateAddedUtc = DateTime.UtcNow,
+                                    DateLastUpdatedUtc = DateTime.UtcNow
+                                });
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to scrape Parliament URL: {Url}", url);
+                }
             }
 
             await SaveEntries("PARLIAMENT", entries);
-            _logger.LogInformation("Scraped {Count} Parliament entries", entries.Count);
             return entries.Count;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error scraping Parliament data: {Error}", ex.Message);
+            _logger.LogError(ex, "Error scraping Parliament data");
             return 0;
         }
     }
@@ -172,43 +244,64 @@ public class PublicDataScrapingService : IPublicDataScrapingService
             _logger.LogInformation("Starting Wikipedia PEP scraping");
             var entries = new List<WatchlistEntry>();
 
-            var chiefMinisters = new[]
+            var urls = new[]
             {
-                new { Name = "Yogi Adityanath", State = "Uttar Pradesh" },
-                new { Name = "Mamata Banerjee", State = "West Bengal" },
-                new { Name = "M. K. Stalin", State = "Tamil Nadu" },
-                new { Name = "Pinarayi Vijayan", State = "Kerala" },
-                new { Name = "Bhupesh Baghel", State = "Chhattisgarh" }
+                _configuration["ScrapingUrls:Wikipedia:ChiefMinisters"],
+                _configuration["ScrapingUrls:Wikipedia:Governors"],
+                _configuration["ScrapingUrls:Wikipedia:CabinetMinisters"]
             };
 
-            foreach (var cm in chiefMinisters)
+            foreach (var url in urls.Where(u => !string.IsNullOrEmpty(u)))
             {
-                entries.Add(new WatchlistEntry
+                try
                 {
-                    Id = Guid.NewGuid(),
-                    ExternalId = $"WIKI_CM_{entries.Count + 1}",
-                    Source = "WIKIPEDIA",
-                    ListType = "PEP",
-                    PrimaryName = cm.Name,
-                    Country = "India",
-                    PositionOrRole = $"Chief Minister of {cm.State}",
-                    PepCategory = "State Government Head",
-                    PepPosition = "Chief Minister",
-                    PepCountry = "India",
-                    RiskCategory = "High",
-                    IsActive = true,
-                    DateAddedUtc = DateTime.UtcNow,
-                    DateLastUpdatedUtc = DateTime.UtcNow
-                });
+                    var response = await _httpClient.GetStringAsync(url);
+                    var data = JsonSerializer.Deserialize<JsonElement>(response);
+                    
+                    if (data.TryGetProperty("extract", out var extract))
+                    {
+                        var text = extract.GetString();
+                        if (!string.IsNullOrEmpty(text))
+                        {
+                            var names = ExtractNamesFromText(text);
+                            foreach (var name in names.Take(10))
+                            {
+                                var position = url.Contains("chief") ? "Chief Minister" : 
+                                             url.Contains("governor") ? "Governor" : "Cabinet Minister";
+                                
+                                entries.Add(new WatchlistEntry
+                                {
+                                    Id = Guid.NewGuid(),
+                                    ExternalId = $"WIKI_{Guid.NewGuid().ToString("N")[..8]}",
+                                    Source = "WIKIPEDIA",
+                                    ListType = "PEP",
+                                    PrimaryName = name,
+                                    Country = "India",
+                                    PositionOrRole = position,
+                                    PepCategory = "Government Official",
+                                    PepPosition = position,
+                                    PepCountry = "India",
+                                    RiskCategory = "High",
+                                    IsActive = true,
+                                    DateAddedUtc = DateTime.UtcNow,
+                                    DateLastUpdatedUtc = DateTime.UtcNow
+                                });
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to scrape Wikipedia URL: {Url}", url);
+                }
             }
 
             await SaveEntries("WIKIPEDIA", entries);
-            _logger.LogInformation("Scraped {Count} Wikipedia entries", entries.Count);
             return entries.Count;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error scraping Wikipedia data: {Error}", ex.Message);
+            _logger.LogError(ex, "Error scraping Wikipedia data");
             return 0;
         }
     }
@@ -220,42 +313,88 @@ public class PublicDataScrapingService : IPublicDataScrapingService
             _logger.LogInformation("Starting OpenSanctions scraping");
             var entries = new List<WatchlistEntry>();
 
-            var sampleSanctions = new[]
+            var baseUrl = _configuration["ScrapingUrls:OpenSanctions:SearchApi"];
+            var queries = new[]
             {
-                new { Name = "Dawood Ibrahim", Reason = "Terrorism financing" },
-                new { Name = "Hafiz Saeed", Reason = "Terrorist activities" },
-                new { Name = "Masood Azhar", Reason = "Global terrorist" },
-                new { Name = "Tiger Memon", Reason = "Bomb blast conspirator" }
+                _configuration["ScrapingUrls:OpenSanctions:IndiaQuery"],
+                _configuration["ScrapingUrls:OpenSanctions:TerrorismQuery"]
             };
 
-            foreach (var sanction in sampleSanctions)
+            foreach (var query in queries.Where(q => !string.IsNullOrEmpty(q)))
             {
-                entries.Add(new WatchlistEntry
+                try
                 {
-                    Id = Guid.NewGuid(),
-                    ExternalId = $"OPENSANCTIONS_{entries.Count + 1}",
-                    Source = "OPENSANCTIONS",
-                    ListType = "Sanctions",
-                    PrimaryName = sanction.Name,
-                    Country = "India",
-                    PositionOrRole = "Sanctioned Individual",
-                    RiskCategory = "High",
-                    SanctionReason = sanction.Reason,
-                    IsActive = true,
-                    DateAddedUtc = DateTime.UtcNow,
-                    DateLastUpdatedUtc = DateTime.UtcNow
-                });
+                    var url = baseUrl + query;
+                    var response = await _httpClient.GetStringAsync(url);
+                    var data = JsonSerializer.Deserialize<JsonElement>(response);
+
+                    if (data.TryGetProperty("results", out var results))
+                    {
+                        foreach (var result in results.EnumerateArray())
+                        {
+                            if (result.TryGetProperty("caption", out var caption))
+                            {
+                                var name = caption.GetString();
+                                if (!string.IsNullOrEmpty(name))
+                                {
+                                    var schema = result.TryGetProperty("schema", out var schemaElement) ? schemaElement.GetString() : "Person";
+                                    var country = result.TryGetProperty("countries", out var countriesElement) ? 
+                                        string.Join(", ", countriesElement.EnumerateArray().Select(c => c.GetString())) : "Unknown";
+
+                                    entries.Add(new WatchlistEntry
+                                    {
+                                        Id = Guid.NewGuid(),
+                                        ExternalId = $"OS_{Guid.NewGuid().ToString("N")[..8]}",
+                                        Source = "OPENSANCTIONS",
+                                        ListType = "Sanctions",
+                                        PrimaryName = name,
+                                        Country = country,
+                                        PositionOrRole = schema,
+                                        RiskCategory = "High",
+                                        SanctionReason = "Listed in OpenSanctions database",
+                                        IsActive = true,
+                                        DateAddedUtc = DateTime.UtcNow,
+                                        DateLastUpdatedUtc = DateTime.UtcNow
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to scrape OpenSanctions query: {Query}", query);
+                }
             }
 
             await SaveEntries("OPENSANCTIONS", entries);
-            _logger.LogInformation("Scraped {Count} OpenSanctions entries", entries.Count);
             return entries.Count;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error scraping OpenSanctions data: {Error}", ex.Message);
+            _logger.LogError(ex, "Error scraping OpenSanctions data");
             return 0;
         }
+    }
+
+    private List<string> ExtractNamesFromText(string text)
+    {
+        var names = new List<string>();
+        var words = text.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        
+        for (int i = 0; i < words.Length - 1; i++)
+        {
+            if (char.IsUpper(words[i][0]) && char.IsUpper(words[i + 1][0]))
+            {
+                var name = $"{words[i]} {words[i + 1]}";
+                if (name.Length > 5 && !names.Contains(name))
+                {
+                    names.Add(name);
+                }
+            }
+        }
+        
+        return names;
     }
 
     private async Task SaveEntries(string source, List<WatchlistEntry> entries)
@@ -281,7 +420,7 @@ public class PublicDataScrapingService : IPublicDataScrapingService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error saving entries for source {Source}: {Error}", source, ex.Message);
+            _logger.LogError(ex, "Error saving entries for source {Source}", source);
             throw;
         }
     }
