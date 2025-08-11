@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pepify - AI-Powered PEP Screening Interactive Demo</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #333; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .header { text-align: center; color: white; margin-bottom: 40px; }
+        .header h1 { font-size: 3rem; margin-bottom: 10px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+        .header p { font-size: 1.2rem; opacity: 0.9; }
+        .demo-container { background: white; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); overflow: hidden; }
+        .nav-tabs { display: flex; background: #f8f9fa; }
+        .nav-tab { flex: 1; padding: 15px 20px; text-align: center; cursor: pointer; border: none; background: none; font-size: 16px; transition: all 0.3s; }
+        .nav-tab.active { background: #007bff; color: white; }
+        .nav-tab:hover { background: #e9ecef; }
+        .nav-tab.active:hover { background: #0056b3; }
+        .tab-content { display: none; padding: 30px; }
+        .tab-content.active { display: block; }
+        .feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin: 20px 0; }
+        .feature-card { background: #f8f9fa; border-radius: 10px; padding: 20px; border-left: 4px solid #007bff; transition: transform 0.3s; }
+        .feature-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        .feature-card h3 { color: #007bff; margin-bottom: 10px; }
+        .demo-section { margin: 30px 0; }
+        .demo-section h2 { color: #333; margin-bottom: 20px; border-bottom: 2px solid #007bff; padding-bottom: 10px; }
+        .workflow-step { background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 20px; margin: 10px 0; border-radius: 10px; position: relative; }
+        .workflow-step::before { content: attr(data-step); position: absolute; left: -10px; top: -10px; background: #ff6b6b; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+        .role-card { background: linear-gradient(135deg, #4facfe, #00f2fe); color: white; padding: 20px; border-radius: 10px; margin: 10px 0; }
+        .role-card h3 { margin-bottom: 10px; }
+        .role-card ul { list-style: none; }
+        .role-card li { padding: 5px 0; }
+        .role-card li::before { content: "✓ "; color: #00ff88; font-weight: bold; }
+        .tech-stack { display: flex; flex-wrap: wrap; gap: 10px; margin: 20px 0; }
+        .tech-item { background: #007bff; color: white; padding: 8px 16px; border-radius: 20px; font-size: 14px; }
+        .cta-section { background: linear-gradient(135deg, #ff6b6b, #ffa500); color: white; padding: 40px; text-align: center; border-radius: 15px; margin: 30px 0; }
+        .cta-button { background: white; color: #ff6b6b; padding: 15px 30px; border: none; border-radius: 25px; font-size: 18px; font-weight: bold; cursor: pointer; transition: all 0.3s; }
+        .cta-button:hover { transform: scale(1.05); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        .interactive-demo { background: #f8f9fa; padding: 20px; border-radius: 10px; margin: 20px 0; }
+        .demo-input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; margin: 10px 0; }
+        .demo-button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; }
+        .demo-result { background: white; padding: 15px; border-radius: 5px; margin: 10px 0; border-left: 4px solid #28a745; }
+        .risk-high { border-left-color: #dc3545; }
+        .risk-medium { border-left-color: #ffc107; }
+        .risk-low { border-left-color: #28a745; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛡️ Pepify</h1>
+            <p>AI-Powered PEP Screening from India to Beyond</p>
+        </div>
+
+        <div class="demo-container">
+            <div class="nav-tabs">
+                <button class="nav-tab active" onclick="showTab('overview')">Overview</button>
+                <button class="nav-tab" onclick="showTab('features')">Features</button>
+                <button class="nav-tab" onclick="showTab('workflow')">Workflow</button>
+                <button class="nav-tab" onclick="showTab('roles')">User Roles</button>
+                <button class="nav-tab" onclick="showTab('demo')">Live Demo</button>
+                <button class="nav-tab" onclick="showTab('tech')">Technology</button>
+            </div>
+
+            <div id="overview" class="tab-content active">
+                <div class="demo-section">
+                    <h2>🎯 What is Pepify?</h2>
+                    <p>Pepify is a comprehensive AI-powered compliance platform designed to help financial institutions, banks, and businesses screen customers against Politically Exposed Persons (PEP) lists, sanctions databases, and adverse media sources.</p>
+                    
+                    <div class="feature-grid">
+                        <div class="feature-card">
+                            <h3>🤖 AI-Powered Screening</h3>
+                            <p>Advanced machine learning algorithms for accurate name matching and risk assessment</p>
+                        </div>
+                        <div class="feature-card">
+                            <h3>🌍 Global Coverage</h3>
+                            <p>Comprehensive databases including Indian PEP lists, UN sanctions, OFAC, and more</p>
+                        </div>
+                        <div class="feature-card">
+                            <h3>⚡ Real-time Processing</h3>
+                            <p>Instant screening results with automated alert generation and workflow management</p>
+                        </div>
+                        <div class="feature-card">
+                            <h3>📊 Compliance Reporting</h3>
+                            <p>Automated SAR/STR report generation with regulatory compliance tracking</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="features" class="tab-content">
+                <div class="demo-section">
+                    <h2>🚀 Key Features</h2>
+                    
+                    <div class="feature-grid">
+                        <div class="feature-card">
+                            <h3>Customer Screening</h3>
+                            <ul>
+                                <li>Individual & Entity screening</li>
+                                <li>Bulk customer processing</li>
+                                <li>Real-time API integration</li>
+                                <li>Fuzzy name matching</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="feature-card">
+                            <h3>Adverse Media Monitoring</h3>
+                            <ul>
+                                <li>Global news source monitoring</li>
+                                <li>AI-powered sentiment analysis</li>
+                                <li>Automated risk categorization</li>
+                                <li>Continuous monitoring</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="feature-card">
+                            <h3>Financial Intelligence</h3>
+                            <ul>
+                                <li>CIBIL score integration</li>
+                                <li>MCA data verification</li>
+                                <li>Transaction monitoring</li>
+                                <li>Risk scoring algorithms</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="feature-card">
+                            <h3>Compliance Management</h3>
+                            <ul>
+                                <li>SAR/STR report automation</li>
+                                <li>Regulatory compliance tracking</li>
+                                <li>Audit trail maintenance</li>
+                                <li>Workflow management</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="workflow" class="tab-content">
+                <div class="demo-section">
+                    <h2>🔄 Screening Workflow</h2>
+                    
+                    <div class="workflow-step" data-step="1">
+                        <h3>Customer Onboarding</h3>
+                        <p>Customer data is entered into the system either manually or through API integration. The system captures essential information including name, date of birth, nationality, and identification documents.</p>
+                    </div>
+                    
+                    <div class="workflow-step" data-step="2">
+                        <h3>Automated Screening</h3>
+                        <p>AI algorithms perform comprehensive screening against multiple databases including PEP lists, sanctions databases, and adverse media sources using advanced fuzzy matching techniques.</p>
+                    </div>
+                    
+                    <div class="workflow-step" data-step="3">
+                        <h3>Risk Assessment</h3>
+                        <p>Machine learning models analyze screening results and assign risk scores based on match quality, source reliability, and historical patterns.</p>
+                    </div>
+                    
+                    <div class="workflow-step" data-step="4">
+                        <h3>Alert Generation</h3>
+                        <p>High-risk matches automatically generate alerts that are routed to appropriate compliance officers based on risk level and organizational hierarchy.</p>
+                    </div>
+                    
+                    <div class="workflow-step" data-step="5">
+                        <h3>Review & Decision</h3>
+                        <p>Compliance officers review alerts, conduct enhanced due diligence if required, and make final decisions on customer acceptance or rejection.</p>
+                    </div>
+                    
+                    <div class="workflow-step" data-step="6">
+                        <h3>Reporting & Documentation</h3>
+                        <p>All decisions are documented with audit trails. Suspicious activities automatically generate SAR/STR reports for regulatory submission.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="roles" class="tab-content">
+                <div class="demo-section">
+                    <h2>👥 User Roles & Permissions</h2>
+                    
+                    <div class="role-card">
+                        <h3>🔧 System Administrator</h3>
+                        <ul>
+                            <li>Complete system access and configuration</li>
+                            <li>User management and role assignment</li>
+                            <li>Organization setup and management</li>
+                            <li>System monitoring and maintenance</li>
+                            <li>Database and watchlist management</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="role-card">
+                        <h3>👨‍💼 Compliance Manager</h3>
+                        <ul>
+                            <li>Team oversight and workflow management</li>
+                            <li>Alert assignment and escalation</li>
+                            <li>Policy configuration and rule setting</li>
+                            <li>Reporting and analytics access</li>
+                            <li>Regulatory compliance monitoring</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="role-card">
+                        <h3>🔍 Compliance Analyst</h3>
+                        <ul>
+                            <li>Customer screening and analysis</li>
+                            <li>Alert investigation and resolution</li>
+                            <li>Enhanced due diligence procedures</li>
+                            <li>Case documentation and reporting</li>
+                            <li>Risk assessment and scoring</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="role-card">
+                        <h3>📋 Compliance Officer</h3>
+                        <ul>
+                            <li>Alert review and approval</li>
+                            <li>SAR/STR report generation</li>
+                            <li>Regulatory submission management</li>
+                            <li>Compliance reporting and documentation</li>
+                            <li>Senior management reporting</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div id="demo" class="tab-content">
+                <div class="demo-section">
+                    <h2>🎮 Interactive Demo</h2>
+                    <p>Try our screening engine with sample data:</p>
+                    
+                    <div class="interactive-demo">
+                        <h3>Customer Screening Simulator</h3>
+                        <input type="text" id="customerName" class="demo-input" placeholder="Enter customer name (try: Narendra Modi, Vladimir Putin, or John Smith)" value="Narendra Modi">
+                        <input type="text" id="customerCountry" class="demo-input" placeholder="Country" value="India">
+                        <button class="demo-button" onclick="simulateScreening()">🔍 Screen Customer</button>
+                        
+                        <div id="screeningResult" style="display: none;">
+                            <div class="demo-result" id="resultCard">
+                                <h4 id="resultTitle"></h4>
+                                <p id="resultDescription"></p>
+                                <div id="resultDetails"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="interactive-demo">
+                        <h3>Risk Assessment Calculator</h3>
+                        <select class="demo-input" id="riskFactors">
+                            <option value="low">Low Risk Profile</option>
+                            <option value="medium">Medium Risk Profile</option>
+                            <option value="high">High Risk Profile</option>
+                        </select>
+                        <button class="demo-button" onclick="calculateRisk()">📊 Calculate Risk Score</button>
+                        
+                        <div id="riskResult" style="display: none;">
+                            <div class="demo-result" id="riskCard">
+                                <h4 id="riskTitle"></h4>
+                                <p id="riskScore"></p>
+                                <p id="riskRecommendation"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tech" class="tab-content">
+                <div class="demo-section">
+                    <h2>⚙️ Technology Stack</h2>
+                    
+                    <h3>Frontend Technologies</h3>
+                    <div class="tech-stack">
+                        <span class="tech-item">Angular 18</span>
+                        <span class="tech-item">TypeScript</span>
+                        <span class="tech-item">Angular Material</span>
+                        <span class="tech-item">RxJS</span>
+                        <span class="tech-item">Chart.js</span>
+                    </div>
+                    
+                    <h3>Backend Technologies</h3>
+                    <div class="tech-stack">
+                        <span class="tech-item">.NET 8</span>
+                        <span class="tech-item">C#</span>
+                        <span class="tech-item">Entity Framework Core</span>
+                        <span class="tech-item">PostgreSQL</span>
+                        <span class="tech-item">Hangfire</span>
+                    </div>
+                    
+                    <h3>AI & Machine Learning</h3>
+                    <div class="tech-stack">
+                        <span class="tech-item">Fuzzy String Matching</span>
+                        <span class="tech-item">Natural Language Processing</span>
+                        <span class="tech-item">Sentiment Analysis</span>
+                        <span class="tech-item">Risk Scoring Algorithms</span>
+                    </div>
+                    
+                    <h3>Integration & APIs</h3>
+                    <div class="tech-stack">
+                        <span class="tech-item">RESTful APIs</span>
+                        <span class="tech-item">OpenAPI/Swagger</span>
+                        <span class="tech-item">CIBIL Integration</span>
+                        <span class="tech-item">MCA Data Services</span>
+                        <span class="tech-item">News API Integration</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="cta-section">
+            <h2>Ready to Transform Your Compliance Operations?</h2>
+            <p>Join leading financial institutions using Pepify for comprehensive PEP screening and compliance management.</p>
+            <button class="cta-button" onclick="window.open('http://localhost:4200', '_blank')">🚀 Launch Live Application</button>
+        </div>
+    </div>
+
+    <script>
+        function showTab(tabName) {
+            // Hide all tab contents
+            const contents = document.querySelectorAll('.tab-content');
+            contents.forEach(content => content.classList.remove('active'));
+            
+            // Remove active class from all tabs
+            const tabs = document.querySelectorAll('.nav-tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            // Show selected tab content
+            document.getElementById(tabName).classList.add('active');
+            
+            // Add active class to clicked tab
+            event.target.classList.add('active');
+        }
+
+        function simulateScreening() {
+            const name = document.getElementById('customerName').value;
+            const country = document.getElementById('customerCountry').value;
+            const resultDiv = document.getElementById('screeningResult');
+            const resultCard = document.getElementById('resultCard');
+            const resultTitle = document.getElementById('resultTitle');
+            const resultDescription = document.getElementById('resultDescription');
+            const resultDetails = document.getElementById('resultDetails');
+            
+            // Simulate screening logic
+            let riskLevel, matches, recommendation;
+            
+            if (name.toLowerCase().includes('modi') || name.toLowerCase().includes('putin') || name.toLowerCase().includes('trump')) {
+                riskLevel = 'HIGH';
+                matches = Math.floor(Math.random() * 5) + 3;
+                recommendation = 'Enhanced Due Diligence Required';
+                resultCard.className = 'demo-result risk-high';
+            } else if (name.toLowerCase().includes('smith') || name.toLowerCase().includes('johnson')) {
+                riskLevel = 'MEDIUM';
+                matches = Math.floor(Math.random() * 3) + 1;
+                recommendation = 'Additional Review Recommended';
+                resultCard.className = 'demo-result risk-medium';
+            } else {
+                riskLevel = 'LOW';
+                matches = 0;
+                recommendation = 'Proceed with Standard Onboarding';
+                resultCard.className = 'demo-result risk-low';
+            }
+            
+            resultTitle.textContent = `Screening Results for ${name}`;
+            resultDescription.textContent = `Risk Level: ${riskLevel} | Matches Found: ${matches}`;
+            resultDetails.innerHTML = `
+                <strong>Recommendation:</strong> ${recommendation}<br>
+                <strong>Screening Time:</strong> 0.3 seconds<br>
+                <strong>Databases Checked:</strong> PEP Lists, Sanctions, Adverse Media<br>
+                <strong>Confidence Score:</strong> ${Math.floor(Math.random() * 20) + 80}%
+            `;
+            
+            resultDiv.style.display = 'block';
+        }
+
+        function calculateRisk() {
+            const riskProfile = document.getElementById('riskFactors').value;
+            const resultDiv = document.getElementById('riskResult');
+            const resultCard = document.getElementById('riskCard');
+            const resultTitle = document.getElementById('riskTitle');
+            const resultScore = document.getElementById('riskScore');
+            const resultRecommendation = document.getElementById('riskRecommendation');
+            
+            let score, recommendation, className;
+            
+            switch(riskProfile) {
+                case 'high':
+                    score = Math.floor(Math.random() * 20) + 80;
+                    recommendation = 'Reject or require extensive due diligence';
+                    className = 'demo-result risk-high';
+                    break;
+                case 'medium':
+                    score = Math.floor(Math.random() * 30) + 40;
+                    recommendation = 'Enhanced monitoring and periodic review';
+                    className = 'demo-result risk-medium';
+                    break;
+                default:
+                    score = Math.floor(Math.random() * 30) + 10;
+                    recommendation = 'Standard monitoring procedures';
+                    className = 'demo-result risk-low';
+            }
+            
+            resultCard.className = className;
+            resultTitle.textContent = 'Risk Assessment Complete';
+            resultScore.textContent = `Risk Score: ${score}/100`;
+            resultRecommendation.textContent = `Recommendation: ${recommendation}`;
+            
+            resultDiv.style.display = 'block';
+        }
+
+        // Auto-advance demo every 30 seconds
+        let currentTab = 0;
+        const tabs = ['overview', 'features', 'workflow', 'roles', 'demo', 'tech'];
+        
+        setInterval(() => {
+            currentTab = (currentTab + 1) % tabs.length;
+            const tabButtons = document.querySelectorAll('.nav-tab');
+            tabButtons[currentTab].click();
+        }, 30000);
+    </script>
+</body>
+</html>

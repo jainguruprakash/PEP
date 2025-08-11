@@ -6,7 +6,7 @@ using PEPScanner.Domain.Entities;
 namespace PEPScanner.API.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/alerts")]
     public class AlertsController : ControllerBase
     {
         private readonly PepScannerDbContext _context;

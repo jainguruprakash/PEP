@@ -9,28 +9,14 @@ import { AuthService } from './auth.service';
 export class AlertsService {
   private readonly http = inject(HttpClient);
   private readonly authService = inject(AuthService);
-  private readonly baseUrl = `${environment.apiBaseUrl}/alerts`;
+  private readonly baseUrl = `${environment.apiBaseUrl}/api/alerts`;
 
   getAll(): Observable<any[]> {
-    const user = this.authService.getCurrentUser();
-    let params = new HttpParams();
-    
-    if (user?.organizationId) {
-      params = params.set('organizationId', user.organizationId);
-    }
-    
-    return this.http.get<any[]>(`${this.baseUrl}`, { params });
+    return this.http.get<any[]>(`${this.baseUrl}`);
   }
 
   getByStatus(status: string): Observable<any[]> {
-    const user = this.authService.getCurrentUser();
-    let params = new HttpParams();
-    
-    if (user?.organizationId) {
-      params = params.set('organizationId', user.organizationId);
-    }
-    
-    return this.http.get<any[]>(`${this.baseUrl}/status/${status}`, { params });
+    return this.http.get<any[]>(`${this.baseUrl}/status/${status}`);
   }
 
   getById(id: string): Observable<any> {
@@ -58,14 +44,7 @@ export class AlertsService {
   }
 
   getPendingApproval(): Observable<any[]> {
-    const user = this.authService.getCurrentUser();
-    let params = new HttpParams();
-    
-    if (user?.organizationId) {
-      params = params.set('organizationId', user.organizationId);
-    }
-    
-    return this.http.get<any[]>(`${this.baseUrl}/pending-approval`, { params });
+    return this.http.get<any[]>(`${this.baseUrl}/pending-approval`);
   }
 
   // Alert Creation

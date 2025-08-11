@@ -44,7 +44,7 @@ import { AlertsService } from '../../services/alerts.service';
                 <td mat-cell *matCellDef="let row">
                   <button mat-raised-button color="primary" (click)="approveAlert(row.id)">Approve</button>
                   <button mat-raised-button color="warn" (click)="rejectAlert(row.id)">Reject</button>
-                  <button mat-button [routerLink]="['/alerts', row.id]">Details</button>
+                  <button mat-button [routerLink]="['/dashboard/alerts', row.id]">Details</button>
                 </td>
               </ng-container>
               <tr mat-header-row *matHeaderRowDef="pendingColumns"></tr>
@@ -75,7 +75,7 @@ import { AlertsService } from '../../services/alerts.service';
               <ng-container matColumnDef="actions">
                 <th mat-header-cell *matHeaderCellDef>Actions</th>
                 <td mat-cell *matCellDef="let row">
-                  <button mat-button [routerLink]="['/alerts', row.id]">View</button>
+                  <button mat-button [routerLink]="['/dashboard/alerts', row.id]">View</button>
                 </td>
               </ng-container>
               <tr mat-header-row *matHeaderRowDef="allColumns"></tr>
