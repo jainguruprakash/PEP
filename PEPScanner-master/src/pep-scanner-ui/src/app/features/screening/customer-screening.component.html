@@ -193,47 +193,291 @@
             <mat-icon>upload_file</mat-icon>
             Bulk Customer Screening
           </mat-card-title>
+          <mat-card-subtitle>
+            Screen multiple customers simultaneously against all watchlists
+          </mat-card-subtitle>
         </mat-card-header>
         <mat-card-content>
-          <form [formGroup]="bulkScreeningForm">
-            <div class="bulk-upload">
-              <input type="file" #fileInput (change)="uploadBulkFile($event)" 
-                     accept=".csv,.xlsx" style="display: none">
-              <button mat-raised-button color="primary" (click)="fileInput.click()">
-                <mat-icon>cloud_upload</mat-icon>
-                Upload Customer File
+          <!-- Sample File Download -->
+          <div class="sample-files-header">
+            <h4>Download Template Files</h4>
+            <p>Download sample files to see the required format for bulk screening</p>
+            <div class="sample-buttons">
+              <button mat-raised-button color="accent" (click)="downloadSampleFile('csv')">
+                <mat-icon>download</mat-icon> CSV Template
               </button>
-              <p class="upload-help">Supported formats: CSV, Excel</p>
+              <button mat-raised-button color="accent" (click)="downloadSampleFile('excel')">
+                <mat-icon>download</mat-icon> Excel Template
+              </button>
+            </div>
+          </div>
+          
+          <form [formGroup]="bulkScreeningForm">
+            <!-- File Upload Section -->
+            <div class="bulk-upload-section">
+              <div class="upload-area" [class.dragover]="isDragOver" 
+                   (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)" 
+                   (drop)="onFileDrop($event)" (click)="fileInput.click()">
+                <input type="file" #fileInput (change)="uploadBulkFile($event)" 
+                       accept=".csv,.xlsx,.xls" style="display: none">
+                <div class="upload-content">
+                  <mat-icon class="upload-icon">cloud_upload</mat-icon>
+                  <h3>Drop files here or click to upload</h3>
+                  <p>Supported formats: CSV, Excel (.xlsx, .xls)</p>
+                  <p class="file-requirements">Required columns: Name, Country (optional), DOB (optional)</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bulk Screening Options -->
+            <div class="bulk-options" *ngIf="uploadedFile()">
+              <h3>Screening Configuration</h3>
+              
+              <div class="options-grid">
+                <!-- Threshold Setting -->
+                <div class="threshold-section">
+                  <label class="section-label">Matching Threshold: {{ bulkScreeningForm.get('threshold')?.value }}%</label>
+                  <mat-slider min="50" max="100" step="5" discrete>
+                    <input matSliderThumb formControlName="threshold">
+                  </mat-slider>
+                </div>
+
+                <!-- Source Selection -->
+                <div class="sources-section" formArrayName="bulkSources">
+                  <label class="section-label">Watchlist Sources</label>
+                  <div class="checkbox-grid">
+                    <mat-checkbox *ngFor="let source of availableSources; let i = index"
+                                  [formControlName]="i">
+                      {{ source.label }}
+                    </mat-checkbox>
+                  </div>
+                </div>
+
+                <!-- Processing Options -->
+                <div class="processing-options">
+                  <label class="section-label">Processing Options</label>
+                  <mat-checkbox formControlName="autoCreateAlerts">
+                    Auto-create alerts for high-risk matches
+                  </mat-checkbox>
+                  <mat-checkbox formControlName="skipDuplicates">
+                    Skip customers already screened today
+                  </mat-checkbox>
+                  <mat-checkbox formControlName="enableParallelProcessing">
+                    Enable parallel processing (faster)
+                  </mat-checkbox>
+                </div>
+              </div>
+
+              <!-- File Preview -->
+              <div class="file-preview" *ngIf="filePreview().length > 0">
+                <h4>File Preview (First 5 rows)</h4>
+                <mat-table [dataSource]="filePreview()" class="preview-table">
+                  <ng-container matColumnDef="name">
+                    <mat-header-cell *matHeaderCellDef>Name</mat-header-cell>
+                    <mat-cell *matCellDef="let row">{{ row.name }}</mat-cell>
+                  </ng-container>
+                  <ng-container matColumnDef="country">
+                    <mat-header-cell *matHeaderCellDef>Country</mat-header-cell>
+                    <mat-cell *matCellDef="let row">{{ row.country || 'N/A' }}</mat-cell>
+                  </ng-container>
+                  <ng-container matColumnDef="dob">
+                    <mat-header-cell *matHeaderCellDef>Date of Birth</mat-header-cell>
+                    <mat-cell *matCellDef="let row">{{ row.dob || 'N/A' }}</mat-cell>
+                  </ng-container>
+                  <mat-header-row *matHeaderRowDef="['name', 'country', 'dob']"></mat-header-row>
+                  <mat-row *matRowDef="let row; columns: ['name', 'country', 'dob']"></mat-row>
+                </mat-table>
+                <p class="preview-info">Total customers to screen: {{ totalCustomersToScreen() }}</p>
+              </div>
+
+              <!-- Start Screening Button -->
+              <div class="bulk-actions">
+                <button mat-raised-button color="primary" (click)="startBulkScreening()"
+                        [disabled]="isBulkProcessing() || !uploadedFile()">
+                  <mat-icon>play_arrow</mat-icon>
+                  Start Bulk Screening
+                </button>
+                <button mat-button (click)="clearBulkForm()">
+                  <mat-icon>clear</mat-icon>
+                  Clear
+                </button>
+              </div>
             </div>
           </form>
+
+          <!-- Bulk Processing Progress -->
+          <div *ngIf="isBulkProcessing()" class="bulk-progress">
+            <mat-card class="progress-card">
+              <mat-card-header>
+                <mat-card-title>
+                  <mat-icon>hourglass_empty</mat-icon>
+                  Processing Bulk Screening
+                </mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="progress-info">
+                  <p>Processed: {{ bulkProgress().processed }} / {{ bulkProgress().total }}</p>
+                  <p>Estimated time remaining: {{ bulkProgress().estimatedTime }}</p>
+                </div>
+                <mat-progress-bar mode="determinate" [value]="bulkProgress().percentage"></mat-progress-bar>
+                <div class="progress-stats">
+                  <div class="stat">
+                    <span class="stat-label">Clear:</span>
+                    <span class="stat-value">{{ bulkProgress().clear }}</span>
+                  </div>
+                  <div class="stat">
+                    <span class="stat-label">Low Risk:</span>
+                    <span class="stat-value">{{ bulkProgress().lowRisk }}</span>
+                  </div>
+                  <div class="stat">
+                    <span class="stat-label">Medium Risk:</span>
+                    <span class="stat-value">{{ bulkProgress().mediumRisk }}</span>
+                  </div>
+                  <div class="stat">
+                    <span class="stat-label">High Risk:</span>
+                    <span class="stat-value">{{ bulkProgress().highRisk }}</span>
+                  </div>
+                </div>
+                <button mat-button color="warn" (click)="cancelBulkScreening()">
+                  <mat-icon>stop</mat-icon>
+                  Cancel Processing
+                </button>
+              </mat-card-content>
+            </mat-card>
+          </div>
           
-          <!-- Bulk Results -->
-          <div *ngIf="bulkResults().length > 0" class="bulk-results">
-            <h3>Bulk Screening Results</h3>
-            <mat-table [dataSource]="bulkResults()">
-              <ng-container matColumnDef="name">
-                <mat-header-cell *matHeaderCellDef>Name</mat-header-cell>
-                <mat-cell *matCellDef="let result">{{ result.customerName }}</mat-cell>
-              </ng-container>
-              <ng-container matColumnDef="riskScore">
-                <mat-header-cell *matHeaderCellDef>Risk Score</mat-header-cell>
-                <mat-cell *matCellDef="let result">{{ result.riskScore }}%</mat-cell>
-              </ng-container>
-              <ng-container matColumnDef="matches">
-                <mat-header-cell *matHeaderCellDef>Matches</mat-header-cell>
-                <mat-cell *matCellDef="let result">{{ result.matchCount }}</mat-cell>
-              </ng-container>
-              <ng-container matColumnDef="status">
-                <mat-header-cell *matHeaderCellDef>Status</mat-header-cell>
-                <mat-cell *matCellDef="let result">
-                  <span class="status-badge" [class]="result.status.toLowerCase().replace(' ', '-')">
-                    {{ result.status }}
-                  </span>
-                </mat-cell>
-              </ng-container>
-              <mat-header-row *matHeaderRowDef="['name', 'riskScore', 'matches', 'status']"></mat-header-row>
-              <mat-row *matRowDef="let row; columns: ['name', 'riskScore', 'matches', 'status']"></mat-row>
-            </mat-table>
+          <!-- Enhanced Bulk Results -->
+          <div *ngIf="bulkResults().length > 0 && !result()" class="bulk-results">
+            <mat-card class="results-card">
+              <mat-card-header>
+                <mat-card-title>
+                  <mat-icon>assessment</mat-icon>
+                  Bulk Screening Results
+                </mat-card-title>
+                <mat-card-subtitle>
+                  {{ bulkResults().length }} customers screened
+                </mat-card-subtitle>
+              </mat-card-header>
+              <mat-card-content>
+                <!-- Results Summary -->
+                <div class="results-summary">
+                  <div class="summary-card clear">
+                    <div class="summary-number">{{ getBulkSummary().clear }}</div>
+                    <div class="summary-label">Clear</div>
+                  </div>
+                  <div class="summary-card low-risk">
+                    <div class="summary-number">{{ getBulkSummary().lowRisk }}</div>
+                    <div class="summary-label">Low Risk</div>
+                  </div>
+                  <div class="summary-card medium-risk">
+                    <div class="summary-number">{{ getBulkSummary().mediumRisk }}</div>
+                    <div class="summary-label">Medium Risk</div>
+                  </div>
+                  <div class="summary-card high-risk">
+                    <div class="summary-number">{{ getBulkSummary().highRisk }}</div>
+                    <div class="summary-label">High Risk</div>
+                  </div>
+                </div>
+
+                <!-- Results Actions -->
+                <div class="results-actions">
+                  <button mat-raised-button color="primary" (click)="exportBulkResults('excel')">
+                    <mat-icon>table_chart</mat-icon>
+                    Export to Excel
+                  </button>
+                  <button mat-button (click)="exportBulkResults('pdf')">
+                    <mat-icon>picture_as_pdf</mat-icon>
+                    Generate Report
+                  </button>
+                  <button mat-button (click)="createBulkAlerts()" 
+                          [disabled]="getBulkSummary().highRisk === 0">
+                    <mat-icon>notification_add</mat-icon>
+                    Create Alerts for High Risk
+                  </button>
+                </div>
+
+                <!-- Results Filter -->
+                <div class="results-filter">
+                  <mat-form-field appearance="outline">
+                    <mat-label>Filter by Status</mat-label>
+                    <mat-select [(value)]="bulkResultsFilter" (selectionChange)="filterBulkResults()">
+                      <mat-option value="all">All Results</mat-option>
+                      <mat-option value="high-risk">High Risk Only</mat-option>
+                      <mat-option value="medium-risk">Medium Risk Only</mat-option>
+                      <mat-option value="low-risk">Low Risk Only</mat-option>
+                      <mat-option value="clear">Clear Only</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>Search Customer</mat-label>
+                    <input matInput [(ngModel)]="bulkSearchTerm" (input)="filterBulkResults()">
+                    <mat-icon matSuffix>search</mat-icon>
+                  </mat-form-field>
+                </div>
+
+                <!-- Results Table -->
+                <mat-table [dataSource]="filteredBulkResults()" class="bulk-results-table" matSort>
+                  <ng-container matColumnDef="name">
+                    <mat-header-cell *matHeaderCellDef mat-sort-header>Customer Name</mat-header-cell>
+                    <mat-cell *matCellDef="let result">{{ result.customerName }}</mat-cell>
+                  </ng-container>
+                  <ng-container matColumnDef="country">
+                    <mat-header-cell *matHeaderCellDef>Country</mat-header-cell>
+                    <mat-cell *matCellDef="let result">{{ result.country || 'N/A' }}</mat-cell>
+                  </ng-container>
+                  <ng-container matColumnDef="riskScore">
+                    <mat-header-cell *matHeaderCellDef mat-sort-header>Risk Score</mat-header-cell>
+                    <mat-cell *matCellDef="let result">
+                      <div class="risk-score" [class]="getRiskClass(result.riskScore)">
+                        {{ result.riskScore }}%
+                      </div>
+                    </mat-cell>
+                  </ng-container>
+                  <ng-container matColumnDef="matches">
+                    <mat-header-cell *matHeaderCellDef mat-sort-header>Matches</mat-header-cell>
+                    <mat-cell *matCellDef="let result">
+                      <mat-chip-set *ngIf="result.matchCount > 0">
+                        <mat-chip>{{ result.matchCount }}</mat-chip>
+                      </mat-chip-set>
+                      <span *ngIf="result.matchCount === 0">None</span>
+                    </mat-cell>
+                  </ng-container>
+                  <ng-container matColumnDef="status">
+                    <mat-header-cell *matHeaderCellDef>Status</mat-header-cell>
+                    <mat-cell *matCellDef="let result">
+                      <span class="status-badge" [class]="getStatusClass(result.status)">
+                        {{ result.status }}
+                      </span>
+                    </mat-cell>
+                  </ng-container>
+                  <ng-container matColumnDef="actions">
+                    <mat-header-cell *matHeaderCellDef>Actions</mat-header-cell>
+                    <mat-cell *matCellDef="let result">
+                      <button mat-icon-button [matMenuTriggerFor]="actionMenu">
+                        <mat-icon>more_vert</mat-icon>
+                      </button>
+                      <mat-menu #actionMenu="matMenu">
+                        <button mat-menu-item (click)="viewBulkResultDetails(result)">
+                          <mat-icon>visibility</mat-icon> View Details
+                        </button>
+                        <button mat-menu-item (click)="createAlertFromBulkResult(result)" 
+                                *ngIf="result.matchCount > 0">
+                          <mat-icon>notification_add</mat-icon> Create Alert
+                        </button>
+                        <button mat-menu-item (click)="approveBulkCustomer(result)">
+                          <mat-icon>check_circle</mat-icon> Approve
+                        </button>
+                      </mat-menu>
+                    </mat-cell>
+                  </ng-container>
+                  <mat-header-row *matHeaderRowDef="['name', 'country', 'riskScore', 'matches', 'status', 'actions']"></mat-header-row>
+                  <mat-row *matRowDef="let row; columns: ['name', 'country', 'riskScore', 'matches', 'status', 'actions']"></mat-row>
+                </mat-table>
+
+                <!-- Pagination -->
+                <mat-paginator [pageSizeOptions]="[10, 25, 50, 100]" showFirstLastButtons></mat-paginator>
+              </mat-card-content>
+            </mat-card>
           </div>
         </mat-card-content>
       </mat-card>
@@ -253,7 +497,7 @@
   </div>
 
   <!-- Enhanced Results Section -->
-  <div *ngIf="result() && !isLoading()" class="results-container">
+  <div *ngIf="result() && !isLoading() && bulkResults().length === 0" class="results-container">
     <mat-tab-group>
       <!-- Screening Results -->
       <mat-tab label="Results">

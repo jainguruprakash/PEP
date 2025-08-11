@@ -1,6 +1,6 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, Validators, FormArray } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, Validators, FormArray, FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -54,7 +54,9 @@ import { MatSnackBarModule } from '@angular/material/snack-bar';
     MatMenuModule,
     MatChipsModule,
     MatTableModule,
+    MatPaginatorModule,
     MatSnackBarModule,
+    FormsModule,
     ScreeningResultsComponent
   ],
   templateUrl: './customer-screening.component.html',
@@ -73,10 +75,32 @@ export class CustomerScreeningComponent implements OnInit {
   isLoading = signal(false);
   result = signal<any>(null);
   bulkResults = signal<any[]>([]);
+  filteredBulkResults = signal<any[]>([]);
   screeningHistory = signal<any[]>([]);
   aiSuggestions = signal<any>(null);
   searchTemplates = signal<any[]>([]);
   notifications = signal<string[]>([]);
+  
+  // Bulk screening signals
+  uploadedFile = signal<File | null>(null);
+  filePreview = signal<any[]>([]);
+  totalCustomersToScreen = signal(0);
+  isBulkProcessing = signal(false);
+  bulkProgress = signal({
+    processed: 0,
+    total: 0,
+    percentage: 0,
+    estimatedTime: '0 min',
+    clear: 0,
+    lowRisk: 0,
+    mediumRisk: 0,
+    highRisk: 0
+  });
+  
+  // UI state
+  isDragOver = false;
+  bulkResultsFilter = 'all';
+  bulkSearchTerm = '';
 
   // Form groups
   singleScreeningForm = this.fb.group({
@@ -96,7 +120,12 @@ export class CustomerScreeningComponent implements OnInit {
 
   bulkScreeningForm = this.fb.group({
     file: ['', Validators.required],
-    fileType: ['csv', Validators.required]
+    fileType: ['csv', Validators.required],
+    threshold: [70],
+    bulkSources: this.fb.array([]),
+    autoCreateAlerts: [true],
+    skipDuplicates: [false],
+    enableParallelProcessing: [true]
   });
 
   // Configuration options
@@ -130,11 +159,18 @@ export class CustomerScreeningComponent implements OnInit {
   }
 
   private initializeFormArrays() {
-    // Initialize sources
+    // Initialize single screening sources
     const sourcesArray = this.singleScreeningForm.get('sources') as FormArray;
-    sourcesArray.clear(); // Clear any existing controls
+    sourcesArray.clear();
     this.availableSources.forEach(source => {
       sourcesArray.push(this.fb.control(source.selected));
+    });
+    
+    // Initialize bulk screening sources
+    const bulkSourcesArray = this.bulkScreeningForm.get('bulkSources') as FormArray;
+    bulkSourcesArray.clear();
+    this.availableSources.forEach(source => {
+      bulkSourcesArray.push(this.fb.control(source.selected));
     });
   }
 
@@ -144,6 +180,8 @@ export class CustomerScreeningComponent implements OnInit {
 
     this.isLoading.set(true);
     this.result.set(null);
+    this.bulkResults.set([]);
+    this.filteredBulkResults.set([]);
 
     const formValue = this.singleScreeningForm.value;
     const selectedSources = this.getSelectedOptions(formValue.sources, this.availableSources);
@@ -294,21 +332,234 @@ export class CustomerScreeningComponent implements OnInit {
     }
   }
 
-  // Bulk screening
+  // Enhanced bulk screening methods
   uploadBulkFile(event: any) {
     const file = event.target.files[0];
     if (file) {
-      this.isLoading.set(true);
-      this.screeningService.screenBatchFile(file).subscribe({
-        next: (results) => {
-          this.bulkResults.set(results);
-          this.isLoading.set(false);
-        },
-        error: (error) => {
-          console.error('Bulk screening error:', error);
-          this.isLoading.set(false);
+      this.processUploadedFile(file);
+    }
+  }
+  
+  onDragOver(event: DragEvent) {
+    event.preventDefault();
+    this.isDragOver = true;
+  }
+  
+  onDragLeave(event: DragEvent) {
+    event.preventDefault();
+    this.isDragOver = false;
+  }
+  
+  onFileDrop(event: DragEvent) {
+    event.preventDefault();
+    this.isDragOver = false;
+    
+    const files = event.dataTransfer?.files;
+    if (files && files.length > 0) {
+      this.processUploadedFile(files[0]);
+    }
+  }
+  
+  private processUploadedFile(file: File) {
+    // Validate file type
+    const allowedTypes = ['.csv', '.xlsx', '.xls'];
+    const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+    
+    if (!allowedTypes.includes(fileExtension)) {
+      this.toastService.error('Invalid file type. Please upload CSV or Excel files only.');
+      return;
+    }
+    
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      this.toastService.error('File size too large. Maximum size is 10MB.');
+      return;
+    }
+    
+    this.uploadedFile.set(file);
+    this.bulkScreeningForm.patchValue({ file: file.name, fileType: fileExtension.substring(1) });
+    
+    // Preview file contents
+    this.previewFile(file);
+    
+    this.toastService.success(`File "${file.name}" uploaded successfully`);
+  }
+  
+  private previewFile(file: File) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const content = e.target?.result as string;
+      const lines = content.split('\n').filter(line => line.trim());
+      
+      if (lines.length < 2) {
+        this.toastService.error('File must contain at least a header row and one data row.');
+        return;
+      }
+      
+      // Parse header and first few rows
+      const header = lines[0].split(',').map(h => h.trim().toLowerCase());
+      const preview = [];
+      
+      for (let i = 1; i < Math.min(6, lines.length); i++) {
+        const row = lines[i].split(',').map(cell => cell.trim());
+        const nameIndex = header.findIndex(h => h.includes('name'));
+        const countryIndex = header.findIndex(h => h.includes('country'));
+        const dobIndex = header.findIndex(h => h.includes('dob') || h.includes('birth'));
+        
+        if (nameIndex >= 0 && row[nameIndex]) {
+          preview.push({
+            name: row[nameIndex],
+            country: countryIndex >= 0 ? row[countryIndex] : '',
+            dob: dobIndex >= 0 ? row[dobIndex] : ''
+          });
         }
-      });
+      }
+      
+      this.filePreview.set(preview);
+      this.totalCustomersToScreen.set(lines.length - 1); // Exclude header
+    };
+    
+    reader.readAsText(file);
+  }
+  
+  startBulkScreening() {
+    const file = this.uploadedFile();
+    if (!file) {
+      this.toastService.error('Please upload a file first.');
+      return;
+    }
+    
+    const formValue = this.bulkScreeningForm.value;
+    const selectedSources = this.getSelectedOptions(formValue.bulkSources, this.availableSources);
+    
+    this.isBulkProcessing.set(true);
+    this.bulkResults.set([]);
+    this.result.set(null);
+    
+    // Reset progress
+    this.bulkProgress.set({
+      processed: 0,
+      total: this.totalCustomersToScreen(),
+      percentage: 0,
+      estimatedTime: 'Calculating...',
+      clear: 0,
+      lowRisk: 0,
+      mediumRisk: 0,
+      highRisk: 0
+    });
+    
+    const bulkRequest = {
+      file: file,
+      threshold: formValue.threshold || 70,
+      sources: selectedSources,
+      autoCreateAlerts: formValue.autoCreateAlerts || false,
+      skipDuplicates: formValue.skipDuplicates || false,
+      enableParallelProcessing: formValue.enableParallelProcessing || true
+    };
+    
+    // Start processing with progress updates
+    this.screeningService.screenBulkWithProgress(bulkRequest).subscribe({
+      next: (update) => {
+        if (update.type === 'progress') {
+          this.updateBulkProgress(update.data);
+        } else if (update.type === 'complete') {
+          this.bulkResults.set(update.data);
+          this.filteredBulkResults.set(update.data);
+          this.isBulkProcessing.set(false);
+          this.toastService.success(`Bulk screening completed! ${update.data.length} customers processed.`);
+        }
+      },
+      error: (error) => {
+        console.error('Bulk screening error:', error);
+        this.toastService.error('Bulk screening failed. Please try again.');
+        this.isBulkProcessing.set(false);
+      }
+    });
+  }
+  
+  private updateBulkProgress(progressData: any) {
+    const progress = {
+      processed: progressData.processed,
+      total: progressData.total,
+      percentage: Math.round((progressData.processed / progressData.total) * 100),
+      estimatedTime: this.calculateEstimatedTime(progressData),
+      clear: progressData.clear || 0,
+      lowRisk: progressData.lowRisk || 0,
+      mediumRisk: progressData.mediumRisk || 0,
+      highRisk: progressData.highRisk || 0
+    };
+    this.bulkProgress.set(progress);
+  }
+  
+  private calculateEstimatedTime(progressData: any): string {
+    if (progressData.processed === 0) return 'Calculating...';
+    
+    const avgTimePerCustomer = progressData.elapsedTime / progressData.processed;
+    const remainingCustomers = progressData.total - progressData.processed;
+    const estimatedSeconds = avgTimePerCustomer * remainingCustomers;
+    
+    if (estimatedSeconds < 60) {
+      return `${Math.round(estimatedSeconds)} sec`;
+    } else {
+      return `${Math.round(estimatedSeconds / 60)} min`;
+    }
+  }
+  
+  cancelBulkScreening() {
+    this.screeningService.cancelBulkScreening().subscribe({
+      next: () => {
+        this.isBulkProcessing.set(false);
+        this.toastService.info('Bulk screening cancelled.');
+      },
+      error: (error) => {
+        console.error('Cancel error:', error);
+        this.isBulkProcessing.set(false);
+      }
+    });
+  }
+  
+  clearBulkForm() {
+    this.bulkScreeningForm.reset();
+    this.uploadedFile.set(null);
+    this.filePreview.set([]);
+    this.totalCustomersToScreen.set(0);
+    this.bulkResults.set([]);
+    this.filteredBulkResults.set([]);
+    this.initializeFormArrays();
+  }
+  
+  // Sample file downloads
+  downloadSampleFile(format: 'csv' | 'excel') {
+    const sampleData = [
+      ['Name', 'Country', 'Date of Birth', 'ID Number', 'ID Type'],
+      ['John Doe', 'United States', '1980-01-15', 'SSN123456789', 'SSN'],
+      ['Jane Smith', 'United Kingdom', '1975-06-22', 'PASS987654321', 'Passport'],
+      ['Raj Patel', 'India', '1985-03-10', 'ABCDE1234F', 'PAN'],
+      ['Maria Garcia', 'Spain', '1990-12-05', 'ESP123456789', 'National ID'],
+      ['Ahmed Hassan', 'UAE', '1988-08-20', 'UAE987654321', 'Emirates ID']
+    ];
+    
+    if (format === 'csv') {
+      const csvContent = sampleData.map(row => row.join(',')).join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'bulk-screening-template.csv';
+      link.click();
+      URL.revokeObjectURL(url);
+      this.toastService.success('CSV template downloaded successfully');
+    } else {
+      // Create simple Excel-like CSV for now
+      const csvContent = sampleData.map(row => row.join(',')).join('\n');
+      const blob = new Blob([csvContent], { type: 'application/vnd.ms-excel' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'bulk-screening-template.xlsx';
+      link.click();
+      URL.revokeObjectURL(url);
+      this.toastService.success('Excel template downloaded successfully');
     }
   }
 
@@ -399,6 +650,145 @@ export class CustomerScreeningComponent implements OnInit {
     });
   }
 
+  // Bulk results management
+  getBulkSummary() {
+    const results = this.bulkResults();
+    return {
+      clear: results.filter(r => r.status === 'Clear').length,
+      lowRisk: results.filter(r => r.status === 'Low Risk' || r.status === 'Minimal Risk').length,
+      mediumRisk: results.filter(r => r.status === 'Medium Risk').length,
+      highRisk: results.filter(r => r.status === 'High Risk').length
+    };
+  }
+  
+  filterBulkResults() {
+    let filtered = this.bulkResults();
+    
+    // Filter by status
+    if (this.bulkResultsFilter !== 'all') {
+      const statusMap: { [key: string]: string[] } = {
+        'high-risk': ['High Risk'],
+        'medium-risk': ['Medium Risk'],
+        'low-risk': ['Low Risk', 'Minimal Risk'],
+        'clear': ['Clear']
+      };
+      const allowedStatuses = statusMap[this.bulkResultsFilter] || [];
+      filtered = filtered.filter(r => allowedStatuses.includes(r.status));
+    }
+    
+    // Filter by search term
+    if (this.bulkSearchTerm.trim()) {
+      const searchTerm = this.bulkSearchTerm.toLowerCase();
+      filtered = filtered.filter(r => 
+        r.customerName.toLowerCase().includes(searchTerm) ||
+        (r.country && r.country.toLowerCase().includes(searchTerm))
+      );
+    }
+    
+    this.filteredBulkResults.set(filtered);
+  }
+  
+  getRiskClass(riskScore: number): string {
+    if (riskScore >= 80) return 'high-risk';
+    if (riskScore >= 60) return 'medium-risk';
+    if (riskScore >= 40) return 'low-risk';
+    return 'clear';
+  }
+  
+  getStatusClass(status: string): string {
+    return status.toLowerCase().replace(' ', '-');
+  }
+  
+  exportBulkResults(format: 'excel' | 'pdf') {
+    const results = this.filteredBulkResults();
+    if (results.length === 0) {
+      this.toastService.warning('No results to export.');
+      return;
+    }
+    
+    this.reportService.generateBulkReport(results, format).subscribe({
+      next: (blob) => {
+        const fileName = `bulk-screening-results-${new Date().toISOString().split('T')[0]}.${format}`;
+        this.reportService.downloadReport(blob, fileName);
+        this.toastService.success(`Report exported successfully as ${format.toUpperCase()}`);
+      },
+      error: (error) => {
+        console.error('Export error:', error);
+        this.toastService.error('Failed to export results.');
+      }
+    });
+  }
+  
+  createBulkAlerts() {
+    const highRiskResults = this.bulkResults().filter(r => r.status === 'High Risk');
+    if (highRiskResults.length === 0) {
+      this.toastService.warning('No high-risk customers found.');
+      return;
+    }
+    
+    this.screeningService.createBulkAlerts(highRiskResults).subscribe({
+      next: (response) => {
+        this.toastService.success(`${response.alertsCreated} alerts created for high-risk customers.`);
+      },
+      error: (error) => {
+        console.error('Bulk alert creation error:', error);
+        this.toastService.error('Failed to create alerts.');
+      }
+    });
+  }
+  
+  viewBulkResultDetails(result: any) {
+    // Set the result as current single result for detailed view
+    this.result.set({
+      ...result,
+      customerId: result.customerId || '',
+      fullName: result.customerName,
+      screenedAt: result.screenedAt
+    });
+    
+    // Switch to single screening tab to show details
+    // This would require tab group reference - simplified for now
+    this.toastService.info(`Viewing details for ${result.customerName}`);
+  }
+  
+  createAlertFromBulkResult(result: any) {
+    if (!result.matches || result.matches.length === 0) {
+      this.toastService.warning('No matches found to create alert.');
+      return;
+    }
+    
+    const alertRequest = {
+      customerName: result.customerName,
+      matches: result.matches,
+      riskScore: result.riskScore / 100,
+      source: 'BulkScreening'
+    };
+    
+    this.screeningService.createAlertFromBulkResult(alertRequest).subscribe({
+      next: (response) => {
+        this.toastService.success(`Alert created for ${result.customerName}`);
+      },
+      error: (error) => {
+        console.error('Alert creation error:', error);
+        this.toastService.error('Failed to create alert.');
+      }
+    });
+  }
+  
+  approveBulkCustomer(result: any) {
+    this.screeningService.approveBulkCustomer(result.customerName, 'Approved from bulk screening').subscribe({
+      next: () => {
+        // Update the result status
+        result.status = 'Approved';
+        this.toastService.success(`${result.customerName} approved successfully`);
+      },
+      error: (error) => {
+        console.error('Approval error:', error);
+        this.toastService.error('Failed to approve customer.');
+      }
+    });
+  }
+  
   private addNotification(message: string) {
     const current = this.notifications();
     this.notifications.set([...current, message]);

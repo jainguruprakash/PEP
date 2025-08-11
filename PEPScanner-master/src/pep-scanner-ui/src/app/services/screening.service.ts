@@ -151,11 +151,55 @@ export class ScreeningService {
     return this.http.get(`${this.baseUrl}/status/${screeningId}`);
   }
 
-  // Bulk screening
+  // Enhanced bulk screening
   screenBatchFile(file: File): Observable<any> {
     const formData = new FormData();
     formData.append('file', file);
     return this.http.post(`${this.baseUrl}/batch-file`, formData);
+  }
+  
+  screenBulkWithProgress(request: any): Observable<any> {
+    const formData = new FormData();
+    formData.append('file', request.file);
+    formData.append('threshold', request.threshold.toString());
+    formData.append('sources', JSON.stringify(request.sources));
+    formData.append('autoCreateAlerts', request.autoCreateAlerts.toString());
+    formData.append('skipDuplicates', request.skipDuplicates.toString());
+    formData.append('enableParallelProcessing', request.enableParallelProcessing.toString());
+    
+    // For demo purposes, simulate progress updates
+    return new Observable(observer => {
+      // Start the actual request
+      this.http.post(`${this.baseUrl}/bulk-with-progress`, formData).subscribe({
+        next: (response: any) => {
+          // Emit completion
+          observer.next({
+            type: 'complete',
+            data: response.data || response
+          });
+          observer.complete();
+        },
+        error: (error) => {
+          observer.error(error);
+        }
+      });
+    });
+  }
+  
+  cancelBulkScreening(): Observable<any> {
+    return this.http.post(`${this.baseUrl}/cancel-bulk`, {});
+  }
+  
+  createBulkAlerts(results: any[]): Observable<any> {
+    return this.http.post(`${this.baseUrl}/bulk-alerts`, { results });
+  }
+  
+  createAlertFromBulkResult(request: any): Observable<any> {
+    return this.http.post(`${this.baseUrl}/bulk-result-alert`, request);
+  }
+  
+  approveBulkCustomer(customerName: string, notes: string): Observable<any> {
+    return this.http.post(`${this.baseUrl}/bulk-approve`, { customerName, notes });
   }
 
   // Customer actions
@@ -183,6 +227,20 @@ export class ScreeningService {
 
   saveSearchTemplate(template: any): Observable<any> {
     return this.http.post(`${this.baseUrl}/templates`, template);
+  }
+  
+  // Bulk screening statistics
+  getBulkScreeningStats(dateRange?: { start: string, end: string }): Observable<any> {
+    const params = dateRange ? 
+      new HttpParams().set('startDate', dateRange.start).set('endDate', dateRange.end) : 
+      new HttpParams();
+    return this.http.get(`${this.baseUrl}/bulk-stats`, { params });
+  }
+  
+  // Get bulk screening history
+  getBulkScreeningHistory(limit: number = 50): Observable<any[]> {
+    const params = new HttpParams().set('limit', limit.toString());
+    return this.http.get<any[]>(`${this.baseUrl}/bulk-history`, { params });
   }
 }
 

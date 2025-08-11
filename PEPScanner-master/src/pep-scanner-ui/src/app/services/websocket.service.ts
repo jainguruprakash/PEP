@@ -7,17 +7,21 @@ export class WebSocketService {
   private messageSubject = new Subject<any>();
 
   connect(): Observable<any> {
-    if (!this.socket) {
-      this.socket = new WebSocket('ws://localhost:4200/ws');
-      this.socket.onmessage = (event) => {
-        this.messageSubject.next(JSON.parse(event.data));
-      };
-    }
+    // Mock WebSocket connection for demo
+    // In production, this would connect to actual WebSocket server
+    setTimeout(() => {
+      this.messageSubject.next({
+        type: 'WATCHLIST_UPDATE',
+        message: 'Watchlist updated with new entries'
+      });
+    }, 30000); // Simulate update after 30 seconds
+
     return this.messageSubject.asObservable();
   }
 
   disconnect() {
-    this.socket?.close();
-    this.socket = undefined;
+    if (this.socket) {
+      this.socket.close();
+    }
   }
 }

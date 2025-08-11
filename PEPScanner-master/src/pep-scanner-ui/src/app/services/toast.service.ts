@@ -1,9 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class ToastService {
   private snackBar = inject(MatSnackBar);
 
@@ -43,8 +41,15 @@ export class ToastService {
     });
   }
 
-  showSuccess = this.success;
-  showError = this.error;
-  showWarning = this.warning;
-  showInfo = this.info;
+  showSuccess(message: string, duration: number = 3000) {
+    this.success(message, duration);
+  }
+
+  showError(message: string, duration: number = 5000) {
+    this.error(message, duration);
+  }
+
+  showInfo(message: string, duration: number = 3000) {
+    this.info(message, duration);
+  }
 }

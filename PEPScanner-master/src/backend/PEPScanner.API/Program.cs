@@ -170,21 +170,9 @@ app.MapControllers();
 app.MapGet("/api/health", () => new { status = "PEP Scanner Backend is running!", timestamp = DateTime.UtcNow });
 app.MapGet("/api/version", () => new { version = "1.0.0", environment = "Development" });
 
-// Initialize recurring jobs and seed data
+// Initialize recurring jobs
 using (var scope = app.Services.CreateScope())
 {
-    var context = scope.ServiceProvider.GetRequiredService<PepScannerDbContext>();
-
-    // Seed users and sample alerts
-    await PEPScanner.API.Data.SeedData.SeedUsersAsync(context);
-    await PEPScanner.API.Data.SeedData.SeedSampleAlertsAsync(context);
-    
-    // Seed dashboard data
-    await PEPScanner.API.Data.DashboardSeedData.SeedDashboardDataAsync(context);
-    
-    // Seed compliance hierarchy
-    await PEPScanner.API.Data.ComplianceHierarchySeedData.SeedComplianceHierarchyAsync(context);
-
     var watchlistUpdateService = scope.ServiceProvider.GetRequiredService<PEPScanner.API.Services.IWatchlistUpdateService>();
     watchlistUpdateService.ScheduleRecurringUpdates();
 
