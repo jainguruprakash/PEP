@@ -201,12 +201,45 @@ export class CustomerScreeningComponent implements OnInit {
 
   // Single customer screening
   screenSingleCustomer() {
-    if (this.singleScreeningForm.invalid) return;
+    console.log('=== SCREENING STARTED ===');
+
+    if (this.singleScreeningForm.invalid) {
+      console.log('Form is invalid:', this.singleScreeningForm.errors);
+      return;
+    }
+
+    // Get form value and debug it
+    const formValue = this.singleScreeningForm.value;
+    console.log('Raw form value:', formValue);
 
     // Validate that at least fullName is provided
-    const formValue = this.singleScreeningForm.value;
     if (!formValue.fullName || formValue.fullName.trim() === '') {
       this.toastService.error('Customer name is required for screening');
+      return;
+    }
+
+    // Debug source selection
+    const sourcesFormArray = this.singleScreeningForm.get('sources') as FormArray;
+    console.log('Sources form array value:', sourcesFormArray?.value);
+    console.log('Available sources:', this.availableSources);
+
+    // Get ONLY the sources that user actually selected
+    const selectedSources: string[] = [];
+    if (sourcesFormArray && this.availableSources) {
+      this.availableSources.forEach((source, index) => {
+        const isSelected = sourcesFormArray.at(index)?.value === true;
+        console.log(`Source ${source.label} (${source.value}): ${isSelected ? 'SELECTED' : 'NOT SELECTED'}`);
+        if (isSelected) {
+          selectedSources.push(source.value);
+        }
+      });
+    }
+
+    console.log('FINAL SELECTED SOURCES:', selectedSources);
+
+    // Validate that at least one source is selected
+    if (selectedSources.length === 0) {
+      this.toastService.error('Please select at least one data source for screening');
       return;
     }
 
@@ -215,54 +248,40 @@ export class CustomerScreeningComponent implements OnInit {
     this.bulkResults.set([]);
     this.filteredBulkResults.set([]);
 
-    // Build base payload with only non-null/non-empty customer data
-    const basePayload: any = {
-      fullName: formValue.fullName.trim()
+    // Build clean payload with ONLY selected sources and provided data
+    const screeningRequest: any = {
+      fullName: formValue.fullName.trim(),
+      sources: selectedSources, // ONLY user-selected sources
+      threshold: formValue.threshold || 70,
+      includeFuzzyMatching: formValue.includeFuzzyMatching === true,
+      includePhoneticMatching: formValue.includePhoneticMatching === true,
+      includeAliases: formValue.includeAliases === true
     };
 
-    // Add optional fields only if they have values
+    // Add optional fields only if they have actual values
     if (formValue.dateOfBirth && formValue.dateOfBirth.trim()) {
-      basePayload.dateOfBirth = formValue.dateOfBirth.trim();
+      screeningRequest.dateOfBirth = formValue.dateOfBirth.trim();
     }
 
     if (formValue.nationality && formValue.nationality.trim()) {
-      basePayload.nationality = formValue.nationality.trim();
+      screeningRequest.nationality = formValue.nationality.trim();
     }
 
     if (formValue.country && formValue.country.trim()) {
-      basePayload.country = formValue.country.trim();
+      screeningRequest.country = formValue.country.trim();
     }
 
     if (formValue.identificationNumber && formValue.identificationNumber.trim()) {
-      basePayload.identificationNumber = formValue.identificationNumber.trim();
+      screeningRequest.identificationNumber = formValue.identificationNumber.trim();
     }
 
     if (formValue.identificationType && formValue.identificationType.trim()) {
-      basePayload.identificationType = formValue.identificationType.trim();
+      screeningRequest.identificationType = formValue.identificationType.trim();
     }
 
-    // Get selected sources using the reliable method
-    const selectedSources = this.getSelectedOptions(formValue.sources, this.availableSources);
-
-    // Validate that at least one source is selected
-    if (!selectedSources || selectedSources.length === 0) {
-      this.toastService.error('Please select at least one data source for screening');
-      this.isLoading.set(false);
-      return;
-    }
-
-    // Build the screening request with only selected sources
-    const screeningRequest = {
-      ...basePayload,
-      sources: selectedSources,
-      threshold: formValue.threshold || 70,
-      includeFuzzyMatching: formValue.includeFuzzyMatching || false,
-      includePhoneticMatching: formValue.includePhoneticMatching || false,
-      includeAliases: formValue.includeAliases || false
-    };
-
-    console.log('Selected sources only:', selectedSources);
-    console.log('Complete screening request payload:', JSON.stringify(screeningRequest, null, 2));
+    console.log('FINAL SCREENING REQUEST PAYLOAD:');
+    console.log(JSON.stringify(screeningRequest, null, 2));
+    console.log('Sources being sent:', screeningRequest.sources);
 
     this.screeningService.screenCustomer(screeningRequest).subscribe({
       next: (res) => {

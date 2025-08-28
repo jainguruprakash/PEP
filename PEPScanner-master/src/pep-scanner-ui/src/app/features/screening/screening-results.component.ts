@@ -749,6 +749,49 @@ export class ScreeningResultsComponent implements OnInit {
     return match.matchId || match.id || index;
   }
 
+  // Get display name for match with fallbacks
+  getMatchDisplayName(match: any): string {
+    const name = match.matchedName || match.fullName || match.name || match.entityName || match.listName;
+
+    if (!name || name.trim() === '') {
+      console.log('Empty match name found:', match);
+      return `Match ${this.getPaginatedMatches().indexOf(match) + 1}`;
+    }
+
+    return name;
+  }
+
+  // Debug helper methods
+  getMatchKeys(match: any): string[] {
+    return Object.keys(match || {});
+  }
+
+  hasMatchData(match: any): boolean {
+    if (!match) return false;
+    const keys = Object.keys(match);
+    return keys.length > 0 && keys.some(key => match[key] !== null && match[key] !== undefined && match[key] !== '');
+  }
+
+  getMatchDataAsString(match: any): string {
+    try {
+      return JSON.stringify(match, null, 2);
+    } catch (e) {
+      return 'Error serializing match data';
+    }
+  }
+
+  getMatchSource(match: any): string {
+    return match.source || match.dataSource || match.listSource || 'Unknown Source';
+  }
+
+  getMatchScore(match: any): number {
+    return match.matchScore || match.similarityScore || match.score || 0;
+  }
+
+  getMatchField(match: any, fieldName: string): any {
+    return match[fieldName] || match[fieldName.toLowerCase()] || match[fieldName.toUpperCase()] || null;
+  }
+
   getPaginatedMatches(): any[] {
     if (!this.result?.matches) {
       console.log('No matches found in result:', this.result);
