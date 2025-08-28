@@ -87,7 +87,7 @@ echo.
 echo Applications are starting up...
 echo.
 echo Backend API: http://localhost:5098
-echo Frontend App: http://localhost:4200
+echo Frontend App: http://localhost:4300
 echo API Documentation: http://localhost:5098/swagger
 echo Interactive Demo: file:///%~dp0INTERACTIVE_DEMO.html
 echo.

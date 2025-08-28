@@ -15,12 +15,12 @@ if %errorlevel% equ 0 (
 
 echo.
 echo [TEST 2] Frontend Application Check...
-curl -s http://localhost:4200 >nul 2>nul
+curl -s http://localhost:4300 >nul 2>nul
 if %errorlevel% equ 0 (
     echo ✓ Frontend application is responding
 ) else (
     echo ✗ Frontend application is not responding
-    echo   Please ensure the frontend is running on port 4200
+    echo   Please ensure the frontend is running on port 4300
 )
 
 echo.
@@ -98,7 +98,7 @@ echo.
 echo System Status: OPERATIONAL
 echo.
 echo For detailed testing, please:
-echo 1. Open http://localhost:4200 in your browser
+echo 1. Open http://localhost:4300 in your browser
 echo 2. Test login with different user roles
 echo 3. Verify role-based menu visibility
 echo 4. Test customer screening functionality

@@ -17,6 +17,8 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+
+
 // SignalR for real-time notifications
 builder.Services.AddSignalR();
 
@@ -110,11 +112,12 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowAngularApp", policy =>
     {
         policy.WithOrigins(
-                "http://localhost:4200",
+                "http://localhost:4300",
                 "http://localhost:4201",
                 "http://localhost:56733",
                 "http://localhost:3000",
-                "http://127.0.0.1:4200",
+                "http://localhost:5098",
+                "http://127.0.0.1:4300",
                 "http://127.0.0.1:4201",
                 "http://127.0.0.1:56733",
                 "http://127.0.0.1:3000"

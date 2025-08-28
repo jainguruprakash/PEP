@@ -103,7 +103,7 @@ npm start
 ```
 
 ### 4. Access Application
-- **Frontend**: http://localhost:4200
+- **Frontend**: http://localhost:4300
 - **Backend API**: http://localhost:5098
 - **Swagger Documentation**: http://localhost:5098/swagger
 

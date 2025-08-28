@@ -17,7 +17,7 @@ import { AuthService } from '../../services/auth.service';
   template: `
   <div class="center">
     <mat-card>
-      <mat-card-title>Login to PEP Scanner</mat-card-title>
+      <mat-card-title>Login to PEP Scanner11</mat-card-title>
       <mat-card-subtitle style="color: #666; margin-bottom: 1rem;">Test credentials: admin / admin123</mat-card-subtitle>
       <form [formGroup]="form" (ngSubmit)="submit()">
         <mat-form-field appearance="outline">

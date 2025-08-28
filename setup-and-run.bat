@@ -27,6 +27,6 @@ start "Frontend" cmd /k "npm start"
 echo.
 echo Setup complete! 
 echo Backend API: http://localhost:5098
-echo Frontend: http://localhost:4200
+echo Frontend: http://localhost:4300
 echo.
 pause

@@ -188,7 +188,7 @@ The interactive demo (`INTERACTIVE_DEMO.html`) provides:
 
 ### Quick Start (5 minutes)
 1. Run `deploy.bat` for automated setup
-2. Access application at `http://localhost:4200`
+2. Access application at `http://localhost:4300`
 3. View interactive demo at `INTERACTIVE_DEMO.html`
 4. Test system with `test-system.bat`
 
