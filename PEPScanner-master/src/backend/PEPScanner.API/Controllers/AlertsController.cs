@@ -73,7 +73,8 @@ namespace PEPScanner.API.Controllers
                         a.EscalationLevel,
                         a.LastActionType,
                         a.LastActionDateUtc,
-                        CustomerName = a.Customer != null ? a.Customer.FullName : "Unknown",
+                        CustomerName = a.Customer != null ? a.Customer.FullName : ExtractCustomerNameFromDetails(a.MatchingDetails),
+                        CreatedBy = a.CreatedBy ?? "Unknown User",
                         SourceList = a.SourceList,
                         SimilarityScore = a.SimilarityScore
                     })
@@ -142,6 +143,8 @@ namespace PEPScanner.API.Controllers
                     alert.EscalationLevel,
                     alert.LastActionType,
                     alert.LastActionDateUtc,
+                    alert.CreatedBy,
+                    CustomerName = alert.Customer?.FullName ?? ExtractCustomerNameFromDetails(alert.MatchingDetails),
                     Customer = alert.Customer != null ? new
                     {
                         alert.Customer.Id,
@@ -538,9 +541,62 @@ namespace PEPScanner.API.Controllers
         {
             try
             {
+                _logger.LogInformation("Creating alert from screening with data: {@Request}", request);
+
+                // Find or create customer if CustomerName is provided
+                Customer? customer = null;
+                if (!string.IsNullOrEmpty(request.CustomerName))
+                {
+                    customer = await _context.Customers
+                        .FirstOrDefaultAsync(c => c.FullName == request.CustomerName && !c.IsDeleted);
+
+                    if (customer == null)
+                    {
+                        // Get the existing organization (use the SBI organization we found)
+                        var defaultOrg = await _context.Organizations.FirstOrDefaultAsync(o => o.IsActive);
+                        if (defaultOrg == null)
+                        {
+                            _logger.LogError("No active organization found for customer creation");
+                            return BadRequest(new { error = "No active organization available" });
+                        }
+
+                        try
+                        {
+                            // Create new customer record
+                            customer = new Customer
+                            {
+                                Id = Guid.NewGuid(),
+                                OrganizationId = defaultOrg.Id,
+                                FullName = request.CustomerName,
+                                CustomerType = "Individual",
+                                RiskLevel = request.RiskLevel ?? "Medium",
+                                Status = "Active",
+                                OnboardingDate = DateTime.UtcNow,
+                                CreatedAtUtc = DateTime.UtcNow,
+                                UpdatedAtUtc = DateTime.UtcNow,
+                                CreatedBy = request.CreatedBy ?? "System",
+                                IsDeleted = false,
+                                IsActive = true
+                            };
+
+                            _context.Customers.Add(customer);
+                            await _context.SaveChangesAsync();
+                            _logger.LogInformation("Created new customer: {CustomerName} with ID: {CustomerId} for Organization: {OrgName}",
+                                customer.FullName, customer.Id, defaultOrg.Name);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Failed to create customer: {CustomerName}", request.CustomerName);
+                            // Continue without customer - we'll still create the alert
+                            customer = null;
+                        }
+                    }
+                }
+
                 var alert = new Alert
                 {
                     Id = Guid.NewGuid(),
+                    CustomerId = customer?.Id,
                     Context = "CustomerScreening",
                     AlertType = request.AlertType,
                     SimilarityScore = request.SimilarityScore,
@@ -549,24 +605,38 @@ namespace PEPScanner.API.Controllers
                     RiskLevel = request.RiskLevel,
                     SourceList = request.SourceList,
                     SourceCategory = request.SourceCategory,
-                    MatchingDetails = request.MatchingDetails,
+                    MatchingDetails = $"Customer: {request.CustomerName ?? "Unknown"} | Match: {request.MatchedName ?? "Unknown"} | Details: {request.MatchingDetails}",
                     WorkflowStatus = "PendingReview",
                     CreatedAtUtc = DateTime.UtcNow,
                     UpdatedAtUtc = DateTime.UtcNow,
-                    CreatedBy = request.CreatedBy,
+                    CreatedBy = request.CreatedBy ?? "Unknown User",
                     DueDate = DateTime.UtcNow.AddHours(request.SlaHours ?? 24),
-                    SlaHours = request.SlaHours ?? 24
+                    SlaHours = request.SlaHours ?? 24,
+                    SlaStatus = "OnTime",
+                    EscalationLevel = 0,
+                    LastActionType = "Created",
+                    LastActionDateUtc = DateTime.UtcNow
                 };
 
                 _context.Alerts.Add(alert);
                 await _context.SaveChangesAsync();
 
-                return Ok(new { alertId = alert.Id, message = "Alert created successfully" });
+                _logger.LogInformation("Alert created successfully: {AlertId} for customer: {CustomerName}",
+                    alert.Id, customer?.FullName ?? "Unknown");
+
+                return Ok(new {
+                    alertId = alert.Id,
+                    message = "Alert created successfully",
+                    customerName = customer?.FullName ?? request.CustomerName ?? "Unknown",
+                    customerId = customer?.Id,
+                    createdBy = request.CreatedBy ?? "Unknown User",
+                    matchedName = request.MatchedName
+                });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating alert from screening");
-                return StatusCode(500, new { error = "Internal server error" });
+                return StatusCode(500, new { error = "Internal server error", details = ex.Message });
             }
         }
 
@@ -625,6 +695,50 @@ namespace PEPScanner.API.Controllers
                 return StatusCode(500, new { error = "Internal server error" });
             }
         }
+
+        private static string ExtractCustomerNameFromDetails(string? matchingDetails)
+        {
+            if (string.IsNullOrEmpty(matchingDetails))
+                return "Unknown";
+
+            // Try to extract customer name from matching details format: "Customer: NAME | Match: MATCH | Details: ..."
+            var customerPrefix = "Customer: ";
+            var customerIndex = matchingDetails.IndexOf(customerPrefix);
+            if (customerIndex >= 0)
+            {
+                var startIndex = customerIndex + customerPrefix.Length;
+                var endIndex = matchingDetails.IndexOf(" | ", startIndex);
+                if (endIndex > startIndex)
+                {
+                    return matchingDetails.Substring(startIndex, endIndex - startIndex);
+                }
+                else
+                {
+                    // If no pipe separator found, try to get the rest of the line
+                    var remainingText = matchingDetails.Substring(startIndex);
+                    var spaceIndex = remainingText.IndexOf(" Match:");
+                    if (spaceIndex > 0)
+                    {
+                        return remainingText.Substring(0, spaceIndex);
+                    }
+                }
+            }
+
+            // Alternative: try to extract from "Manual alert created for: NAME"
+            var manualPrefix = "Manual alert created for: ";
+            var manualIndex = matchingDetails.IndexOf(manualPrefix);
+            if (manualIndex >= 0)
+            {
+                var startIndex = manualIndex + manualPrefix.Length;
+                var endIndex = matchingDetails.IndexOf(" (", startIndex);
+                if (endIndex > startIndex)
+                {
+                    return matchingDetails.Substring(startIndex, endIndex - startIndex);
+                }
+            }
+
+            return "Unknown";
+        }
     }
 
     // Request DTOs
@@ -670,5 +784,7 @@ public class CreateAlertFromScreeningRequest
     public string? SourceCategory { get; set; }
     public string? MatchingDetails { get; set; }
     public string? CreatedBy { get; set; }
+    public string? CustomerName { get; set; }
+    public string? MatchedName { get; set; }
     public int? SlaHours { get; set; }
 }

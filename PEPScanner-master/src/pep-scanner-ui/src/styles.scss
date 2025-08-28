@@ -23,3 +23,81 @@ body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
   background-color: #2196f3 !important;
   color: white !important;
 }
+
+/* Global fixes for Material Design button text visibility */
+.mat-mdc-button .mdc-button__label,
+.mat-mdc-raised-button .mdc-button__label,
+.mat-mdc-outlined-button .mdc-button__label {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  white-space: nowrap !important;
+}
+
+.mat-mdc-button span,
+.mat-mdc-raised-button span,
+.mat-mdc-outlined-button span {
+  display: inline !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Fix mat-expansion-panel layout issues */
+.mat-expansion-panel-header {
+  min-height: 64px !important;
+}
+
+.mat-expansion-panel-header-title {
+  flex: 1 !important;
+  margin-right: 16px !important;
+}
+
+.mat-expansion-panel-header-description {
+  flex: none !important;
+  justify-content: flex-end !important;
+}
+
+/* Fix mat-chip layout */
+.mat-mdc-chip-set {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 4px !important;
+}
+
+.mat-mdc-chip {
+  margin: 2px !important;
+}
+
+/* Fix form field spacing */
+.mat-mdc-form-field {
+  margin-bottom: 16px !important;
+}
+
+.mat-mdc-form-field .mat-mdc-form-field-wrapper {
+  padding-bottom: 0 !important;
+}
+
+/* Fix slider appearance */
+.mat-mdc-slider {
+  width: 100% !important;
+  margin: 16px 0 !important;
+}
+
+/* Ensure proper spacing in card actions */
+.mat-mdc-card-actions {
+  padding: 16px !important;
+  display: flex !important;
+  gap: 8px !important;
+  flex-wrap: wrap !important;
+}
+
+/* Fix table layout issues */
+.mat-mdc-table {
+  width: 100% !important;
+}
+
+.mat-mdc-header-cell,
+.mat-mdc-cell {
+  padding: 12px 8px !important;
+}

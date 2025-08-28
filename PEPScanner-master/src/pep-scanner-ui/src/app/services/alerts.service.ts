@@ -9,7 +9,7 @@ import { AuthService } from './auth.service';
 export class AlertsService {
   private readonly http = inject(HttpClient);
   private readonly authService = inject(AuthService);
-  private readonly baseUrl = `${environment.apiBaseUrl}/api/alerts`;
+  private readonly baseUrl = `${environment.apiBaseUrl}/alerts`;
 
   getAll(): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}`);
@@ -49,7 +49,13 @@ export class AlertsService {
 
   // Alert Creation
   createFromScreening(alertData: any): Observable<any> {
-    return this.http.post(`${this.baseUrl}/create-from-screening`, alertData);
+    console.log('Creating alert with data:', alertData);
+    return this.http.post(`${this.baseUrl}/create-from-screening`, alertData).pipe(
+      map((response: any) => {
+        console.log('Alert creation response:', response);
+        return response;
+      })
+    );
   }
 
   createFromMedia(alertData: any): Observable<any> {

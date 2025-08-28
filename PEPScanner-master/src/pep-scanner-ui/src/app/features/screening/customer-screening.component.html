@@ -160,23 +160,26 @@
           <button mat-button type="button" (click)="clearSingleForm()"
                   [disabled]="isLoading()">
             <mat-icon>clear</mat-icon>
-            Clear Form
+            <span>Clear Form</span>
           </button>
 
           <button mat-button [matMenuTriggerFor]="exportMenu"
                   [disabled]="!result() || isLoading()">
             <mat-icon>download</mat-icon>
-            Export
+            <span>Export</span>
           </button>
           <mat-menu #exportMenu="matMenu">
             <button mat-menu-item (click)="exportResults('json')">
-              <mat-icon>code</mat-icon> JSON
+              <mat-icon>code</mat-icon>
+              <span>JSON</span>
             </button>
             <button mat-menu-item (click)="exportResults('pdf')">
-              <mat-icon>picture_as_pdf</mat-icon> PDF Report
+              <mat-icon>picture_as_pdf</mat-icon>
+              <span>PDF Report</span>
             </button>
             <button mat-menu-item (click)="exportResults('excel')">
-              <mat-icon>table_chart</mat-icon> Excel
+              <mat-icon>table_chart</mat-icon>
+              <span>Excel</span>
             </button>
           </mat-menu>
         </div>
@@ -295,11 +298,11 @@
                 <button mat-raised-button color="primary" (click)="startBulkScreening()"
                         [disabled]="isBulkProcessing() || !uploadedFile()">
                   <mat-icon>play_arrow</mat-icon>
-                  Start Bulk Screening
+                  <span>Start Bulk Screening</span>
                 </button>
                 <button mat-button (click)="clearBulkForm()">
                   <mat-icon>clear</mat-icon>
-                  Clear
+                  <span>Clear</span>
                 </button>
               </div>
             </div>
@@ -504,13 +507,16 @@
         <!-- Quick Actions Panel -->
         <div class="quick-actions" *ngIf="result()">
           <button mat-raised-button color="primary" (click)="approveCustomer()">
-            <mat-icon>check_circle</mat-icon> Approve
+            <mat-icon>check_circle</mat-icon>
+            <span>Approve</span>
           </button>
           <button mat-raised-button color="warn" (click)="flagForReview()">
-            <mat-icon>flag</mat-icon> Flag for Review
+            <mat-icon>flag</mat-icon>
+            <span>Flag for Review</span>
           </button>
           <button mat-raised-button color="accent" (click)="requestEDD()">
-            <mat-icon>assignment</mat-icon> Request EDD
+            <mat-icon>assignment</mat-icon>
+            <span>Request EDD</span>
           </button>
         </div>
         

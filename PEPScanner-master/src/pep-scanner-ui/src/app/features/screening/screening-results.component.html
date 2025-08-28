@@ -25,6 +25,16 @@
   </mat-card-header>
 
   <mat-card-content>
+    <!-- Alert Success Notification -->
+    <div class="alert-success-banner" *ngIf="hasRecentAlerts()">
+      <mat-icon>check_circle</mat-icon>
+      <span>{{ getRecentAlertsCount() }} alert(s) created successfully! Check the alerts dashboard for next steps.</span>
+      <button mat-button color="primary" (click)="viewAlerts()">
+        <mat-icon>visibility</mat-icon>
+        View Alerts
+      </button>
+    </div>
+
     <!-- Auto-Created Alerts Notification -->
     <div class="alerts-notification" *ngIf="result?.alertsCreated?.length > 0">
       <mat-icon>notification_important</mat-icon>
@@ -66,26 +76,56 @@
 
     <!-- Matches Section -->
     <div class="matches-section" *ngIf="result.matches && result.matches.length > 0">
-      <h3>
-        <mat-icon>warning</mat-icon>
-        Watchlist Matches ({{ result.matches.length }})
-      </h3>
-      
+      <div class="matches-header">
+        <h3>
+          <mat-icon>warning</mat-icon>
+          Watchlist Matches ({{ result.matches.length }})
+        </h3>
+
+        <!-- Pagination Controls -->
+        <div class="pagination-controls" *ngIf="result.matches.length > pageSize">
+          <mat-paginator
+            [length]="result.matches.length"
+            [pageSize]="pageSize"
+            [pageSizeOptions]="[5, 10, 25, 50]"
+            [pageIndex]="currentPage"
+            (page)="onPageChange($event)"
+            showFirstLastButtons>
+          </mat-paginator>
+        </div>
+      </div>
+
       <mat-accordion>
-        <mat-expansion-panel *ngFor="let match of result.matches; let i = index" class="match-panel">
+        <mat-expansion-panel *ngFor="let match of getPaginatedMatches(); let i = index" class="match-panel">
           <mat-expansion-panel-header>
             <mat-panel-title>
               <div class="match-header">
-                <div class="match-name">{{ match.matchedName }}</div>
+                <div class="match-name">
+                  {{ match.matchedName || match.fullName || match.name }}
+                  <mat-icon *ngIf="match.alertCreated === true" class="alert-created-icon"
+                           matTooltip="Alert created for this match">
+                    notification_important
+                  </mat-icon>
+                </div>
                 <mat-chip-set>
                   <mat-chip [class]="getSourceClass(match.source)">{{ match.source }}</mat-chip>
-                  <mat-chip [class]="getRiskClass(match.riskCategory)">{{ match.riskCategory }}</mat-chip>
+                  <mat-chip [class]="getRiskClass(match.riskCategory || match.listType)">
+                    {{ match.riskCategory || match.listType }}
+                  </mat-chip>
+                  <mat-chip *ngIf="match.alertCreated === true" class="alert-chip">
+                    <mat-icon>check_circle</mat-icon>
+                    Alert Created
+                  </mat-chip>
+                  <mat-chip *ngIf="match.alertCreatedAt && isRecentlyCreated(match.alertCreatedAt)" class="recent-alert-chip">
+                    <mat-icon>new_releases</mat-icon>
+                    Just Created
+                  </mat-chip>
                 </mat-chip-set>
               </div>
             </mat-panel-title>
             <mat-panel-description>
               <div class="match-score">
-                Match: {{ (match.matchScore * 100) | number:'1.0-0' }}%
+                Match: {{ ((match.matchScore || match.similarityScore || 0) * 100) | number:'1.0-0' }}%
               </div>
             </mat-panel-description>
           </mat-expansion-panel-header>
@@ -141,9 +181,42 @@
           </div>
           
           <div class="match-actions">
-            <button mat-raised-button color="warn" (click)="createAlert(match)">
+            <!-- Create Alert Button (when no alert exists) -->
+            <button mat-raised-button
+                    color="warn"
+                    *ngIf="match.alertCreated !== true"
+                    (click)="createAlert(match)"
+                    class="create-alert-btn">
               <mat-icon>notification_important</mat-icon>
               Create Alert
+            </button>
+
+            <!-- Alert Created Button (when alert exists) -->
+            <button mat-raised-button
+                    color="primary"
+                    *ngIf="match.alertCreated === true"
+                    disabled
+                    class="alert-created-btn">
+              <mat-icon>check_circle</mat-icon>
+              Alert Created
+            </button>
+
+            <!-- View Alert Button -->
+            <button mat-button
+                    color="primary"
+                    *ngIf="match.alertCreated === true && match.alertId"
+                    (click)="viewAlert(match.alertId)"
+                    class="view-alert-btn">
+              <mat-icon>visibility</mat-icon>
+              View Alert
+            </button>
+
+            <!-- Export Button -->
+            <button mat-button
+                    (click)="exportMatch(match)"
+                    class="export-btn">
+              <mat-icon>download</mat-icon>
+              Export Details
             </button>
           </div>
         </mat-expansion-panel>
@@ -166,21 +239,45 @@
       <h4>Screening Details</h4>
       <div class="details-grid">
         <div class="detail-item">
+          <strong>Customer Name:</strong>
+          <span>{{ result.fullName || result.customerName || 'N/A' }}</span>
+        </div>
+        <div class="detail-item">
           <strong>Search Criteria:</strong>
-          <span>{{ result.screeningDetails?.searchCriteria }}</span>
+          <span>{{ getSearchCriteria() }}</span>
         </div>
         <div class="detail-item">
           <strong>Sources Searched:</strong>
           <mat-chip-set>
-            <mat-chip *ngFor="let source of result.screeningDetails?.sourcesSearched" 
+            <mat-chip *ngFor="let source of getSourcesSearched()"
                      [class]="getSourceClass(source)">
               {{ source }}
             </mat-chip>
           </mat-chip-set>
         </div>
         <div class="detail-item">
+          <strong>Total Records Searched:</strong>
+          <span>{{ getTotalRecordsSearched() | number }}</span>
+        </div>
+        <div class="detail-item">
+          <strong>Screening Duration:</strong>
+          <span>{{ getScreeningDuration() }}</span>
+        </div>
+        <div class="detail-item">
           <strong>Screened At:</strong>
           <span>{{ result.screenedAt | date:'medium' }}</span>
+        </div>
+        <div class="detail-item">
+          <strong>Risk Assessment:</strong>
+          <mat-chip [class]="getRiskClass(result.riskLevel || getRiskLevel())">
+            {{ result.riskLevel || getRiskLevel() }}
+          </mat-chip>
+        </div>
+        <div class="detail-item">
+          <strong>Screening Status:</strong>
+          <mat-chip [class]="getStatusClass(result.status)">
+            {{ result.status }}
+          </mat-chip>
         </div>
       </div>
     </div>

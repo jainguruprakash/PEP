@@ -28,6 +28,7 @@ import { ReportService } from '../../services/report.service';
 import { WebSocketService } from '../../services/websocket.service';
 import { AiSuggestionsService } from '../../services/ai-suggestions.service';
 import { ToastService } from '../../services/toast.service';
+import { AuthService } from '../../services/auth.service';
 import { ScreeningResultsComponent } from './screening-results.component';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 
@@ -70,6 +71,7 @@ export class CustomerScreeningComponent implements OnInit {
   private webSocketService = inject(WebSocketService);
   private aiService = inject(AiSuggestionsService);
   private toastService = inject(ToastService);
+  private authService = inject(AuthService);
 
   // Signals for reactive state management
   isLoading = signal(false);
@@ -258,25 +260,68 @@ export class CustomerScreeningComponent implements OnInit {
 
   // Create alert for specific match
   createAlert(match: any) {
+    if (!match) {
+      this.toastService.error('Invalid match data provided');
+      return;
+    }
+
+    // Get current user information
+    const currentUser = this.authService.getCurrentUser();
+    const currentResult = this.result();
+    const formData = this.singleScreeningForm.value;
+
+    // Get customer name from form data or screening result
+    const customerName = formData.fullName ||
+                        currentResult?.customerName ||
+                        currentResult?.fullName ||
+                        match.matchedName ||
+                        match.fullName ||
+                        match.name ||
+                        'Unknown Customer';
+
     const alertRequest = {
-      alertType: this.determineAlertType(match.listType),
-      similarityScore: match.matchScore,
-      priority: this.determinePriority(match.matchScore),
-      riskLevel: this.determineRiskLevel(match.matchScore),
+      alertType: this.determineAlertType(match.listType || match.riskCategory),
+      similarityScore: match.matchScore || match.similarityScore || 0,
+      priority: this.determinePriority(match.matchScore || match.similarityScore || 0),
+      riskLevel: this.determineRiskLevel(match.matchScore || match.similarityScore || 0),
       sourceList: match.source,
-      sourceCategory: match.listType,
-      matchingDetails: `Manual alert for: ${match.matchedName} (Score: ${match.matchScore})`,
-      createdBy: 'current-user', // Replace with actual user
-      slaHours: this.getSlaHours(match.matchScore)
+      sourceCategory: match.listType || match.riskCategory,
+      matchingDetails: `Manual alert created for customer screening`,
+      createdBy: currentUser?.username || currentUser?.email || 'System User',
+      customerName: customerName.trim(),
+      matchedName: match.matchedName || match.fullName || match.name,
+      slaHours: this.getSlaHours(match.matchScore || match.similarityScore || 0)
     };
+
+    console.log('Creating alert with request:', alertRequest);
+    this.toastService.info('Creating alert...');
 
     this.alertsService.createFromScreening(alertRequest).subscribe({
       next: (response) => {
-        console.log('Alert created:', response.alertId);
-        // Update UI to show alert was created
+        console.log('Alert created successfully:', response);
+
+        // Update the match to show alert was created
+        if (match) {
+          match.alertCreated = true;
+          match.alertId = response.alertId;
+          match.customerName = response.customerName;
+          match.alertCreatedAt = new Date();
+          match.alertCreatedBy = alertRequest.createdBy;
+        }
+
+        // Show success message with action options
+        this.toastService.success(`Alert created successfully! Alert ID: ${response.alertId}`);
+
+        // Optional: Show a confirmation dialog with next steps
+        this.showAlertCreatedDialog(response, match);
+
+        // Update the screening results to reflect the new alert status
+        this.updateScreeningResultsAfterAlert(match);
       },
       error: (error) => {
         console.error('Error creating alert:', error);
+        const errorMessage = error?.error?.message || error?.message || 'Failed to create alert';
+        this.toastService.error(`Alert creation failed: ${errorMessage}`);
       }
     });
   }
@@ -560,6 +605,44 @@ export class CustomerScreeningComponent implements OnInit {
       link.click();
       URL.revokeObjectURL(url);
       this.toastService.success('Excel template downloaded successfully');
+    }
+  }
+
+  // Alert creation success handlers
+  private showAlertCreatedDialog(response: any, match: any) {
+    // You can implement a dialog here if needed
+    console.log('Alert created dialog:', { response, match });
+
+    // For now, just log the success and provide guidance
+    console.log(`
+      Alert Created Successfully!
+      - Alert ID: ${response.alertId}
+      - Customer: ${response.customerName || 'Unknown'}
+      - Match: ${match.matchedName || match.fullName || match.name}
+      - Created By: ${response.createdBy || 'Unknown'}
+
+      Next Steps:
+      1. Review the alert in the alerts dashboard
+      2. Assign to appropriate reviewer
+      3. Continue with customer screening if needed
+    `);
+  }
+
+  private updateScreeningResultsAfterAlert(match: any) {
+    // Update the current result to reflect alert creation
+    const currentResult = this.result();
+    if (currentResult && currentResult.matches) {
+      const matchIndex = currentResult.matches.findIndex((m: any) =>
+        m.matchedName === match.matchedName ||
+        m.fullName === match.fullName ||
+        m.name === match.name
+      );
+
+      if (matchIndex >= 0) {
+        currentResult.matches[matchIndex] = { ...match };
+        // Trigger change detection
+        this.result.set({ ...currentResult });
+      }
     }
   }
 

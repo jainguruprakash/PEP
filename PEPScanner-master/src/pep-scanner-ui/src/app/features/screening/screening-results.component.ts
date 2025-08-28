@@ -7,19 +7,21 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatBadgeModule } from '@angular/material/badge';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 
 @Component({
   selector: 'app-screening-results',
   standalone: true,
   imports: [
-    CommonModule, 
-    MatCardModule, 
-    MatChipsModule, 
-    MatIconModule, 
-    MatButtonModule, 
+    CommonModule,
+    MatCardModule,
+    MatChipsModule,
+    MatIconModule,
+    MatButtonModule,
     MatExpansionModule,
     MatDividerModule,
-    MatBadgeModule
+    MatBadgeModule,
+    MatPaginatorModule
   ],
   templateUrl: './screening-results.component.html',
   styles: [`
@@ -93,6 +95,39 @@ import { MatBadgeModule } from '@angular/material/badge';
       color: #666;
     }
 
+    .alert-success-banner {
+      background-color: #d4edda;
+      border: 1px solid #c3e6cb;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      animation: slideIn 0.5s ease-out;
+    }
+
+    .alert-success-banner mat-icon {
+      color: #155724;
+    }
+
+    .alert-success-banner span {
+      flex: 1;
+      color: #155724;
+      font-weight: 500;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
     .alerts-notification {
       display: flex;
       align-items: center;
@@ -113,6 +148,33 @@ import { MatBadgeModule } from '@angular/material/badge';
       margin: 16px 0;
     }
 
+    .matches-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .matches-header h3 {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0;
+      color: #f57c00;
+      font-weight: 600;
+    }
+
+    .pagination-controls {
+      display: flex;
+      align-items: center;
+    }
+
+    .pagination-controls mat-paginator {
+      background: transparent;
+    }
+
     .matches-section h3 {
       display: flex;
       align-items: center;
@@ -123,6 +185,16 @@ import { MatBadgeModule } from '@angular/material/badge';
 
     .match-panel {
       margin-bottom: 8px;
+      overflow: visible !important;
+    }
+
+    ::ng-deep .match-panel .mat-expansion-panel-content {
+      overflow: visible !important;
+    }
+
+    ::ng-deep .match-panel .mat-expansion-panel-body {
+      padding: 16px !important;
+      overflow: visible !important;
     }
 
     .match-header {
@@ -130,16 +202,21 @@ import { MatBadgeModule } from '@angular/material/badge';
       justify-content: space-between;
       align-items: center;
       width: 100%;
+      flex-wrap: wrap;
+      gap: 8px;
     }
 
     .match-name {
       font-weight: 500;
       font-size: 16px;
+      flex: 1;
+      min-width: 200px;
     }
 
     .match-score {
       font-weight: bold;
       color: #1976d2;
+      white-space: nowrap;
     }
 
     .match-details {
@@ -149,20 +226,36 @@ import { MatBadgeModule } from '@angular/material/badge';
     .detail-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 12px;
-      margin-bottom: 16px;
+      gap: 20px;
+      margin-bottom: 20px;
+      padding: 16px;
+      background-color: #f8f9fa;
+      border-radius: 8px;
+      border: 1px solid #e9ecef;
     }
 
     .detail-item {
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 6px;
+      padding: 8px;
+      background-color: #f8f9fa;
+      border-radius: 4px;
+      border-left: 3px solid #1976d2;
     }
 
     .detail-item strong {
-      font-size: 12px;
+      font-size: 11px;
       color: #666;
       text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .detail-item span {
+      font-size: 14px;
+      color: #333;
+      word-break: break-word;
     }
 
     .match-metadata {
@@ -184,11 +277,26 @@ import { MatBadgeModule } from '@angular/material/badge';
       padding-top: 16px;
       border-top: 1px solid #e0e0e0;
       display: flex;
-      gap: 8px;
+      gap: 12px;
+      flex-wrap: wrap;
     }
 
     .match-actions button {
-      min-width: 120px;
+      min-width: 140px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .match-actions button mat-icon {
+      margin-right: 4px;
+    }
+
+    .match-actions button span {
+      font-size: 14px;
+      font-weight: 500;
     }
 
     .no-matches-section {
@@ -284,6 +392,174 @@ import { MatBadgeModule } from '@angular/material/badge';
       color: white !important;
     }
 
+    /* Alert Status Styles */
+    .alert-created-icon {
+      color: #4caf50;
+      font-size: 18px;
+      margin-left: 8px;
+    }
+
+    .alert-chip {
+      background-color: #4caf50 !important;
+      color: white !important;
+      font-size: 11px;
+    }
+
+    .alert-chip mat-icon {
+      font-size: 14px;
+      margin-right: 4px;
+    }
+
+    .recent-alert-chip {
+      background-color: #ff9800 !important;
+      color: white !important;
+      font-size: 11px;
+      animation: pulse 2s infinite;
+    }
+
+    .recent-alert-chip mat-icon {
+      font-size: 14px;
+      margin-right: 4px;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.7; }
+      100% { opacity: 1; }
+    }
+
+    .match-actions button[disabled] {
+      opacity: 0.7;
+    }
+
+    .match-actions button:not(:last-child) {
+      margin-right: 8px;
+    }
+
+    /* Global Material Design fixes for button text */
+    ::ng-deep .mat-mdc-button .mdc-button__label,
+    ::ng-deep .mat-mdc-raised-button .mdc-button__label {
+      display: inline-flex !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      align-items: center !important;
+      gap: 8px !important;
+      white-space: nowrap !important;
+    }
+
+    ::ng-deep .mat-mdc-button span,
+    ::ng-deep .mat-mdc-raised-button span {
+      display: inline !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      color: inherit !important;
+    }
+
+    /* Fix overlapping issues */
+    .match-actions {
+      display: flex !important;
+      flex-wrap: wrap !important;
+      gap: 12px !important;
+      margin-top: 16px !important;
+      align-items: center !important;
+      justify-content: flex-start !important;
+    }
+
+    .match-actions button {
+      flex-shrink: 0 !important;
+      margin: 0 !important;
+      white-space: nowrap !important;
+      overflow: visible !important;
+      min-height: 36px !important;
+    }
+
+    /* Button styles */
+    .create-alert-btn,
+    .alert-created-btn {
+      font-weight: 500 !important;
+      min-width: 160px !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 8px !important;
+      padding: 8px 16px !important;
+      text-transform: none !important;
+    }
+
+    .create-alert-btn mat-icon,
+    .alert-created-btn mat-icon {
+      display: inline-flex !important;
+      font-size: 18px !important;
+      width: 18px !important;
+      height: 18px !important;
+      margin: 0 !important;
+    }
+
+    .alert-created-btn {
+      opacity: 0.8 !important;
+    }
+
+    .view-alert-btn,
+    .export-btn {
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 8px !important;
+      padding: 8px 16px !important;
+    }
+
+    .view-alert-btn mat-icon,
+    .export-btn mat-icon {
+      font-size: 18px !important;
+      width: 18px !important;
+      height: 18px !important;
+      margin: 0 !important;
+    }
+
+    /* Additional fixes for text visibility */
+    ::ng-deep .mat-mdc-button,
+    ::ng-deep .mat-mdc-raised-button {
+      font-size: 14px !important;
+      line-height: 1.4 !important;
+      text-transform: none !important;
+      font-weight: 500 !important;
+    }
+
+    /* Force button text to be visible */
+    ::ng-deep .mat-mdc-button .mdc-button__label,
+    ::ng-deep .mat-mdc-raised-button .mdc-button__label {
+      color: inherit !important;
+      font-size: inherit !important;
+      font-weight: inherit !important;
+    }
+
+    /* Prevent text overlapping */
+    .match-name {
+      margin-bottom: 8px !important;
+      word-wrap: break-word !important;
+      overflow-wrap: break-word !important;
+    }
+
+    .match-header {
+      flex-direction: column !important;
+      align-items: flex-start !important;
+      gap: 8px !important;
+    }
+
+    @media (min-width: 768px) {
+      .match-header {
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+      }
+    }
+
+    .match-actions button .mat-button-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
     @media (max-width: 768px) {
       .header-content {
         flex-direction: column;
@@ -298,11 +574,30 @@ import { MatBadgeModule } from '@angular/material/badge';
       .match-header {
         flex-direction: column;
         align-items: flex-start;
-        gap: 8px;
+        gap: 12px;
+      }
+
+      .match-name {
+        min-width: unset;
+        width: 100%;
       }
 
       .detail-grid {
         grid-template-columns: 1fr;
+        gap: 12px;
+      }
+
+      .detail-item {
+        padding: 12px;
+      }
+
+      .match-actions {
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .match-actions button {
+        width: 100%;
       }
     }
   `]
@@ -310,6 +605,11 @@ import { MatBadgeModule } from '@angular/material/badge';
 export class ScreeningResultsComponent {
   @Input() result: any = null;
   @Input() onCreateAlert: ((match: any) => void) | null = null;
+
+  // Pagination properties
+  currentPage = 0;
+  pageSize = 10;
+  pageSizeOptions = [5, 10, 25, 50];
 
   getStatusClass(status: string): string {
     return `status-${status.toLowerCase().replace(' ', '-')}`;
@@ -354,8 +654,173 @@ export class ScreeningResultsComponent {
     }
   }
 
+
+
+  viewAlert(alertId: string): void {
+    // Navigate to specific alert details
+    console.log('Navigate to alert:', alertId);
+    // TODO: Implement navigation to alert details page
+    // this.router.navigate(['/alerts', alertId]);
+  }
+
+  exportMatch(match: any): void {
+    const matchData = {
+      matchedName: match.matchedName || match.fullName || match.name,
+      source: match.source,
+      riskCategory: match.riskCategory || match.listType,
+      matchScore: match.matchScore || match.similarityScore || 0,
+      country: match.country,
+      alternateNames: match.alternateNames,
+      positionOrRole: match.positionOrRole,
+      sanctionType: match.sanctionType,
+      sanctionReason: match.sanctionReason,
+      pepCategory: match.pepCategory,
+      pepPosition: match.pepPosition,
+      dateAdded: match.dateAdded,
+      lastUpdated: match.lastUpdated,
+      alertCreated: match.alertCreated,
+      alertId: match.alertId,
+      alertCreatedAt: match.alertCreatedAt,
+      alertCreatedBy: match.alertCreatedBy,
+      exportedAt: new Date().toISOString()
+    };
+
+    const dataStr = JSON.stringify(matchData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `match-details-${match.matchedName || 'unknown'}-${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  isRecentlyCreated(alertCreatedAt: Date | string): boolean {
+    if (!alertCreatedAt) return false;
+
+    const createdDate = new Date(alertCreatedAt);
+    const now = new Date();
+    const diffInMinutes = (now.getTime() - createdDate.getTime()) / (1000 * 60);
+
+    // Consider "recently created" if within the last 5 minutes
+    return diffInMinutes <= 5;
+  }
+
+  hasRecentAlerts(): boolean {
+    const result = this.result();
+    if (!result?.matches) return false;
+
+    return result.matches.some((match: any) =>
+      match.alertCreatedAt && this.isRecentlyCreated(match.alertCreatedAt)
+    );
+  }
+
+  getRecentAlertsCount(): number {
+    const result = this.result();
+    if (!result?.matches) return 0;
+
+    return result.matches.filter((match: any) =>
+      match.alertCreatedAt && this.isRecentlyCreated(match.alertCreatedAt)
+    ).length;
+  }
+
   viewAlerts(): void {
-    // Navigate to alerts page - you can implement routing here
-    console.log('Navigate to alerts page');
+    // Navigate to alerts dashboard or open alerts in a new tab
+    window.open('/alerts', '_blank');
+  }
+
+  // Pagination methods
+  onPageChange(event: PageEvent): void {
+    this.currentPage = event.pageIndex;
+    this.pageSize = event.pageSize;
+  }
+
+  getPaginatedMatches(): any[] {
+    if (!this.result?.matches) return [];
+
+    const startIndex = this.currentPage * this.pageSize;
+    const endIndex = startIndex + this.pageSize;
+    return this.result.matches.slice(startIndex, endIndex);
+  }
+
+  // Screening details methods
+  getSearchCriteria(): string {
+    if (this.result?.screeningDetails?.searchCriteria) {
+      return this.result.screeningDetails.searchCriteria;
+    }
+
+    // Generate search criteria from available data
+    const criteria = [];
+    if (this.result?.fullName || this.result?.customerName) {
+      criteria.push(`Name: ${this.result.fullName || this.result.customerName}`);
+    }
+    if (this.result?.nationality) {
+      criteria.push(`Nationality: ${this.result.nationality}`);
+    }
+    if (this.result?.country) {
+      criteria.push(`Country: ${this.result.country}`);
+    }
+    if (this.result?.dateOfBirth) {
+      criteria.push(`DOB: ${this.result.dateOfBirth}`);
+    }
+
+    return criteria.length > 0 ? criteria.join(', ') : 'Full name and available identifiers';
+  }
+
+  getSourcesSearched(): string[] {
+    if (this.result?.screeningDetails?.sourcesSearched) {
+      return this.result.screeningDetails.sourcesSearched;
+    }
+
+    // Extract unique sources from matches
+    if (this.result?.matches) {
+      const sources = [...new Set(this.result.matches.map((match: any) => match.source).filter(Boolean))] as string[];
+      return sources.length > 0 ? sources : ['OFAC', 'EU Sanctions', 'UN Sanctions', 'PEP Lists'];
+    }
+
+    return ['OFAC', 'EU Sanctions', 'UN Sanctions', 'PEP Lists'];
+  }
+
+  getTotalRecordsSearched(): number {
+    if (this.result?.screeningDetails?.totalWatchlistEntries) {
+      return this.result.screeningDetails.totalWatchlistEntries;
+    }
+
+    // Estimate based on sources and typical database sizes
+    const sources = this.getSourcesSearched();
+    return sources.length * 50000; // Rough estimate
+  }
+
+  getScreeningDuration(): string {
+    if (this.result?.screeningDetails?.duration) {
+      return this.result.screeningDetails.duration;
+    }
+
+    // Calculate or estimate duration
+    const matchCount = this.result?.matches?.length || 0;
+    const estimatedMs = Math.max(500, matchCount * 100); // Minimum 500ms
+
+    if (estimatedMs < 1000) {
+      return `${estimatedMs}ms`;
+    } else {
+      return `${(estimatedMs / 1000).toFixed(1)}s`;
+    }
+  }
+
+  getRiskLevel(): string {
+    if (this.result?.riskLevel) {
+      return this.result.riskLevel;
+    }
+
+    // Calculate risk level based on matches
+    const matchCount = this.result?.matches?.length || 0;
+    const highRiskMatches = this.result?.matches?.filter((match: any) =>
+      (match.matchScore || match.similarityScore || 0) > 0.8
+    ).length || 0;
+
+    if (matchCount === 0) return 'Low';
+    if (highRiskMatches > 0) return 'High';
+    if (matchCount > 3) return 'Medium';
+    return 'Low';
   }
 }
