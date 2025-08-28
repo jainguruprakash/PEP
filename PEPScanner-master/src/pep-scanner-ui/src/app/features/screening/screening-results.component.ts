@@ -741,14 +741,32 @@ export class ScreeningResultsComponent implements OnInit {
   onPageChange(event: PageEvent): void {
     this.currentPage = event.pageIndex;
     this.pageSize = event.pageSize;
+    console.log('Page changed to:', this.currentPage, 'Size:', this.pageSize);
+  }
+
+  // Track by function for better performance
+  trackByMatch(index: number, match: any): any {
+    return match.matchId || match.id || index;
   }
 
   getPaginatedMatches(): any[] {
-    if (!this.result?.matches) return [];
+    if (!this.result?.matches) {
+      console.log('No matches found in result:', this.result);
+      return [];
+    }
+
+    console.log('Total matches available:', this.result.matches.length);
+    console.log('Current page:', this.currentPage, 'Page size:', this.pageSize);
+    console.log('All matches:', this.result.matches);
 
     const startIndex = this.currentPage * this.pageSize;
     const endIndex = startIndex + this.pageSize;
-    return this.result.matches.slice(startIndex, endIndex);
+    const paginatedMatches = this.result.matches.slice(startIndex, endIndex);
+
+    console.log('Paginated matches (showing):', paginatedMatches);
+    console.log('Start index:', startIndex, 'End index:', endIndex);
+
+    return paginatedMatches;
   }
 
   // Screening details methods

@@ -100,8 +100,16 @@
         </div>
       </div>
 
+      <!-- Debug info for matches -->
+      <div class="debug-matches" style="background: #fff3e0; padding: 10px; margin: 10px 0; border-radius: 4px;">
+        <strong>Debug Matches:</strong>
+        Total: {{ result?.matches?.length || 0 }},
+        Showing: {{ getPaginatedMatches().length }},
+        Page: {{ currentPage + 1 }}
+      </div>
+
       <mat-accordion>
-        <mat-expansion-panel *ngFor="let match of getPaginatedMatches(); let i = index" class="match-panel">
+        <mat-expansion-panel *ngFor="let match of getPaginatedMatches(); let i = index; trackBy: trackByMatch" class="match-panel">
           <mat-expansion-panel-header>
             <mat-panel-title>
               <div class="match-header">

@@ -43,6 +43,10 @@
         <!-- Basic Information Section -->
         <div class="form-section">
           <h3>Customer Information</h3>
+          <p class="section-description">
+            <mat-icon>info</mat-icon>
+            Only customer name is required. All other fields are optional and will be used to refine search results.
+          </p>
 
           <div class="form-grid">
             <mat-form-field appearance="outline">
@@ -50,6 +54,12 @@
               <input matInput formControlName="fullName" required
                      placeholder="Enter customer's full name">
               <mat-icon matSuffix>person</mat-icon>
+              <mat-error *ngIf="singleScreeningForm.get('fullName')?.hasError('required')">
+                Full name is required for screening
+              </mat-error>
+              <mat-error *ngIf="singleScreeningForm.get('fullName')?.hasError('minlength')">
+                Full name must be at least 2 characters
+              </mat-error>
             </mat-form-field>
 
             <mat-form-field appearance="outline">
@@ -115,17 +125,27 @@
 
             <!-- Data Sources -->
             <div class="sources-section" formArrayName="sources">
-              <label class="section-label">Watchlist Sources</label>
+              <label class="section-label">
+                Watchlist Sources *
+                <span class="selected-count">({{ getSelectedSourcesCount() }} selected)</span>
+              </label>
               <div class="checkbox-grid">
                 <mat-checkbox
                   *ngFor="let source of availableSources; let i = index"
                   [formControlName]="i"
-                  [matTooltip]="source.label">
+                  [matTooltip]="source.description || source.label">
                   {{ source.label }}
                 </mat-checkbox>
               </div>
               <div class="sources-help">
-                <small>Select which watchlist sources to search. RBI includes Indian regulatory lists.</small>
+                <small>
+                  <mat-icon>info</mat-icon>
+                  Select at least one watchlist source to search. Each source will be searched independently.
+                </small>
+              </div>
+              <div class="sources-error" *ngIf="getSelectedSourcesCount() === 0 && singleScreeningForm.get('sources')?.touched">
+                <mat-icon>error</mat-icon>
+                Please select at least one data source for screening
               </div>
             </div>
 
@@ -177,14 +197,40 @@
           </div>
         </div>
 
+        <!-- Screening Summary -->
+        <div class="screening-summary" *ngIf="getSelectedSourcesCount() > 0">
+          <h4>Screening Summary</h4>
+          <div class="summary-content">
+            <div class="summary-item">
+              <mat-icon>person</mat-icon>
+              <span>Customer: {{ singleScreeningForm.get('fullName')?.value || 'Not specified' }}</span>
+            </div>
+            <div class="summary-item">
+              <mat-icon>source</mat-icon>
+              <span>Sources: {{ getSelectedSourceNames().join(', ') }}</span>
+            </div>
+            <div class="summary-item">
+              <mat-icon>tune</mat-icon>
+              <span>Threshold: {{ singleScreeningForm.get('threshold')?.value }}%</span>
+            </div>
+          </div>
+        </div>
+
         <!-- Action Buttons -->
         <div class="action-buttons">
           <button mat-raised-button color="primary" type="submit"
-                  [disabled]="singleScreeningForm.invalid || isLoading()">
+                  [disabled]="singleScreeningForm.invalid || isLoading() || getSelectedSourcesCount() === 0">
             <mat-spinner diameter="20" *ngIf="isLoading()"></mat-spinner>
             <mat-icon *ngIf="!isLoading()">search</mat-icon>
             <span *ngIf="!isLoading()">Screen Customer</span>
             <span *ngIf="isLoading()">Screening...</span>
+          </button>
+
+          <!-- Debug Button (temporary) -->
+          <button mat-button type="button" (click)="debugFormState()"
+                  style="margin-left: 12px; background: #fff3e0;">
+            <mat-icon>bug_report</mat-icon>
+            Debug Form
           </button>
 
           <button mat-button type="button" (click)="clearSingleForm()"

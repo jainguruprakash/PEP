@@ -55,7 +55,8 @@ export class ScreeningConfigService {
         { value: 'MCA', label: 'MCA Directors (India)', selected: true, description: 'Ministry of Corporate Affairs' },
         { value: 'LOCAL', label: 'Local Lists', selected: false, description: 'Custom local watchlists' },
         { value: 'PEP', label: 'PEP Lists', selected: true, description: 'Politically Exposed Persons' },
-        { value: 'INTERPOL', label: 'Interpol', selected: false, description: 'International Criminal Police Organization' }
+        { value: 'INTERPOL', label: 'Interpol', selected: false, description: 'International Criminal Police Organization' },
+        { value: 'ECI', label: 'Election Commission (India)', selected: true, description: 'Election Commission of India' }
       ]
     },
 
@@ -224,7 +225,7 @@ export class ScreeningConfigService {
 
   // Get all available categories
   getCategories(): string[] {
-    const categories = [...new Set(this.screeningConfig.map(config => config.category).filter(Boolean))];
+    const categories = [...new Set(this.screeningConfig.map(config => config.category).filter(Boolean))] as string[];
     return categories;
   }
 
@@ -252,31 +253,65 @@ export class ScreeningConfigService {
 
     this.screeningConfig.forEach(config => {
       const formValue = formValues[config.fieldName];
-      
-      if (formValue !== undefined && formValue !== null) {
+
+      // Skip undefined, null, empty strings, and empty arrays
+      if (this.isValidValue(formValue)) {
         if (config.type === 'checkbox-group' && Array.isArray(formValue)) {
           // Handle checkbox groups - convert boolean array to selected values
           const selectedOptions = config.options
-            ?.filter((option, index) => formValue[index])
+            ?.filter((_, index) => formValue[index] === true)
             .map(option => option.value) || [];
-          
-          if (selectedOptions.length > 0) {
-            payload[config.payloadKey] = selectedOptions;
-          }
+
+          // Always include the array, even if empty, so we know user made a selection
+          payload[config.payloadKey] = selectedOptions;
+
+          console.log(`Checkbox group ${config.fieldName}:`, {
+            formValue,
+            selectedOptions,
+            payloadKey: config.payloadKey
+          });
         } else if (config.type === 'select' && config.options) {
           // Handle select options - use the actual value
           const selectedOption = config.options.find(option => option.value === formValue);
           if (selectedOption) {
             payload[config.payloadKey] = selectedOption.value;
           }
+        } else if (config.type === 'radio-group' && config.options) {
+          // Handle radio groups - use the actual value
+          const selectedOption = config.options.find(option => option.value === formValue);
+          if (selectedOption) {
+            payload[config.payloadKey] = selectedOption.value;
+          }
+        } else if (config.type === 'toggle') {
+          // Handle toggles - only include if true or explicitly set
+          if (formValue === true || formValue === false) {
+            payload[config.payloadKey] = formValue;
+          }
+        } else if (config.type === 'slider') {
+          // Handle sliders - include numeric values
+          if (typeof formValue === 'number' && !isNaN(formValue)) {
+            payload[config.payloadKey] = formValue;
+          }
         } else {
-          // Handle direct values (toggles, inputs, etc.)
-          payload[config.payloadKey] = formValue;
+          // Handle direct values (inputs, etc.) - only if not empty
+          if (typeof formValue === 'string' && formValue.trim() !== '') {
+            payload[config.payloadKey] = formValue.trim();
+          } else if (typeof formValue !== 'string') {
+            payload[config.payloadKey] = formValue;
+          }
         }
       }
     });
 
     return payload;
+  }
+
+  // Helper method to check if a value is valid for inclusion in payload
+  private isValidValue(value: any): boolean {
+    if (value === undefined || value === null) return false;
+    if (typeof value === 'string' && value.trim() === '') return false;
+    if (Array.isArray(value) && value.length === 0) return false;
+    return true;
   }
 
   // Get default form values

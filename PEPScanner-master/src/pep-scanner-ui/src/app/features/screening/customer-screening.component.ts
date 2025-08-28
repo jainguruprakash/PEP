@@ -112,14 +112,14 @@ export class CustomerScreeningComponent implements OnInit {
 
   // Form groups
   singleScreeningForm = this.fb.group({
-    fullName: ['', Validators.required],
-    dateOfBirth: [''],
-    nationality: [''],
-    country: [''],
-    identificationNumber: [''],
-    identificationType: [''],
+    fullName: ['', [Validators.required, Validators.minLength(2)]],
+    dateOfBirth: [''], // Optional
+    nationality: [''], // Optional
+    country: [''], // Optional
+    identificationNumber: [''], // Optional
+    identificationType: [''], // Optional
     // Advanced filters
-    threshold: [70],
+    threshold: [70, [Validators.min(10), Validators.max(100)]],
     sources: this.fb.array([]),
     includeAliases: [true],
     includeFuzzyMatching: [true],
@@ -183,48 +183,108 @@ export class CustomerScreeningComponent implements OnInit {
     // Initialize single screening sources
     const sourcesArray = this.singleScreeningForm.get('sources') as FormArray;
     sourcesArray.clear();
-    this.availableSources.forEach(source => {
-      sourcesArray.push(this.fb.control(source.selected));
+    this.availableSources.forEach((source, index) => {
+      const control = this.fb.control(source.selected);
+      sourcesArray.push(control);
+      console.log(`Source ${index}: ${source.label} = ${source.selected}`);
     });
-    
+
     // Initialize bulk screening sources
     const bulkSourcesArray = this.bulkScreeningForm.get('bulkSources') as FormArray;
     bulkSourcesArray.clear();
     this.availableSources.forEach(source => {
       bulkSourcesArray.push(this.fb.control(source.selected));
     });
+
+    console.log('Form array initialized with sources:', this.availableSources.map(s => ({ label: s.label, selected: s.selected })));
   }
 
   // Single customer screening
   screenSingleCustomer() {
     if (this.singleScreeningForm.invalid) return;
 
+    // Validate that at least fullName is provided
+    const formValue = this.singleScreeningForm.value;
+    if (!formValue.fullName || formValue.fullName.trim() === '') {
+      this.toastService.error('Customer name is required for screening');
+      return;
+    }
+
     this.isLoading.set(true);
     this.result.set(null);
     this.bulkResults.set([]);
     this.filteredBulkResults.set([]);
 
-    const formValue = this.singleScreeningForm.value;
-
-    // Build base payload with customer data
-    const basePayload = {
-      fullName: formValue.fullName || '',
-      dateOfBirth: formValue.dateOfBirth,
-      nationality: formValue.nationality,
-      country: formValue.country,
-      identificationNumber: formValue.identificationNumber,
-      identificationType: formValue.identificationType
+    // Build base payload with only non-null/non-empty customer data
+    const basePayload: any = {
+      fullName: formValue.fullName.trim()
     };
 
-    // Use configurable service to build complete payload
-    const screeningRequest = this.screeningConfigService.buildApiPayload(formValue, basePayload);
+    // Add optional fields only if they have values
+    if (formValue.dateOfBirth && formValue.dateOfBirth.trim()) {
+      basePayload.dateOfBirth = formValue.dateOfBirth.trim();
+    }
+
+    if (formValue.nationality && formValue.nationality.trim()) {
+      basePayload.nationality = formValue.nationality.trim();
+    }
+
+    if (formValue.country && formValue.country.trim()) {
+      basePayload.country = formValue.country.trim();
+    }
+
+    if (formValue.identificationNumber && formValue.identificationNumber.trim()) {
+      basePayload.identificationNumber = formValue.identificationNumber.trim();
+    }
+
+    if (formValue.identificationType && formValue.identificationType.trim()) {
+      basePayload.identificationType = formValue.identificationType.trim();
+    }
+
+    // Get selected sources using the reliable method
+    const selectedSources = this.getSelectedOptions(formValue.sources, this.availableSources);
+
+    // Validate that at least one source is selected
+    if (!selectedSources || selectedSources.length === 0) {
+      this.toastService.error('Please select at least one data source for screening');
+      this.isLoading.set(false);
+      return;
+    }
+
+    // Build the screening request with only selected sources
+    const screeningRequest = {
+      ...basePayload,
+      sources: selectedSources,
+      threshold: formValue.threshold || 70,
+      includeFuzzyMatching: formValue.includeFuzzyMatching || false,
+      includePhoneticMatching: formValue.includePhoneticMatching || false,
+      includeAliases: formValue.includeAliases || false
+    };
+
+    console.log('Selected sources only:', selectedSources);
+    console.log('Complete screening request payload:', JSON.stringify(screeningRequest, null, 2));
 
     this.screeningService.screenCustomer(screeningRequest).subscribe({
       next: (res) => {
-        console.log('Screening response received:', res);
+        console.log('=== SCREENING RESPONSE ===');
+        console.log('Response received:', res);
         console.log('Response type:', typeof res);
         console.log('Response has matches:', res?.matches?.length || 0);
+
+        if (res?.matches) {
+          console.log('Matches details:');
+          res.matches.forEach((match: any, index: number) => {
+            console.log(`Match ${index}:`, {
+              name: match.matchedName || match.fullName || match.name,
+              source: match.source,
+              score: match.matchScore || match.similarityScore,
+              hasData: Object.keys(match).length > 0
+            });
+          });
+        }
+
         console.log('Full response structure:', JSON.stringify(res, null, 2));
+        console.log('========================');
 
         this.result.set(res);
         this.isLoading.set(false);
@@ -259,17 +319,57 @@ export class CustomerScreeningComponent implements OnInit {
   // Utility methods
   private getSelectedOptions(selections: any[] | null | undefined, options: any[]): string[] {
     if (!selections || !Array.isArray(selections)) {
-      // If no selections, return all default selected sources
-      return options.filter(option => option.selected).map(option => option.value);
+      // If no selections array, return empty array - user must select sources
+      return [];
     }
-    return options
+
+    // Only return sources that are explicitly selected by the user
+    const selectedSources = options
       .filter((_, index) => selections[index] === true)
       .map(option => option.value);
+
+    console.log('Selected sources:', selectedSources);
+    console.log('Available options:', options.map(o => ({ value: o.value, label: o.label })));
+    console.log('Selection array:', selections);
+
+    return selectedSources;
   }
 
   // Form getters
   get sourcesFormArray() {
     return this.singleScreeningForm.get('sources') as FormArray;
+  }
+
+  // Helper method to count selected sources
+  getSelectedSourcesCount(): number {
+    const sourcesArray = this.singleScreeningForm.get('sources') as FormArray;
+    if (!sourcesArray) return 0;
+
+    return sourcesArray.controls.filter(control => control.value === true).length;
+  }
+
+  // Helper method to get selected source names
+  getSelectedSourceNames(): string[] {
+    const sourcesArray = this.singleScreeningForm.get('sources') as FormArray;
+    if (!sourcesArray) return [];
+
+    const selectedNames = this.availableSources
+      .filter((_, index) => sourcesArray.at(index)?.value === true)
+      .map(source => source.label);
+
+    console.log('Getting selected source names:', selectedNames);
+    return selectedNames;
+  }
+
+  // Debug method to show current form state
+  debugFormState() {
+    const sourcesArray = this.singleScreeningForm.get('sources') as FormArray;
+    console.log('=== FORM DEBUG ===');
+    console.log('Available sources:', this.availableSources);
+    console.log('Form array values:', sourcesArray?.value);
+    console.log('Selected sources:', this.getSelectedOptions(sourcesArray?.value, this.availableSources));
+    console.log('Form value:', this.singleScreeningForm.value);
+    console.log('================');
   }
 
   // Clear forms
@@ -870,7 +970,7 @@ export class CustomerScreeningComponent implements OnInit {
     };
     
     this.screeningService.createAlertFromBulkResult(alertRequest).subscribe({
-      next: (response) => {
+      next: () => {
         this.toastService.success(`Alert created for ${result.customerName}`);
       },
       error: (error) => {
@@ -932,9 +1032,9 @@ export class CustomerScreeningComponent implements OnInit {
           const formArray = this.fb.array(
             config.options.map(option => this.fb.control(option.selected))
           );
-          this.singleScreeningForm.addControl(config.fieldName, formArray);
+          (this.singleScreeningForm as any).addControl(config.fieldName, formArray);
         } else {
-          this.singleScreeningForm.addControl(
+          (this.singleScreeningForm as any).addControl(
             config.fieldName,
             this.fb.control(config.defaultValue || null)
           );
