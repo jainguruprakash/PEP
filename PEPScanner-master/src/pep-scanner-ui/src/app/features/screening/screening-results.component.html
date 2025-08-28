@@ -1,9 +1,14 @@
 <mat-card class="results-card" *ngIf="result">
+  <!-- Debug Info -->
+  <div class="debug-panel" style="background: #e3f2fd; padding: 10px; margin-bottom: 10px; border-radius: 4px;">
+    <strong>Debug:</strong> Result received with {{ result.matches?.length || 0 }} matches
+  </div>
+
   <!-- Header Section -->
   <mat-card-header class="results-header">
     <div class="header-content">
       <div class="customer-info">
-        <h2>{{ result.fullName || result.customerName }}</h2>
+        <h2>{{ result.fullName || result.customerName || 'Unknown Customer' }}</h2>
         <div class="customer-details">
           <span *ngIf="result.nationality">{{ result.nationality }}</span>
           <span *ngIf="result.country" class="separator">{{ result.country }}</span>

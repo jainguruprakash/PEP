@@ -143,6 +143,36 @@
                   Enable Phonetic Matching
                 </mat-checkbox>
               </div>
+              <div class="matching-help">
+                <small>Fuzzy matching finds similar names, phonetic matching finds names that sound alike</small>
+              </div>
+            </div>
+
+            <!-- Dynamic Configurable Options (Future Enhancement) -->
+            <div class="dynamic-options" *ngIf="screeningConfig.length > 0">
+              <label class="section-label">Additional Options</label>
+              <div class="config-preview">
+                <p class="config-note">
+                  <mat-icon>info</mat-icon>
+                  {{ screeningConfig.length }} configurable options available.
+                  <button mat-button (click)="showConfigOptions = !showConfigOptions">
+                    {{ showConfigOptions ? 'Hide' : 'Show' }} Options
+                  </button>
+                </p>
+
+                <!-- Preview of configurable options -->
+                <div *ngIf="showConfigOptions" class="config-options-preview">
+                  <div *ngFor="let category of getScreeningCategories()" class="config-category-preview">
+                    <h5>{{ getCategoryTitle(category) }}</h5>
+                    <div class="config-items">
+                      <span *ngFor="let config of getConfigByCategory(category)"
+                            class="config-item-tag">
+                        {{ config.label }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -499,8 +529,18 @@
     </mat-card>
   </div>
 
+  <!-- Debug Information -->
+  <div class="debug-info" style="background: #f0f0f0; padding: 10px; margin: 10px 0; border-radius: 4px;">
+    <h4>Debug Info:</h4>
+    <p>Has result: {{ !!result() }}</p>
+    <p>Is loading: {{ isLoading() }}</p>
+    <p>Bulk results length: {{ bulkResults().length }}</p>
+    <p>Should show results: {{ result() && !isLoading() && bulkResults().length === 0 }}</p>
+    <p>Result matches count: {{ result()?.matches?.length || 0 }}</p>
+  </div>
+
   <!-- Enhanced Results Section -->
-  <div *ngIf="result() && !isLoading() && bulkResults().length === 0" class="results-container">
+  <div *ngIf="result() && !isLoading()" class="results-container">
     <mat-tab-group>
       <!-- Screening Results -->
       <mat-tab label="Results">

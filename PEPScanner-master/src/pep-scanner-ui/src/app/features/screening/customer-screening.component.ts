@@ -29,8 +29,11 @@ import { WebSocketService } from '../../services/websocket.service';
 import { AiSuggestionsService } from '../../services/ai-suggestions.service';
 import { ToastService } from '../../services/toast.service';
 import { AuthService } from '../../services/auth.service';
+import { ScreeningConfigService, ScreeningFieldConfig } from '../../services/screening-config.service';
 import { ScreeningResultsComponent } from './screening-results.component';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatRadioModule } from '@angular/material/radio';
 
 @Component({
   selector: 'app-customer-screening',
@@ -57,6 +60,8 @@ import { MatSnackBarModule } from '@angular/material/snack-bar';
     MatTableModule,
     MatPaginatorModule,
     MatSnackBarModule,
+    MatSlideToggleModule,
+    MatRadioModule,
     FormsModule,
     ScreeningResultsComponent
   ],
@@ -72,6 +77,7 @@ export class CustomerScreeningComponent implements OnInit {
   private aiService = inject(AiSuggestionsService);
   private toastService = inject(ToastService);
   private authService = inject(AuthService);
+  private screeningConfigService = inject(ScreeningConfigService);
 
   // Signals for reactive state management
   isLoading = signal(false);
@@ -130,17 +136,10 @@ export class CustomerScreeningComponent implements OnInit {
     enableParallelProcessing: [true]
   });
 
-  // Configuration options
-  availableSources = [
-    { value: 'OFAC', label: 'OFAC (US Treasury)', selected: true },
-    { value: 'UN', label: 'UN Sanctions', selected: true },
-    { value: 'EU', label: 'EU Sanctions', selected: true },
-    { value: 'RBI', label: 'RBI (India)', selected: true },
-    { value: 'FIU-IND', label: 'FIU-IND', selected: true },
-    { value: 'SEBI', label: 'SEBI (India)', selected: true },
-    { value: 'MCA', label: 'MCA Directors (India)', selected: true },
-    { value: 'LOCAL', label: 'Local Lists', selected: false }
-  ];
+  // Configuration options - now loaded from service
+  screeningConfig: ScreeningFieldConfig[] = [];
+  availableSources: any[] = []; // Backward compatibility
+  showConfigOptions = false;
 
   countries = [
     'India', 'United States', 'United Kingdom', 'Canada', 'Australia',
@@ -155,9 +154,29 @@ export class CustomerScreeningComponent implements OnInit {
   totalSources = 8;
 
   ngOnInit() {
+    this.loadScreeningConfiguration();
     this.initializeFormArrays();
     this.loadSearchTemplates();
     this.setupRealTimeUpdates();
+  }
+
+  private loadScreeningConfiguration() {
+    // Load configuration from service
+    this.screeningConfig = this.screeningConfigService.getScreeningConfig();
+
+    // Extract sources for backward compatibility
+    const sourcesConfig = this.screeningConfig.find(config => config.fieldName === 'sources');
+    if (sourcesConfig?.options) {
+      this.availableSources = sourcesConfig.options;
+    }
+
+    // Create dynamic form controls
+    this.createFormControlsForConfig();
+
+    // Update form with default values from configuration
+    const defaultValues = this.screeningConfigService.getDefaultFormValues();
+    this.singleScreeningForm.patchValue(defaultValues);
+    this.bulkScreeningForm.patchValue(defaultValues);
   }
 
   private initializeFormArrays() {
@@ -186,24 +205,27 @@ export class CustomerScreeningComponent implements OnInit {
     this.filteredBulkResults.set([]);
 
     const formValue = this.singleScreeningForm.value;
-    const selectedSources = this.getSelectedOptions(formValue.sources, this.availableSources);
 
-    const screeningRequest: any = {
+    // Build base payload with customer data
+    const basePayload = {
       fullName: formValue.fullName || '',
       dateOfBirth: formValue.dateOfBirth,
       nationality: formValue.nationality,
       country: formValue.country,
       identificationNumber: formValue.identificationNumber,
-      identificationType: formValue.identificationType,
-      threshold: formValue.threshold,
-      sources: selectedSources,
-      includeAliases: formValue.includeAliases,
-      includeFuzzyMatching: formValue.includeFuzzyMatching,
-      includePhoneticMatching: formValue.includePhoneticMatching
+      identificationType: formValue.identificationType
     };
+
+    // Use configurable service to build complete payload
+    const screeningRequest = this.screeningConfigService.buildApiPayload(formValue, basePayload);
 
     this.screeningService.screenCustomer(screeningRequest).subscribe({
       next: (res) => {
+        console.log('Screening response received:', res);
+        console.log('Response type:', typeof res);
+        console.log('Response has matches:', res?.matches?.length || 0);
+        console.log('Full response structure:', JSON.stringify(res, null, 2));
+
         this.result.set(res);
         this.isLoading.set(false);
         
@@ -879,6 +901,46 @@ export class CustomerScreeningComponent implements OnInit {
       const updated = this.notifications().filter(n => n !== message);
       this.notifications.set(updated);
     }, 5000);
+  }
+
+  // Configuration helper methods for template
+  getScreeningCategories(): string[] {
+    return this.screeningConfigService.getCategories();
+  }
+
+  getConfigByCategory(category: string): ScreeningFieldConfig[] {
+    return this.screeningConfigService.getConfigByCategory(category);
+  }
+
+  getCategoryTitle(category: string): string {
+    const categoryTitles: { [key: string]: string } = {
+      'sources': 'Data Sources',
+      'matching': 'Matching Options',
+      'scope': 'Search Scope',
+      'risk': 'Risk Assessment',
+      'filters': 'Filters',
+      'advanced': 'Advanced Options'
+    };
+    return categoryTitles[category] || category.charAt(0).toUpperCase() + category.slice(1);
+  }
+
+  // Dynamic form control creation
+  createFormControlsForConfig() {
+    this.screeningConfig.forEach(config => {
+      if (!this.singleScreeningForm.get(config.fieldName)) {
+        if (config.type === 'checkbox-group' && config.options) {
+          const formArray = this.fb.array(
+            config.options.map(option => this.fb.control(option.selected))
+          );
+          this.singleScreeningForm.addControl(config.fieldName, formArray);
+        } else {
+          this.singleScreeningForm.addControl(
+            config.fieldName,
+            this.fb.control(config.defaultValue || null)
+          );
+        }
+      }
+    });
   }
 }
 

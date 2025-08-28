@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
@@ -602,7 +602,7 @@ import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
     }
   `]
 })
-export class ScreeningResultsComponent {
+export class ScreeningResultsComponent implements OnInit {
   @Input() result: any = null;
   @Input() onCreateAlert: ((match: any) => void) | null = null;
 
@@ -610,6 +610,14 @@ export class ScreeningResultsComponent {
   currentPage = 0;
   pageSize = 10;
   pageSizeOptions = [5, 10, 25, 50];
+
+  ngOnInit() {
+    console.log('ScreeningResultsComponent - result received:', this.result);
+    if (this.result) {
+      console.log('Result has matches:', this.result.matches?.length || 0);
+      console.log('Result data:', JSON.stringify(this.result, null, 2));
+    }
+  }
 
   getStatusClass(status: string): string {
     return `status-${status.toLowerCase().replace(' ', '-')}`;
@@ -707,7 +715,7 @@ export class ScreeningResultsComponent {
   }
 
   hasRecentAlerts(): boolean {
-    const result = this.result();
+    const result = this.result;
     if (!result?.matches) return false;
 
     return result.matches.some((match: any) =>
@@ -716,7 +724,7 @@ export class ScreeningResultsComponent {
   }
 
   getRecentAlertsCount(): number {
-    const result = this.result();
+    const result = this.result;
     if (!result?.matches) return 0;
 
     return result.matches.filter((match: any) =>
