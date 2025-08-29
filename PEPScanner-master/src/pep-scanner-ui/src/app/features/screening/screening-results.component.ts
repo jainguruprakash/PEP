@@ -12,6 +12,7 @@ import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 @Component({
   selector: 'app-screening-results',
   standalone: true,
+  styleUrls: ['./screening-results.component.scss'],
   imports: [
     CommonModule,
     MatCardModule,
@@ -750,15 +751,42 @@ export class ScreeningResultsComponent implements OnInit {
   }
 
   // Get display name for match with fallbacks
-  getMatchDisplayName(match: any): string {
-    const name = match.matchedName || match.fullName || match.name || match.entityName || match.listName;
+  getMatchDisplayName1(): string {
+      return 'Invalid Match';
 
-    if (!name || name.trim() === '') {
-      console.log('Empty match name found:', match);
-      return `Match ${this.getPaginatedMatches().indexOf(match) + 1}`;
+  }
+
+  getMatchDisplayName(match: any): string {
+    if (!match) {
+      return 'Invalid Match';
     }
 
-    return name;
+    
+
+    // Try multiple possible name fields
+    const possibleNames = [
+      match.matchedName,
+      match.fullName,
+      match.name,
+      match.entityName,
+      match.listName,
+      match.firstName && match.lastName ? `${match.firstName} ${match.lastName}` : null,
+      match.title,
+      match.alias,
+      match.displayName
+    ];
+
+    const name = possibleNames.find(n => n && typeof n === 'string' && n.trim() !== '');
+
+    if (!name) {
+      console.log('⚠️ No valid name found for match:', match);
+      // Use index from current matches array
+      const currentMatches = this.result?.matches || [];
+      const matchIndex = currentMatches.indexOf(match);
+      return `Unnamed Match ${matchIndex >= 0 ? matchIndex + 1 : '?'}`;
+    }
+
+    return name.trim();
   }
 
   // Debug helper methods
@@ -789,27 +817,162 @@ export class ScreeningResultsComponent implements OnInit {
   }
 
   getMatchField(match: any, fieldName: string): any {
+    if (!match) return null;
     return match[fieldName] || match[fieldName.toLowerCase()] || match[fieldName.toUpperCase()] || null;
+  }
+
+  // Get all displayable fields from match data
+  getDisplayableFields(match: any): Array<{key: string, label: string, value: any}> {
+    if (!match) return [];
+
+    const displayableFields: Array<{key: string, label: string, value: any}> = [];
+
+    // Field mapping - maps API field names to display labels
+    const fieldMappings: {[key: string]: string} = {
+      'dateOfBirth': 'Date of Birth',
+      'dob': 'Date of Birth',
+      'birthDate': 'Date of Birth',
+      'placeOfBirth': 'Place of Birth',
+      'birthPlace': 'Place of Birth',
+      'address': 'Address',
+      'addresses': 'Addresses',
+      'citizenship': 'Citizenship',
+      'nationality': 'Nationality',
+      'passportNumber': 'Passport Number',
+      'passport': 'Passport',
+      'idNumber': 'ID Number',
+      'identificationNumber': 'ID Number',
+      'ssn': 'SSN',
+      'taxId': 'Tax ID',
+      'designation': 'Designation',
+      'title': 'Title',
+      'occupation': 'Occupation',
+      'employer': 'Employer',
+      'organization': 'Organization',
+      'affiliations': 'Affiliations',
+      'associates': 'Associates',
+      'relatives': 'Relatives',
+      'sanctionDate': 'Sanction Date',
+      'listingDate': 'Listing Date',
+      'lastUpdated': 'Last Updated',
+      'program': 'Program',
+      'regime': 'Regime',
+      'remarks': 'Remarks',
+      'comments': 'Comments',
+      'notes': 'Notes',
+      'website': 'Website',
+      'email': 'Email',
+      'phone': 'Phone',
+      'fax': 'Fax'
+    };
+
+    // Skip these fields as they're handled elsewhere or not useful for display
+    const skipFields = new Set([
+      'matchedName', 'fullName', 'name', 'entityName', 'listName', 'displayName',
+      'firstName', 'lastName', 'middleName',
+      'source', 'dataSource', 'listSource',
+      'matchScore', 'similarityScore', 'score',
+      'id', 'matchId', 'entityId', 'recordId',
+      'alertCreated', 'alertCreatedAt', 'alertId',
+      'createdAt', 'updatedAt', 'timestamp'
+    ]);
+
+    // Extract all fields with data
+    Object.keys(match).forEach(key => {
+      if (skipFields.has(key)) return;
+
+      const value = match[key];
+      if (value !== null && value !== undefined && value !== '' && value !== 0) {
+        const label = fieldMappings[key] || this.formatFieldName(key);
+        displayableFields.push({
+          key,
+          label,
+          value: this.formatFieldValue(value)
+        });
+      }
+    });
+
+    return displayableFields;
+  }
+
+  // Format field name for display
+  private formatFieldName(fieldName: string): string {
+    return fieldName
+      .replace(/([A-Z])/g, ' $1') // Add space before capital letters
+      .replace(/^./, str => str.toUpperCase()) // Capitalize first letter
+      .replace(/_/g, ' ') // Replace underscores with spaces
+      .trim();
+  }
+
+  // Format field value for display
+  private formatFieldValue(value: any): string {
+    if (Array.isArray(value)) {
+      return value.join(', ');
+    }
+    if (typeof value === 'object') {
+      return JSON.stringify(value);
+    }
+    return String(value);
+  }
+
+  // Get a preview of key match information for the accordion header
+  getMatchPreview(match: any): string {
+    if (!match) return '';
+
+    const previewParts: string[] = [];
+
+    // Add country/nationality
+    const country = this.getMatchField(match, 'country') || this.getMatchField(match, 'nationality');
+    if (country) previewParts.push(country);
+
+    // Add date of birth
+    const dob = this.getMatchField(match, 'dateOfBirth') || this.getMatchField(match, 'dob');
+    if (dob) previewParts.push(`DOB: ${dob}`);
+
+    // Add position/role
+    const position = this.getMatchField(match, 'positionOrRole') || this.getMatchField(match, 'position') || this.getMatchField(match, 'title');
+    if (position) previewParts.push(position);
+
+    // Add list type
+    const listType = this.getMatchField(match, 'listType') || this.getMatchField(match, 'type');
+    if (listType) previewParts.push(listType);
+
+    return previewParts.slice(0, 2).join(' • '); // Show max 2 items
   }
 
   getPaginatedMatches(): any[] {
     if (!this.result?.matches) {
-      console.log('No matches found in result:', this.result);
+      console.log('❌ No matches found in result:', this.result);
       return [];
     }
 
+    console.log('🔍 PAGINATION DEBUG:');
     console.log('Total matches available:', this.result.matches.length);
     console.log('Current page:', this.currentPage, 'Page size:', this.pageSize);
-    console.log('All matches:', this.result.matches);
+
+    // Log each match to see what data is available
+    this.result.matches.forEach((match: any, index: number) => {
+      console.log(`Match ${index + 1}:`, {
+        name: this.getMatchDisplayName(match),
+        hasData: this.hasMatchData(match),
+        keys: Object.keys(match),
+        rawMatch: match
+      });
+    });
 
     const startIndex = this.currentPage * this.pageSize;
     const endIndex = startIndex + this.pageSize;
     const paginatedMatches = this.result.matches.slice(startIndex, endIndex);
 
-    console.log('Paginated matches (showing):', paginatedMatches);
+    console.log('📄 Paginated matches (showing):', paginatedMatches.length, 'out of', this.result.matches.length);
     console.log('Start index:', startIndex, 'End index:', endIndex);
+    console.log('Actual paginated data:', paginatedMatches);
 
-    return paginatedMatches;
+    // Ensure we return valid matches
+    const validMatches = paginatedMatches.filter((match: any) => match !== null && match !== undefined);
+    console.log('✅ Valid matches to display:', validMatches.length);
+
+    return validMatches;
   }
 
   // Screening details methods

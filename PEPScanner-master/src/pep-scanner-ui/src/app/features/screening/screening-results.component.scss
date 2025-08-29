@@ -1,0 +1,170 @@
+// Screening Results Component Styles
+
+.match-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.match-score {
+  font-weight: 600;
+  color: #1976d2;
+}
+
+.match-source {
+  color: #666;
+  font-style: italic;
+}
+
+.match-preview {
+  color: #333;
+  font-size: 11px;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  border-left: 4px solid #2196f3;
+  transition: all 0.2s ease;
+}
+
+.detail-item:hover {
+  background-color: #e3f2fd;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.detail-item strong {
+  font-size: 12px;
+  color: #1976d2;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.detail-item span {
+  font-size: 14px;
+  color: #333;
+  word-break: break-word;
+  line-height: 1.4;
+}
+
+.debug-match-details {
+  font-family: 'Courier New', monospace;
+  border: 1px solid #ddd;
+}
+
+.no-data-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 24px;
+  text-align: center;
+}
+
+.no-data-message mat-icon {
+  font-size: 32px;
+  width: 32px;
+  height: 32px;
+  color: #ff9800;
+}
+
+.no-data-message p {
+  margin: 4px 0;
+}
+
+// Match panel styling
+.match-panel {
+  margin-bottom: 12px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.match-panel .mat-expansion-panel-header {
+  padding: 16px 24px;
+  background-color: #fafafa;
+}
+
+.match-panel.mat-expanded .mat-expansion-panel-header {
+  background-color: #e3f2fd;
+}
+
+.match-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.match-name {
+  font-weight: 600;
+  font-size: 16px;
+  color: #1976d2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.debug-match-data {
+  font-family: monospace;
+  background-color: rgba(0,0,0,0.05);
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.alert-created-icon {
+  color: #4caf50;
+  font-size: 18px;
+}
+
+// Debug sections
+details {
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 8px;
+}
+
+details summary {
+  font-weight: 600;
+  padding: 4px;
+  background-color: #f5f5f5;
+  border-radius: 3px;
+}
+
+details[open] summary {
+  margin-bottom: 8px;
+}
+
+pre {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+// Responsive design
+@media (max-width: 768px) {
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .match-info {
+    font-size: 11px;
+  }
+  
+  .match-name {
+    font-size: 14px;
+  }
+}

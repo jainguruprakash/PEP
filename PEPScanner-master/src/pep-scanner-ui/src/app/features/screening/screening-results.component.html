@@ -114,7 +114,11 @@
             <mat-panel-title>
               <div class="match-header">
                 <div class="match-name">
-                  {{ getMatchDisplayName(match) }}
+                 <span  >
+
+                 {{ getMatchDisplayName(match) }}
+
+                 </span> 
                   <span class="debug-match-data" style="font-size: 10px; color: #999; margin-left: 8px;">
                     [{{ i + 1 }}/{{ result?.matches?.length }}]
                   </span>
@@ -140,37 +144,74 @@
               </div>
             </mat-panel-title>
             <mat-panel-description>
-              <div class="match-score">
-                Match: {{ ((match.matchScore || match.similarityScore || 0) * 100) | number:'1.0-0' }}%
-              </div>
+              <!-- <div class="match-info">
+                <div class="match-score">
+                  Match: {{ (getMatchScore(match) * 100) | number:'1.0-0' }}%
+                </div>
+                <div class="match-source">
+                  Source: {{ getMatchSource(match) }}
+                </div>
+                <div class="match-preview" *ngIf="getMatchPreview(match)">
+                  {{ getMatchPreview(match) }}
+                </div>
+              </div> -->
             </mat-panel-description>
           </mat-expansion-panel-header>
 
-          <div class="match-details">
-            <!-- Debug match data -->
+          <!-- <div class="match-details">
             <div class="debug-match-details" style="background: #f0f0f0; padding: 8px; margin-bottom: 12px; border-radius: 4px; font-size: 11px;">
-              <strong>Debug Match {{ i + 1 }}:</strong>
-              <div>Keys: {{ getMatchKeys(match).join(', ') }}</div>
-              <div>Has Data: {{ hasMatchData(match) ? 'Yes' : 'No' }}</div>
-              <div>Raw Data: {{ getMatchDataAsString(match) }}</div>
+              <strong>🔍 Debug Match {{ i + 1 }} of {{ result?.matches?.length }}:</strong>
+              <div><strong>Keys:</strong> {{ getMatchKeys(match).join(', ') || 'No keys found' }}</div>
+              <div><strong>Has Data:</strong> {{ hasMatchData(match) ? '✅ Yes' : '❌ No' }}</div>
+              <div><strong>Display Name:</strong> {{ getMatchDisplayName(match) }}</div>
+              <div><strong>Match Object:</strong> {{ match ? 'Present' : 'Missing' }}</div>
+            </div>
+
+            <details style="margin-bottom: 12px;">
+              <summary style="cursor: pointer; font-size: 12px; color: #666;">🔧 Show Raw Match Data</summary>
+              <pre style="font-size: 10px; background: #f9f9f9; padding: 8px; border-radius: 4px; overflow: auto; max-height: 200px;">{{ getMatchDataAsString(match) }}</pre>
+            </details>
+
+            <div *ngIf="!hasMatchData(match)" class="no-data-message" style="padding: 16px; background: #fff3e0; border-radius: 4px; text-align: center; color: #e65100;">
+              <mat-icon>warning</mat-icon>
+              <p>No detailed data available for this match</p>
+              <p style="font-size: 12px;">This may be due to data structure differences from the source</p>
             </div>
 
             <div class="detail-grid">
-              <div class="detail-item" *ngIf="match.alternateNames">
+              <div class="detail-item">
+                <strong>Source:</strong>
+                <span>{{ getMatchSource(match) }}</span>
+              </div>
+
+              <div class="detail-item">
+                <strong>Match Score:</strong>
+                <span>{{ (getMatchScore(match) * 100) | number:'1.0-0' }}%</span>
+              </div>
+
+              <div class="detail-item" *ngFor="let field of getDisplayableFields(match)" [ngSwitch]="field.key">
+                <strong>{{ field.label }}:</strong>
+                <span>{{ field.value }}</span>
+              </div>
+
+              <div class="detail-item" *ngIf="getMatchField(match, 'alternateNames') || getMatchField(match, 'aliases')">
                 <strong>Alternate Names:</strong>
-                <span>{{ match.alternateNames }}</span>
+                <span>{{ getMatchField(match, 'alternateNames') || getMatchField(match, 'aliases') }}</span>
               </div>
-              <div class="detail-item" *ngIf="match.country">
+
+              <div class="detail-item" *ngIf="getMatchField(match, 'country') || getMatchField(match, 'nationality')">
                 <strong>Country:</strong>
-                <span>{{ match.country }}</span>
+                <span>{{ getMatchField(match, 'country') || getMatchField(match, 'nationality') }}</span>
               </div>
-              <div class="detail-item" *ngIf="match.positionOrRole">
+
+              <div class="detail-item" *ngIf="getMatchField(match, 'positionOrRole') || getMatchField(match, 'position') || getMatchField(match, 'role')">
                 <strong>Position/Role:</strong>
-                <span>{{ match.positionOrRole }}</span>
+                <span>{{ getMatchField(match, 'positionOrRole') || getMatchField(match, 'position') || getMatchField(match, 'role') }}</span>
               </div>
-              <div class="detail-item" *ngIf="match.listType">
+
+              <div class="detail-item" *ngIf="getMatchField(match, 'listType') || getMatchField(match, 'type')">
                 <strong>List Type:</strong>
-                <span>{{ match.listType }}</span>
+                <span>{{ getMatchField(match, 'listType') || getMatchField(match, 'type') }}</span>
               </div>
               <div class="detail-item" *ngIf="match.sanctionType">
                 <strong>Sanction Type:</strong>
@@ -203,19 +244,19 @@
               </div>
             </div>
           </div>
-          
-          <div class="match-actions">
-            <!-- Create Alert Button (when no alert exists) -->
+           -->
+          <!-- <div class="match-actions">
+
+            ttt 
             <button mat-raised-button
                     color="warn"
-                    *ngIf="match.alertCreated !== true"
+                    *ngIf="match?.alertCreated !== true || (match?.alertCreated ?? false === false)"
                     (click)="createAlert(match)"
                     class="create-alert-btn">
               <mat-icon>notification_important</mat-icon>
               Create Alert
             </button>
 
-            <!-- Alert Created Button (when alert exists) -->
             <button mat-raised-button
                     color="primary"
                     *ngIf="match.alertCreated === true"
@@ -225,7 +266,6 @@
               Alert Created
             </button>
 
-            <!-- View Alert Button -->
             <button mat-button
                     color="primary"
                     *ngIf="match.alertCreated === true && match.alertId"
@@ -235,14 +275,13 @@
               View Alert
             </button>
 
-            <!-- Export Button -->
             <button mat-button
                     (click)="exportMatch(match)"
                     class="export-btn">
               <mat-icon>download</mat-icon>
               Export Details
             </button>
-          </div>
+          </div> -->
         </mat-expansion-panel>
       </mat-accordion>
     </div>
