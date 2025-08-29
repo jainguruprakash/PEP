@@ -34,7 +34,6 @@ COPY --from=build /app/publish .
 # Expose port
 EXPOSE 5098
 
-# ASP.NET Core environment variable
 ENV ASPNETCORE_URLS=http://+:5098
 
 ENTRYPOINT ["dotnet", "PEPScanner.API.dll"]
