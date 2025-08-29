@@ -7,13 +7,13 @@ WORKDIR /app
 # Copy solution file from repo root
 COPY PEPScanner.sln ./
 
-# Copy all project files individually for caching
+# Copy project files individually for caching
 COPY src/backend/PEPScanner.Domain/*.csproj ./PEPScanner.Domain/
 COPY src/backend/PEPScanner.Infrastructure/*.csproj ./PEPScanner.Infrastructure/
 COPY src/backend/PEPScanner.Application/*.csproj ./PEPScanner.Application/
 COPY src/backend/PEPScanner.API/*.csproj ./PEPScanner.API/
 
-# Restore dependencies (works for any solution name)
+# Restore dependencies using the solution
 RUN dotnet restore *.sln
 
 # Copy all source files from backend folder
